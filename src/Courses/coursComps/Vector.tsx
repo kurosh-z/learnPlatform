@@ -6,7 +6,7 @@ import { scaleLinear } from 'd3-scale';
 import { compTickValues } from './compute';
 import AxesTick from './AxesTick';
 import { Object3D } from 'three';
-import { CylinderBufferGeometryB } from './CylinderB';
+import { CylinderBufferGeometryB } from './CylinderBB';
 import { TestBufferCylinder } from './TestCylinder';
 import Plane from './Plane';
 const HHEIGHT = 0.2; // head width
@@ -95,20 +95,23 @@ const Vector: React.RefForwardingComponent<
       //        a little bit smaller that the actual size of the vector so that it looks better with head!
 
       // const shaftmesh = new THREE.Mesh(
-      //   // @ts-ignore
+      // @ts-ignore
       //   new CylinderBufferGeometryB(thickness, thickness, mag, 25),
       //   new THREE.MeshBasicMaterial({ color: color })
       // );
 
       const geom = new CylinderBufferGeometryB(1, 1, 2, 30, 2);
-      // prettier-ignore
-      // @ts-ignore
-      const shaftmesh = new THREE.Mesh(geom,
-        new THREE.MeshPhongMaterial({ color:'#4e5cf5'})
+      const shaftmesh = new THREE.Mesh(
+        geom,
+        new THREE.MeshPhongMaterial({ color: '#4e5cf5' })
       );
 
       // @ts-ignore
+      // try {
       const edges = new THREE.EdgesGeometry(geom);
+
+      // const edges = new THREE.EdgesGeometry();
+
       // apply transformation to shaftmesh
       // shaftmesh.position.y = mag / 2;
 
