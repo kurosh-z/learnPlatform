@@ -1,44 +1,28 @@
-import React, { useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { PI, ORIGIN, I, J, K } from './constants';
-import { ReactThreeFiber, Dom } from 'react-three-fiber';
+import { ReactThreeFiber, useUpdate, extend } from 'react-three-fiber';
 import * as THREE from 'three';
-import { scaleLinear } from 'd3-scale';
-import { compTickValues } from './compute';
-import AxesTick from './AxesTick';
-import { Object3D } from 'three';
-import { CylinderBufferGeometryB } from './CylinderBB';
-import { TestBufferCylinder } from './TestCylinder';
-import Plane from './Plane';
+// import { scaleLinear } from 'd3-scale';
+// import { compTickValues } from './compute';
+// import AxesTick from './AxesTick';
+// import { Object3D, BufferGeometry } from 'three';
+import { CustomCylinderBufferGeometry } from './CustomCylinderGeometry';
+import { useSpring, a } from 'react-spring/three';
+
+extend({ CustomCylinderBufferGeometry });
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      customCylinderBufferGeometry: ReactThreeFiber.Object3DNode<
+        CustomCylinderBufferGeometry,
+        typeof CustomCylinderBufferGeometry
+      >;
+    }
+  }
+}
+
 const HHEIGHT = 0.2; // head width
 const HDIAM = 0.1; // head diameter
-
-const calheadPosition = (axes: 'xAxes' | 'yAxes' | 'zAxes', len: number) =>
-  ({
-    xAxes: [len - HHEIGHT / 2, 0, 0],
-    yAxes: [0, len - HHEIGHT / 2, 0],
-    zAxes: [0, 0, len - HHEIGHT / 2]
-  }[axes]);
-
-const calheadRotation = (axes: 'xAxes' | 'yAxes' | 'zAxes', len: number) =>
-  ({
-    xAxes: [0, 0, (-1 * Math.PI) / 2],
-    yAxes: [0, 0, 0],
-    zAxes: [Math.PI / 2, 0, 0]
-  }[axes]);
-
-const calshaftPosition = (axes: 'xAxes' | 'yAxes' | 'zAxes', len: number) =>
-  ({
-    xAxes: [len / 2 - HHEIGHT / 2, 0, 0],
-    yAxes: [0, len - HHEIGHT / 2 / 2, 0],
-    zAxes: [0, 0, len / 2 - HHEIGHT / 2]
-  }[axes]);
-
-const calshaftRotation = (axes: 'xAxes' | 'yAxes' | 'zAxes', len: number) =>
-  ({
-    xAxes: [0, 0, PI / 2],
-    yAxes: [0, 0, 0],
-    zAxes: [PI / 2, 0, 0]
-  }[axes]);
 
 interface VectorProps {
   vector: THREE.Vector3 | number[];
@@ -66,69 +50,25 @@ const Vector: React.RefForwardingComponent<
     },
     ref
   ) => {
-    // const {
-    //   headposition,
-    //   headrotation,
-    //   shaftposition,
-    //   shaftrotation
-    // } = useMemo(
-    //   () => ({
-    //     headposition: calheadPosition(axes, length),
-    //     headrotation: calheadRotation(axes, length),
-    //     shaftposition: calshaftPosition(axes, length),
-    //     shaftrotation: calshaftRotation(axes, length)
-    //   }),
-    //   [axes, length]
-    // );
-
-    const { shaft, head, mag, _vector, edges } = useMemo(() => {
-      const _vector =
-        vector instanceof THREE.Vector3
-          ? vector
-          : new THREE.Vector3(vector[0], vector[1], vector[2]);
-      const mag = _vector.length();
-      const dirVec = _vector.clone().normalize(); // not normalizing the vector cause false results!
-      const angle = J.angleTo(dirVec); // finding the rotation angle between cylinder geometry(default along J-axes) and actual vector
-      const rotAxes = J.cross(dirVec); // cross multiplication gives the axes of rotation between J and actual vector
-      // first build the mesh and transfer it so that the cylinder begins at origin ( by defaul applying lenght cause cylinder grows from both side! )
-      // height of the shaft is set to 1 unit, the actual size will be applied with scaleMag factor : to make sure that thte size of the shaft is always
-      //        a little bit smaller that the actual size of the vector so that it looks better with head!
-
-      // const shaftmesh = new THREE.Mesh(
-      // @ts-ignore
-      //   new CylinderBufferGeometryB(thickness, thickness, mag, 25),
-      //   new THREE.MeshBasicMaterial({ color: color })
-      // );
-
-      const geom = new CylinderBufferGeometryB(1, 1, 2, 30, 2);
-      const shaftmesh = new THREE.Mesh(
-        geom,
-        new THREE.MeshPhongMaterial({ color: '#4e5cf5' })
-      );
-
-      // @ts-ignore
-      // try {
-      const edges = new THREE.EdgesGeometry(geom);
-
-      // const edges = new THREE.EdgesGeometry();
-
-      // apply transformation to shaftmesh
-      // shaftmesh.position.y = mag / 2;
-
-      // apply rotation to object3d
-      const shaft = new THREE.Object3D().add(shaftmesh);
-      // .rotateOnWorldAxis(rotAxes, angle);
-
-      return { shaft, head, mag, _vector, edges };
+    const geometry = useUpdate((geometry: CustomCylinderBufferGeometry) => {
+      geometry.updateHeight(10);
+      return geometry;
     }, []);
 
     return (
       <group ref={ref} rotation={rotation}>
         // shaft:
-        <primitive object={shaft} />
-        <lineSegments geometry={edges}>
+        <mesh>
+          <customCylinderBufferGeometry
+            attach='geometry'
+            args={[1, 1, 3, 30, 8]}
+            ref={geometry}
+          />
+          <meshPhongMaterial attach='material' color={'#385ae0'} />
+        </mesh>
+        {/* <lineSegments geometry={edges}>
           <lineBasicMaterial attach='material' color={'black'} />
-        </lineSegments>
+        </lineSegments> */}
         <axesHelper />
         // head:
       </group>

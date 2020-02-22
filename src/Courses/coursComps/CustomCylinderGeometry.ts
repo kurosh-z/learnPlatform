@@ -1,12 +1,13 @@
 /**
  * ORIGINAL class from threejs : CylinderBufferGeometry
  * changed to the dynamic drawing mode and typescript
- * @author : Kurosh Zamani https://github.com/kurosh-z
+ * @author : Kurosh zamani https://github.com/kurosh-z
  */
 import {
   Geometry,
   BufferGeometry,
   Float32BufferAttribute,
+  BufferAttribute,
   Vector3,
   Vector2,
   DynamicDrawUsage
@@ -23,55 +24,13 @@ interface Parameter {
   thetaLength: number;
 }
 
-// CylinderGeometry
-class CylinderGeometryB extends Geometry {
-  parameters: Parameter;
-
-  constructor(
-    radiusTop: number = 1,
-    radiusBottom: number = 1,
-    height: number = 2,
-    radialSegments: number = 8,
-    heightSegments: number = 1,
-    openEnded: boolean = false,
-    thetaStart: number = 0,
-    thetaLength: number = 2 * Math.PI
-  ) {
-    super();
-    this.type = 'CylinderGeometry';
-    this.parameters = {
-      radiusTop: radiusTop,
-      radiusBottom: radiusBottom,
-      height: height,
-      radialSegments: radialSegments,
-      heightSegments: heightSegments,
-      openEnded: openEnded,
-      thetaStart: thetaStart,
-      thetaLength: thetaLength
-    };
-    this.fromBufferGeometry(
-      new CylinderBufferGeometryB(
-        radiusTop,
-        radiusBottom,
-        height,
-        radialSegments,
-        heightSegments,
-        openEnded,
-        thetaStart,
-        thetaLength
-      )
-    );
-    this.mergeVertices();
-  }
-}
 /* ======================================================================================== */
 // CylinderBufferGeometry
-class CylinderBufferGeometryB extends BufferGeometry {
+export class CustomCylinderBufferGeometry extends BufferGeometry {
   parameters: Parameter;
   verIdx: number = 0;
   indexArray: Array<number[]> = [];
   groupStart: number = 0;
-  groupCount: number = 0;
   indices: number[] = [];
   positions: Float32Array;
   normals: Float32Array;
@@ -82,6 +41,7 @@ class CylinderBufferGeometryB extends BufferGeometry {
   positionNumComponents: number = 3;
   normalNumComponents: number = 3;
   uvNumComponents: number = 2;
+  drawigMode: 'static' | 'dynamic';
 
   constructor(
     radiusTop: number = 1,
@@ -89,22 +49,25 @@ class CylinderBufferGeometryB extends BufferGeometry {
     height: number = 2,
     radialSegments: number = 8,
     heightSegments: number = 1,
+    drawingMode: 'dynamic' | 'static' = 'dynamic',
     openEnded: boolean = false,
     thetaStart: number = 0,
     thetaLength: number = 2 * Math.PI
   ) {
     super();
-    this.type = 'CylinderBufferGeometry';
+    this.type = 'CustomCylinderBufferGeometry';
     this.parameters = {
-      radiusTop: radiusTop,
-      radiusBottom: radiusBottom,
-      height: height,
-      radialSegments: radialSegments,
-      heightSegments: heightSegments,
-      openEnded: openEnded,
-      thetaStart: thetaStart,
-      thetaLength: thetaLength
+      radiusTop,
+      radiusBottom,
+      height,
+      radialSegments,
+      heightSegments,
+      openEnded,
+      thetaStart,
+      thetaLength
     };
+
+    this.drawigMode = drawingMode;
 
     this.numVertices =
       (heightSegments + 1) * (radialSegments + 1) +
@@ -121,62 +84,84 @@ class CylinderBufferGeometryB extends BufferGeometry {
     this.uvs = new Float32Array(this.numVertices * this.uvNumComponents);
 
     // generate geometry
-    this.generateTorso();
+    this._generateTorso();
     if (!openEnded) {
-      if (radiusTop > 0) this.generateCap(true);
-      if (radiusBottom > 0) this.generateCap(false);
+      if (radiusTop > 0) this._generateCap(true);
+      if (radiusBottom > 0) this._generateCap(false);
     }
 
     // build geometry
     this.setIndex(this.indices);
-    this.positionAttr = new Float32BufferAttribute(
+    this.positionAttr = new BufferAttribute(
       this.positions,
       this.positionNumComponents
     );
-    // this.positionAttr.setUsage(DynamicDrawUsage);
+    if (drawingMode === 'dynamic') this.positionAttr.setUsage(DynamicDrawUsage);
+
     this.setAttribute('position', this.positionAttr);
     // this.setAttribute('normal', new Float32BufferAttribute(normals, 3));
     this.setAttribute(
       'normal',
-      new Float32BufferAttribute(this.normals, this.normalNumComponents)
+      new BufferAttribute(this.normals, this.normalNumComponents)
     );
     // this.setAttribute('uv', new Float32BufferAttribute(uvs, 2));
     this.setAttribute(
       'uv',
-      new Float32BufferAttribute(this.uvs, this.uvNumComponents)
+      new BufferAttribute(this.uvs, this.uvNumComponents)
     );
   }
-  generateTorso(): void {
+  updateHeight(newHeight: number): void {
+    if (this.drawigMode === 'static')
+      throw new Error('darwMode should be set to dynamic!');
+    this.parameters.height = newHeight;
+
+    this.clearGroups();
+    this.groupStart = 0;
+    this.verIdx = 0;
+    this.indexArray = [];
+    this.indices = [];
+    this._generateTorso();
+    if (!this.parameters.openEnded) {
+      if (this.parameters.radiusTop > 0) this._generateCap(true);
+      if (this.parameters.radiusBottom > 0) this._generateCap(false);
+    }
+
+    this.positionAttr.needsUpdate = true;
+    this.computeBoundingSphere();
+  }
+  _generateTorso(): void {
+    const {
+      radiusBottom,
+      radiusTop,
+      height,
+      heightSegments,
+      radialSegments,
+      thetaLength,
+      thetaStart
+    } = this.parameters;
     var x, y;
     var normal = new Vector3();
     var vertex = new Vector3();
-    // var groupCount = 0;
+    var groupCount = 0;
     // this will be used to calculate the normal
-    var slope =
-      (this.parameters.radiusBottom - this.parameters.radiusTop) /
-      this.parameters.height;
+    var slope = (radiusBottom - radiusTop) / height;
     // generate vertices, normals and uvs
-    for (y = 0; y <= this.parameters.heightSegments; y++) {
+    for (y = 0; y <= heightSegments; y++) {
       var indexRow = [];
-      var v = y / this.parameters.heightSegments;
+      var v = y / heightSegments;
       // calculate the radius of the current row
       // var radius = v * (radiusBottom - radiusTop) + radiusTop;
-      var radius =
-        v *
-          this.parameters.height *
-          (this.parameters.radiusTop - this.parameters.radiusBottom) +
-        this.parameters.radiusBottom;
-      for (x = 0; x <= this.parameters.radialSegments; x++) {
-        var u = x / this.parameters.radialSegments;
-        var theta =
-          u * this.parameters.thetaLength + this.parameters.thetaStart;
+      var radius = v * height * (radiusTop - radiusBottom) + radiusBottom;
+      for (x = 0; x <= radialSegments; x++) {
+        var u = x / radialSegments;
+        var theta = u * thetaLength + thetaStart;
         // console.log('theta', (theta * 180) / Math.PI);
         var sinTheta = Math.sin(theta);
         var cosTheta = Math.cos(theta);
         // vertex
         vertex.x = radius * cosTheta;
         // vertex.y = -v * height + halfHeight;
-        vertex.y = v * this.parameters.height;
+        vertex.y = v * height;
         vertex.z = radius * sinTheta;
         // vertices.push(vertex.x, vertex.y, vertex.z);
         this.positions.set(
@@ -202,13 +187,13 @@ class CylinderBufferGeometryB extends BufferGeometry {
       this.indexArray.push(indexRow);
     }
     // generate indices
-    for (x = 0; x < this.parameters.radialSegments; x++) {
-      for (y = 0; y < this.parameters.heightSegments; y++) {
+    for (x = 0; x < radialSegments; x++) {
+      for (y = 0; y < heightSegments; y++) {
         // we use the index array to access the correct indices
-        var a = this.indexArray[y][x];
-        var b = this.indexArray[y][x + 1];
-        var c = this.indexArray[y + 1][x];
-        var d = this.indexArray[y + 1][x + 1];
+        let a = this.indexArray[y][x];
+        let b = this.indexArray[y][x + 1];
+        let c = this.indexArray[y + 1][x];
+        let d = this.indexArray[y + 1][x + 1];
         // console.log('a,b,c,d', a, b, c, d);
         // console.log('a', a, vertices.slice(a, a + 3));
         // console.log('b', b, vertices.slice(b * 3, 3 * (b + 1)));
@@ -223,32 +208,39 @@ class CylinderBufferGeometryB extends BufferGeometry {
         //   console.log(a, d, b);
         //   console.log(b, d, c);
         // update group counter
-        this.groupCount += 6;
+        groupCount += 6;
       }
     }
     // add a group to the geometry. this will ensure multi material support
-    // scope.addGroup(groupStart, groupCount, 0);
-    this.addGroup(this.groupStart, this.groupCount, 0);
-
+    this.addGroup(this.groupStart, groupCount, 0);
     // calculate new start value for groups
-    this.groupStart += this.groupCount;
+    this.groupStart += groupCount;
   }
-  generateCap(top: boolean = true): void {
+
+  _generateCap(top: boolean = true): void {
+    const {
+      radiusBottom,
+      radiusTop,
+      height,
+      radialSegments,
+      thetaLength,
+      thetaStart
+    } = this.parameters;
     var x, centerIndexStart, centerIndexEnd;
     var uv = new Vector2();
     var vertex = new Vector3();
-    // var groupCount = 0;
-    var radius = top ? this.parameters.radiusTop : this.parameters.radiusBottom;
+    var groupCount = 0;
+    var radius = top === true ? radiusTop : radiusBottom;
     // var sign = top === true ? 1 : -1;
     // var sign = top === true ? 0 : 1;
-    var capY = top ? 0 : this.parameters.height;
+    var capY = top ? 0 : height;
     var sign = top ? 1 : -1;
     // save the index of the first center vertex
     centerIndexStart = this.verIdx;
     // first we generate the center vertex data of the cap.
     // because the geometry needs one set of uvs per face,
     // we must generate a center vertex per face/segment
-    for (x = 1; x <= this.parameters.radialSegments; x++) {
+    for (x = 1; x <= radialSegments; x++) {
       // vertex
       // vertices.push(0, height * sign, 0);
       // vertices.push(0, capY, 0);
@@ -265,9 +257,9 @@ class CylinderBufferGeometryB extends BufferGeometry {
     // save the index of the last center vertex
     centerIndexEnd = this.verIdx;
     // now we generate the surrounding vertices, normals and uvs
-    for (x = 0; x <= this.parameters.radialSegments; x++) {
-      var u = x / this.parameters.radialSegments;
-      var theta = u * this.parameters.thetaLength + this.parameters.thetaStart;
+    for (x = 0; x <= radialSegments; x++) {
+      var u = x / radialSegments;
+      var theta = u * thetaLength + thetaStart;
       var cosTheta = Math.cos(theta);
       var sinTheta = Math.sin(theta);
       // vertex
@@ -288,7 +280,7 @@ class CylinderBufferGeometryB extends BufferGeometry {
       this.verIdx++;
     }
     // generate indices
-    for (x = 0; x < this.parameters.radialSegments; x++) {
+    for (x = 0; x < radialSegments; x++) {
       var c = centerIndexStart + x;
       var i = centerIndexEnd + x;
       if (top === true) {
@@ -298,15 +290,55 @@ class CylinderBufferGeometryB extends BufferGeometry {
         // face bottom
         this.indices.push(i + 1, i, c);
       }
-      this.groupCount += 3;
+      groupCount += 3;
     }
     // add a group to the geometry. this will ensure multi material support
-    // scope.addGroup(groupStart, groupCount, top === true ? 1 : 2);
-    this.addGroup(this.groupStart, this.groupCount, top === true ? 1 : 2);
-
+    this.addGroup(this.groupStart, groupCount, top ? 1 : 2);
     // calculate new start value for groups
-    this.groupStart += this.groupCount;
+    this.groupStart += groupCount;
   }
 }
 
-export { CylinderGeometryB, CylinderBufferGeometryB };
+/* ======================================================================================== */
+// CylinderGeometry
+export class CustomCylinderGeometry extends Geometry {
+  parameters: Parameter;
+
+  constructor(
+    radiusTop: number = 1,
+    radiusBottom: number = 1,
+    height: number = 2,
+    radialSegments: number = 8,
+    heightSegments: number = 1,
+    openEnded: boolean = false,
+    thetaStart: number = 0,
+    thetaLength: number = 2 * Math.PI
+  ) {
+    super();
+    this.type = 'CylinderGeometry';
+    this.parameters = {
+      radiusTop,
+      radiusBottom,
+      height,
+      radialSegments,
+      heightSegments,
+      openEnded,
+      thetaStart,
+      thetaLength
+    };
+    this.fromBufferGeometry(
+      new CustomCylinderBufferGeometry(
+        radiusTop,
+        radiusBottom,
+        height,
+        radialSegments,
+        heightSegments,
+        false, // dynamicDrawing
+        openEnded,
+        thetaStart,
+        thetaLength
+      )
+    );
+    this.mergeVertices();
+  }
+}
