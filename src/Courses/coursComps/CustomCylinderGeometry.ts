@@ -113,8 +113,8 @@ export class CustomCylinderBufferGeometry extends BufferGeometry {
   updateHeight(newHeight: number): void {
     if (this.drawigMode === 'static')
       throw new Error('darwMode should be set to dynamic!');
+    if (this.parameters.height === newHeight) return;
     this.parameters.height = newHeight;
-
     this.clearGroups();
     this.groupStart = 0;
     this.verIdx = 0;
@@ -128,6 +128,12 @@ export class CustomCylinderBufferGeometry extends BufferGeometry {
 
     this.positionAttr.needsUpdate = true;
     this.computeBoundingSphere();
+  }
+  set height(newHeight: number) {
+    this.updateHeight(newHeight);
+  }
+  get height(): number {
+    return this.parameters.height;
   }
   _generateTorso(): void {
     const {
@@ -333,7 +339,7 @@ export class CustomCylinderGeometry extends Geometry {
         height,
         radialSegments,
         heightSegments,
-        false, // dynamicDrawing
+        'static', // dynamicDrawing
         openEnded,
         thetaStart,
         thetaLength

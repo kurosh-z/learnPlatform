@@ -21,6 +21,21 @@ declare global {
   }
 }
 
+const Cylinder = ({ newH, onPointerDown }) => {
+  return (
+    <mesh onPointerDown={onPointerDown}>
+      <customCylinderBufferGeometry
+        attach='geometry'
+        args={[1, 1, 0.4, 30, 4]}
+        height={newH}
+      />
+      <meshPhongMaterial attach='material' color='blue' opacity={0.5} />
+    </mesh>
+  );
+};
+
+const ACylinder = a(Cylinder);
+
 const HHEIGHT = 0.2; // head width
 const HDIAM = 0.1; // head diameter
 
@@ -50,25 +65,26 @@ const Vector: React.RefForwardingComponent<
     },
     ref
   ) => {
-    const geometry = useUpdate((geometry: CustomCylinderBufferGeometry) => {
-      geometry.updateHeight(10);
-      return geometry;
-    }, []);
+    const [clicked, toggle] = useState<boolean>(false);
+    const { height } = useSpring({
+      height: !clicked ? 1 : 8
+    });
 
     return (
-      <group ref={ref} rotation={rotation}>
+      <group ref={ref}>
         // shaft:
-        <mesh>
-          <customCylinderBufferGeometry
-            attach='geometry'
-            args={[1, 1, 3, 30, 8]}
-            ref={geometry}
-          />
-          <meshPhongMaterial attach='material' color={'#385ae0'} />
-        </mesh>
+        {/* <ACylinder newH={height} onPointerDown={() => toggle(cl => !cl)} /> */}
         {/* <lineSegments geometry={edges}>
           <lineBasicMaterial attach='material' color={'black'} />
         </lineSegments> */}
+        <mesh onPointerDown={() => toggle(cl => !cl)}>
+          <a.customCylinderBufferGeometry
+            args={[1, 1, 1, 30, 2]}
+            attach='geometry'
+            height={height}
+          />
+          <meshBasicMaterial attach='material' color='blue' />
+        </mesh>
         <axesHelper />
         // head:
       </group>
