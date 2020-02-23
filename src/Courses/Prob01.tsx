@@ -77,7 +77,7 @@ const Prob01: React.FC<{}> = () => {
             showEdges
             edgeColor={'gray'}
           /> */}
-          <Vector />
+          <Vector vector={[0.6, 0, 1]} />
           {/* <axesHelper args={[5]} /> */}
           <ambientLight castShadow intensity={0.5} position={[15, 15, 20]} />
           <spotLight position={[30, -10, 50]} intensity={0.3} />

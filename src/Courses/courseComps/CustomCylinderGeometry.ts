@@ -102,16 +102,10 @@ export class CustomCylinderBufferGeometry extends BufferGeometry {
     // generate geometry
     this._generateTorso();
     if (!openTop) {
-      if (radiusTop > 0) {
-        console.log('opentop, radiusTop', openTop, radiusTop);
-        this._generateCap(true);
-      }
+      if (radiusTop > 0) this._generateCap(true);
     }
     if (!openBottom) {
-      if (radiusBottom > 0) {
-        console.log('openBottom, radiusBottom', openBottom, radiusBottom);
-        this._generateCap(false);
-      }
+      if (radiusBottom > 0) this._generateCap(false);
     }
 
     // build geometry
@@ -134,6 +128,7 @@ export class CustomCylinderBufferGeometry extends BufferGeometry {
       new BufferAttribute(this.uvs, this.uvNumComponents)
     );
   }
+
   updateHeight(newHeight: number): void {
     if (this.drawingMode === 'static')
       throw new Error('darwMode should be set to dynamic!');
@@ -153,6 +148,7 @@ export class CustomCylinderBufferGeometry extends BufferGeometry {
     }
 
     this.positionAttr.needsUpdate = true;
+
     this.computeBoundingSphere();
   }
   set height(newHeight: number) {
@@ -259,13 +255,13 @@ export class CustomCylinderBufferGeometry extends BufferGeometry {
       thetaLength,
       thetaStart
     } = this.parameters;
-    console.log('cap:top?, rtop, rbottm', top, radiusTop, radiusBottom);
+    // console.log('cap:top?, rtop, rbottm', top, radiusTop, radiusBottom);
     var x, centerIndexStart, centerIndexEnd;
     var uv = new Vector2();
     var vertex = new Vector3();
     var groupCount = 0;
     var radius = top === true ? radiusTop : radiusBottom;
-    console.log('cap radius:', radius);
+    // console.log('cap radius:', radius);
     // var sign = top === true ? 1 : -1;
     // var sign = top === true ? 0 : 1;
     var capY = top ? height : 0;
