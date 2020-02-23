@@ -6,9 +6,8 @@ import LineAxisHelper from './LineAxisHelper';
 import url from '../../img/matcap-porcelain-white.jpg';
 import { PlaneHelper } from 'three';
 import Vector from './Vector';
-import Meshline from './Meshline';
+// import Meshline from './Meshline';
 import { useTheme } from 'emotion-theming';
-// TODO:  how to change geometry to wireframe?
 
 interface PlaneProps {
   rotation?: [number, number, number];
@@ -18,7 +17,7 @@ interface PlaneProps {
   visible?: boolean;
   showEdges?: boolean;
   showSurface?: boolean;
-  dimentions?: {
+  dimensions?: {
     width?: number;
     height?: number;
     widthSegments?: number;
@@ -47,7 +46,7 @@ const Plane: React.RefForwardingComponent<
     rotation,
     color = 'gray',
     edgeColor = 'gray',
-    dimentions = { width: 1, height: 1, widthSegments: 1, heightSegments: 1 },
+    dimensions = { width: 1, height: 1, widthSegments: 1, heightSegments: 1 },
     showEdges,
     showSurface = true,
     visible = true,
@@ -70,14 +69,14 @@ const Plane: React.RefForwardingComponent<
       'at least one of showEdges or showSurface should be true, otherwise use visible '
     );
   }
-  //meterial texture:
+  //material texture:
   const texture = useLoader(THREE.TextureLoader, url);
   // plane geometry and edge geometry
   const { planeGeo, edgesGeo } = useMemo<{
     planeGeo: THREE.Geometry | THREE.BufferGeometry;
     edgesGeo?: THREE.Geometry | THREE.BufferGeometry;
   }>(() => {
-    const { width, height, widthSegments, heightSegments } = dimentions;
+    const { width, height, widthSegments, heightSegments } = dimensions;
     const plane = new THREE.PlaneBufferGeometry(
       width,
       height,

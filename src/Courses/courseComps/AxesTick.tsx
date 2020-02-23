@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { ReactThreeFiber, Dom } from 'react-three-fiber';
-import { PI } from './../coursComps/constants';
+import { PI } from './constants';
 import { scaleLinear } from 'd3-scale';
 
 const calTicksRotation = (axes: 'xAxes' | 'yAxes' | 'zAxes') =>

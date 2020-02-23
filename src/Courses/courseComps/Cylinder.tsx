@@ -1,7 +1,6 @@
 import { CustomCylinderBufferGeometry } from './CustomCylinderGeometry';
 import { ReactThreeFiber, useUpdate, extend } from 'react-three-fiber';
 import { useSpring, a } from 'react-spring/three';
-import { MeshBasicMaterial } from 'three';
 
 extend({ CustomCylinderBufferGeometry });
 declare global {

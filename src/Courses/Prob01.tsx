@@ -4,9 +4,9 @@ import { useTheme } from 'emotion-theming';
 import { css as emoCSS } from '@emotion/core';
 import { Theme } from '../theme/types';
 import { Canvas, useFrame, useThree } from 'react-three-fiber';
-import Controls from './coursComps/Controls';
-import Plane from './coursComps/Plane';
-import Vector from './coursComps/Vector';
+import Controls from './courseComps/Controls';
+import Plane from './courseComps/Plane';
+import Vector from './courseComps/Vector';
 
 // const Plane = props => {
 //   const { planeGeo, edgesGeo } = useMemo<{
@@ -72,12 +72,12 @@ const Prob01: React.FC<{}> = () => {
           <Controls />
           {/* <Plane
             position={[0, 0, 0]}
-            dimentions={{ width: 3, height: 4 }}
+            dimensions={{ width: 3, height: 4 }}
             onPointerDown={e => console.log('down')}
             showEdges
             edgeColor={'gray'}
           /> */}
-          <Vector vector={[0, 1, 0]} />
+          <Vector />
           {/* <axesHelper args={[5]} /> */}
           <ambientLight castShadow intensity={0.5} position={[15, 15, 20]} />
           <spotLight position={[30, -10, 50]} intensity={0.3} />
