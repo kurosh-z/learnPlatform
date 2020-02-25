@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, ReactNode, useEffect } from 'react';
 import { PI, ORIGIN, I, J, K } from './constants';
-import { ReactThreeFiber, useUpdate, extend } from 'react-three-fiber';
+import { ReactThreeFiber, useFrame, extend } from 'react-three-fiber';
 import * as THREE from 'three';
 // import { scaleLinear } from 'd3-scale';
 // import { compTickValues } from './compute';
@@ -27,7 +27,12 @@ const HHEIGHT = 0.1;
 const SRADIUS = 0.02;
 
 // shaft component:
-const Shaft = ({ mag, newH, rotAngle, rotAxes }) => {
+interface ShaftProps {
+  mag: number;
+  direction: THREE.Vector3 | number[];
+  onPointerDown?: (e: PointerEvent) => void;
+}
+const Shaft: React.FC<ShaftProps> = ({ mag, direction, onPointerDown }) => {
   // shaft material
   const shaftMaterial = useMemo(() => {
     return new THREE.MeshPhongMaterial({ color: new THREE.Color('blue') });
@@ -43,20 +48,74 @@ const Shaft = ({ mag, newH, rotAngle, rotAxes }) => {
     })
   );
 
-  useEffect(() => {
-    if (shaftGeometry.current) shaftGeometry.current.height = newH;
-  }, [newH]);
-  //shaft object
-  const shaftMesh = useMemo(() => {
+  // const shaftGeometry = useRef<THREE.CylinderBufferGeometry>(
+  //   new THREE.CylinderBufferGeometry(SRADIUS, SRADIUS, mag - HHEIGHT, 30, 2)
+  // );
+  //shaft mesh
+  const { shaftObj, shaftMesh } = useMemo(() => {
     const shaftMesh = new THREE.Mesh(shaftGeometry.current, shaftMaterial);
-    shaftMesh.rotateOnWorldAxis(rotAxes, rotAngle);
+    const helper = new THREE.AxesHelper(0.5);
+    shaftMesh.add(helper);
 
-    return shaftMesh;
+    const shaftObj = new THREE.Object3D().add(shaftMesh);
+
+    return { shaftObj, shaftMesh };
   }, []);
 
+  const onUpdate = self => {
+    var curDir = calCurrentDirection(self);
+    const _dir =
+      direction instanceof THREE.Vector3
+        ? direction.clone().normalize()
+        : new THREE.Vector3(
+            direction[0],
+            direction[1],
+            direction[2]
+          ).normalize();
+    var quaternion = new THREE.Quaternion();
+    quaternion.setFromUnitVectors(curDir, _dir);
+    self.applyQuaternion(quaternion);
+    self.updateMatrixWorld();
+    // const { rotAngle, rotAxes } = calRotation(curDir, direction);
+    // console.log('angle, axes', rotAngle, rotAxes);
+    // self.rotateOnWorldAxis(rotAxes, rotAngle);
+
+    shaftMesh.scale.set(1, mag, 1);
+    // shaftGeometry.current.height = mag - HHEIGHT;
+  };
+
+  const onPointerDownHandler = e => {
+    onPointerDown(e);
+    var curDir = calCurrentDirection(shaftObj);
+    const _dir =
+      direction instanceof THREE.Vector3
+        ? direction.clone().normalize()
+        : new THREE.Vector3(
+            direction[0],
+            direction[1],
+            direction[2]
+          ).normalize();
+    var quaternion = new THREE.Quaternion();
+    quaternion.setFromUnitVectors(curDir, _dir);
+    shaftObj.applyQuaternion(quaternion);
+    shaftObj.updateMatrixWorld();
+    // const { rotAngle, rotAxes } = calRotation(curDir, direction);
+    // console.log('angle, axes', rotAngle, rotAxes);
+    // self.rotateOnWorldAxis(rotAxes, rotAngle);
+
+    shaftMesh.scale.set(1, mag, 1);
+    // shaftGeometry.current.height = mag - HHEIGHT;
+  };
+
   return (
-    <primitive object={shaftMesh} />
-    // <mesh>
+    <>
+      <primitive
+        onUpdate={onUpdate}
+        object={shaftObj}
+        onPointerDown={onPointerDownHandler}
+      />
+      <axesHelper args={[2]} />
+      {/* // <mesh>
     //   <customCylinderBufferGeometry
     //     attach='geometry'
     //     args={[
@@ -71,7 +130,8 @@ const Shaft = ({ mag, newH, rotAngle, rotAxes }) => {
     //     height={newH - HHEIGHT}
     //   />
     //   <meshPhongMaterial attach='material' color='blue' />
-    // </mesh>
+    // </mesh> */}
+    </>
   );
 };
 
@@ -114,53 +174,93 @@ const Vector: React.RefForwardingComponent<
   VectorProps
 > = React.forwardRef(({ vector }, ref) => {
   // calculate the magnitude and direction of the vector
-  const { mag, rotAngle, rotAxes } = useMemo(() => {
-    const _vector =
-      vector instanceof THREE.Vector3
-        ? vector
-        : new THREE.Vector3(vector[0], vector[1], vector[2]);
-    const mag = _vector.length();
-    // calculate the angle between cylinder geometry's default direction (J) with the actual vector
-    const rotAngle = J.angleTo(_vector);
-    // calculate the axes of rotation
-    const rotAxes = J.cross(_vector.clone().normalize());
-
-    return { mag, rotAngle, rotAxes };
-  }, []);
+  // const mag = useMemo<number>(() => calMagnitude(vector), [vector]);
 
   const [clicked, toggle] = useState<boolean>(false);
-  const [{ newMag, headPos }, set] = useSpring(() => ({
-    newMag: mag,
-    headPos: [0, mag - HHEIGHT, 0]
-    // config: { mass: 3, friction: 40, tension: 800 }
+  // const [newDir, setNewDir] = useState<number[]>([0, 1, 0]);
+
+  // const _vector =
+  //   vector instanceof THREE.Vector3
+  //     ? vector.clone()
+  //     : new THREE.Vector3(vector[0], vector[1], vector[2]);
+
+  const [{ newDir, mag }, set] = useSpring(() => ({
+    newDir: [0, 1, 0],
+    mag: 1
   }));
 
   const vecRef = useRef(null);
 
   const onPointerDownHandler = () => {
+    // console.log('clicked');
     toggle(cl => !cl);
     set(
-      clicked
-        ? { newMag: 3, headPos: [0, 3 - HHEIGHT, 0] }
-        : { newMag: mag, headPos: [0, mag - HHEIGHT, 0] }
+      clicked ? { mag: 2, newDir: [1, 0, 0] } : { mag: 1, newDir: [0, 1, 0] }
     );
+
+    // console.log('clicked', clicked);
+    //   set({ newDir: [0, 0, 1] });
   };
 
   return (
     <>
       <group
-        onPointerDown={onPointerDownHandler}
         ref={el => {
           vecRef.current = el;
         }}>
-        <AShaft newH={newMag} mag={mag} rotAngle={rotAngle} rotAxes={rotAxes} />
+        <AShaft
+          mag={mag}
+          direction={newDir}
+          onPointerDown={onPointerDownHandler}
+        />
 
         {/* <Head position={[0, mag - HHEIGHT, 0]} /> */}
       </group>
-      <axesHelper />
+      {/* <axesHelper /> */}
     </>
   );
 });
+
+// calculates the angle and axes of rotation required for vec0 to be in direction of dir
+type Vec = THREE.Vector3 | number[];
+function calRotation(
+  vec: Vec,
+  dir: Vec
+): { rotAngle: number; rotAxes: THREE.Vector3 } {
+  const _vec =
+    vec instanceof THREE.Vector3
+      ? vec.clone()
+      : new THREE.Vector3(vec[0], vec[1], vec[2]);
+  const _dir =
+    dir instanceof THREE.Vector3
+      ? dir.clone().normalize()
+      : new THREE.Vector3(dir[0], dir[1], dir[2]).normalize();
+
+  const rotAngle = _vec.angleTo(_dir);
+  // calculate the axes of rotation
+  const rotAxes = _vec.normalize().cross(_dir.normalize());
+  console.log('rot');
+
+  return { rotAngle, rotAxes };
+}
+
+function calMagnitude(vec: Vec): number {
+  const _vec =
+    vec instanceof THREE.Vector3
+      ? vec
+      : new THREE.Vector3(vec[0], vec[1], vec[2]);
+  const mag = _vec.length();
+
+  return mag;
+}
+
+function calCurrentDirection(object3d) {
+  var matrix = new THREE.Matrix4();
+  matrix.extractRotation(object3d.matrix);
+  var curDir = new THREE.Vector3(0, 1, 0);
+  curDir = matrix.multiplyVector3(curDir).normalize();
+  return curDir;
+}
 
 export default Vector;
 // onUpdate={self => self.rotateOnWorldAxis(rotAxes, rotAngle)}
