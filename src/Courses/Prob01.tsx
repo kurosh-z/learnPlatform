@@ -6,7 +6,7 @@ import { Theme } from '../theme/types';
 import { Canvas, useFrame, useThree } from 'react-three-fiber';
 import Controls from './courseComps/Controls';
 import Plane from './courseComps/Plane';
-import Vector from './courseComps/Vector';
+import Vector from './courseComps/VectorN';
 
 // const Plane = props => {
 //   const { planeGeo, edgesGeo } = useMemo<{
@@ -77,7 +77,7 @@ const Prob01: React.FC<{}> = () => {
             showEdges
             edgeColor={'gray'}
           /> */}
-          <Vector vector={[0.6, 0, 1]} />
+          <Vector vector={[1.5, 0, 0]} />
           {/* <axesHelper args={[5]} /> */}
           <ambientLight castShadow intensity={0.5} position={[15, 15, 20]} />
           <spotLight position={[30, -10, 50]} intensity={0.3} />
