@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
 import { useLoader, useThree } from 'react-three-fiber';
-import LineAxisHelper from './LineAxisHelper';
+import LineAxisHelper from './archive/LineAxisHelper';
 // @ts-ignore
 import url from '../../img/matcap-porcelain-white.jpg';
 import { PlaneHelper } from 'three';
-import Vector from './Vector';
+import Vector from './archive/VectorOLD';
 // import Meshline from './Meshline';
 import { useTheme } from 'emotion-theming';
 

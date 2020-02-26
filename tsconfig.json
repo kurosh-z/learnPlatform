@@ -40,5 +40,5 @@
     "importHelpers": true
   },
 
-  "include": ["./src/**/*.ts"]
+  "include": ["./src/**/*.ts", "src/Courses/courseComps/global-definitions.tsx"]
 }

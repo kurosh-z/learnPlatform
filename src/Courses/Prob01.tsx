@@ -6,7 +6,9 @@ import { Theme } from '../theme/types';
 import { Canvas, useFrame, useThree } from 'react-three-fiber';
 import Controls from './courseComps/Controls';
 import Plane from './courseComps/Plane';
-import Vector from './courseComps/VectorN';
+import Vector from './courseComps/Vector';
+import Axes from './courseComps/Axes';
+import Meshline from './courseComps/Meshline';
 
 // const Plane = props => {
 //   const { planeGeo, edgesGeo } = useMemo<{
@@ -46,7 +48,7 @@ const Box: React.FC<any> = props => {
 
 const Prob01: React.FC<{}> = () => {
   const theme = useTheme<Theme>();
-  const { size } = useThree();
+
   const prob01__container = emoCSS({
     width: '100vw',
     height: '100vh'
@@ -77,8 +79,13 @@ const Prob01: React.FC<{}> = () => {
             showEdges
             edgeColor={'gray'}
           /> */}
-          <Vector vector={[1.5, 0, 0]} />
-          {/* <axesHelper args={[5]} /> */}
+          {/* <Vector vector={[1.5, 0, 0]} /> */}
+          <Axes axes='zAxes' range={[-3, 3]} domain={[-10, 10]} />
+          <Axes axes='yAxes' range={[-3, 3]} domain={[-10, 10]} />
+          <Axes axes='xAxes' range={[-3, 3]} domain={[-10, 10]} />
+
+          {/* <axesHelper args={[3]} /> */}
+
           <ambientLight castShadow intensity={0.5} position={[15, 15, 20]} />
           <spotLight position={[30, -10, 50]} intensity={0.3} />
         </Suspense>

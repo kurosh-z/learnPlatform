@@ -5,8 +5,8 @@ import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry';
 import { Line2 } from 'three/examples/jsm/lines/Line2';
 import { ReactThreeFiber, extend, Dom } from 'react-three-fiber';
 // import Meshline from '../coursComps/Meshline';
-import Vector from './Vector';
-import Axes from './Axes';
+import Vector from './VectorOLD';
+import Axes from './AxesOLD';
 
 const PI = Math.PI;
 const ORIGIN = new THREE.Vector3(0, 0, 0);
@@ -85,19 +85,19 @@ const Axisarrow: React.RefForwardingComponent<
   JSX.IntrinsicElements,
   AxisarrowProps
 > = React.forwardRef(
-  ({ axis, length, color, shaftwidth, shaftType = 'cylinder' }, ref) => {
+  ({ axis, length, color, shaftwidth, shaftType = 'line2' }, ref) => {
     // const { size, camera } = useThree();
 
-    // const { shaftgeometry, points } = useMemo<{
-    //   shaftgeometry: LineGeometry | null;
-    //   points: Vector3[] | null;
-    // }>(() => {
-    //   let ret;
-    //   shaftType === 'line2'
-    //     ? (ret = { shaftgeometry: calshaftGeometry(axis, length) })
-    //     : (ret = { points: calheadPoints(axis, length) });
-    //   return ret;
-    // }, [axis, length, shaftType]);
+    const { shaftgeometry, points } = useMemo<{
+      shaftgeometry: LineGeometry | null;
+      points: THREE.Vector3[] | null;
+    }>(() => {
+      let ret;
+      shaftType === 'line2'
+        ? (ret = { shaftgeometry: calshaftGeometry(axis, length) })
+        : (ret = { points: calheadPoints(axis, length) });
+      return ret;
+    }, [axis, length, shaftType]);
 
     const headposition = calheadPosition(axis, length);
     const headrotation = calheadRotation(axis, length);
@@ -115,19 +115,19 @@ const Axisarrow: React.RefForwardingComponent<
             near={camera.near}
             far={camera.far}
           />
-        )}
+        )} */}
         {shaftType === 'line2' && (
           <line2 geometry={shaftgeometry}>
             <lineMaterial
-              attach='material'
-              linewidth={shaftwidth}
+              // attach='material'
+              linewidth={1}
               // @ts-ignore
-              color={color}
+              color={'blue'}
               // @ts-ignore
-              resolution={resolution}
+              resolution={[900, 900]}
             />
           </line2>
-        )} */}
+        )}
         {shaftType === 'cylinder' && (
           <mesh position={shaftposition} rotation={shaftrotation}>
             <cylinderBufferGeometry
@@ -170,12 +170,12 @@ const LineAxisHelper: React.FC<LineAxisHelperProps> = ({
 }) => {
   return (
     <group>
-      {/* <Axisarrow
+      <Axisarrow
         length={length}
-        axis='xAxis'
+        axis='yAxis'
         color={xclolor}
         shaftwidth={linewidth}
-      /> */}
+      />
       {/* <Axisarrow
         length={length}
         axis='yAxis'
@@ -184,7 +184,7 @@ const LineAxisHelper: React.FC<LineAxisHelperProps> = ({
       /> */}
       {/* <Axes length={3} axes='yAxes' color={ycolor} thickness={0.02} /> */}
       {/* <Axes length={3} axes='zAxes' color={zcolor} thickness={0.02} /> */}
-      <Vector vector={[1, 1, 0]} />
+      {/* <Vector vector={[1, 1, 0]} /> */}
     </group>
   );
 };

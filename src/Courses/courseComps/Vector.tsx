@@ -1,14 +1,11 @@
-import React, { useState, useMemo, useRef, ReactNode, useEffect } from 'react';
-import { PI, ORIGIN, I, J, K } from './constants';
-import { ReactThreeFiber, useFrame, extend } from 'react-three-fiber';
+import React, { useState, useMemo, useEffect } from 'react';
 import * as THREE from 'three';
-// import { scaleLinear } from 'd3-scale';
-// import { compTickValues } from './compute';
-// import AxesTick from './AxesTick';
-// import { Object3D, BufferGeometry } from 'three';
+import { ReactThreeFiber, extend } from 'react-three-fiber';
+import { useSpring, a, interpolate } from 'react-spring/three';
 import { CustomCylinderBufferGeometry } from './CustomCylinderGeometry';
-import { useSpring, a } from 'react-spring/three';
+import { ORIGIN } from './constants';
 
+// extend the class to use it in react!
 extend({ CustomCylinderBufferGeometry });
 declare global {
   namespace JSX {
@@ -22,125 +19,112 @@ declare global {
 }
 
 // size constants:
-const HRADIUS = 0.05;
-const HHEIGHT = 0.1;
+const HRADIUS = 0.06;
+const HHEIGHT = 0.09;
 const SRADIUS = 0.02;
 
 // shaft component:
 interface ShaftProps {
   mag: number;
   direction: THREE.Vector3 | number[];
-  onPointerDown?: (e: PointerEvent) => void;
+  color?: ReactThreeFiber.Color;
+  onPointerDown?: (e) => void;
+  hover?: (hoverd: boolean) => void;
 }
-const Shaft: React.FC<ShaftProps> = ({ mag, direction, onPointerDown }) => {
-  // shaft material
-  const shaftMaterial = useMemo(() => {
-    return new THREE.MeshPhongMaterial({ color: new THREE.Color('blue') });
-  }, []);
-  // shaft geometry
-  const shaftGeometry = useRef<CustomCylinderBufferGeometry>(
-    new CustomCylinderBufferGeometry({
-      radiusTop: SRADIUS,
-      radiusBottom: SRADIUS,
-      height: mag - HHEIGHT, // we draw it shorter in order to let room for the Head!
-      radialSegments: 30,
-      heightSegments: 2
-    })
-  );
+const Shaft: React.FC<ShaftProps> = ({
+  mag,
+  direction,
+  color = '#3761fa',
+  onPointerDown,
+  hover
+}) => {
+  // ref to objects:
 
-  // const shaftGeometry = useRef<THREE.CylinderBufferGeometry>(
-  //   new THREE.CylinderBufferGeometry(SRADIUS, SRADIUS, mag - HHEIGHT, 30, 2)
-  // );
-  //shaft mesh
-  const { shaftObj, shaftMesh } = useMemo(() => {
-    const shaftMesh = new THREE.Mesh(shaftGeometry.current, shaftMaterial);
-    const helper = new THREE.AxesHelper(0.5);
-    shaftMesh.add(helper);
-
-    const shaftObj = new THREE.Object3D().add(shaftMesh);
-
-    return { shaftObj, shaftMesh };
-  }, []);
-
-  const onUpdate = self => {
+  const onUpdate = (self: THREE.Mesh) => {
     var curDir = calCurrentDirection(self);
     const _dir =
       direction instanceof THREE.Vector3
         ? direction.clone().normalize()
-        : new THREE.Vector3(
-            direction[0],
-            direction[1],
-            direction[2]
-          ).normalize();
+        : new THREE.Vector3().fromArray(direction).normalize();
     var quaternion = new THREE.Quaternion();
     quaternion.setFromUnitVectors(curDir, _dir);
     self.applyQuaternion(quaternion);
     self.updateMatrixWorld();
-    // const { rotAngle, rotAxes } = calRotation(curDir, direction);
-    // console.log('angle, axes', rotAngle, rotAxes);
-    // self.rotateOnWorldAxis(rotAxes, rotAngle);
-
-    shaftMesh.scale.set(1, mag, 1);
-    // shaftGeometry.current.height = mag - HHEIGHT;
-  };
-
-  const onPointerDownHandler = e => {
-    onPointerDown(e);
-    var curDir = calCurrentDirection(shaftObj);
-    const _dir =
-      direction instanceof THREE.Vector3
-        ? direction.clone().normalize()
-        : new THREE.Vector3(
-            direction[0],
-            direction[1],
-            direction[2]
-          ).normalize();
-    var quaternion = new THREE.Quaternion();
-    quaternion.setFromUnitVectors(curDir, _dir);
-    shaftObj.applyQuaternion(quaternion);
-    shaftObj.updateMatrixWorld();
-    // const { rotAngle, rotAxes } = calRotation(curDir, direction);
-    // console.log('angle, axes', rotAngle, rotAxes);
-    // self.rotateOnWorldAxis(rotAxes, rotAngle);
-
-    shaftMesh.scale.set(1, mag, 1);
-    // shaftGeometry.current.height = mag - HHEIGHT;
+    self.scale.set(1, mag, 1);
   };
 
   return (
-    <>
-      <primitive
-        onUpdate={onUpdate}
-        object={shaftObj}
-        onPointerDown={onPointerDownHandler}
+    <mesh
+      onPointerDown={onPointerDown}
+      onPointerOver={e => {
+        e.stopPropagation();
+        hover(true);
+      }}
+      onPointerOut={e => {
+        // e.stopPropagation();
+        hover(false);
+      }}
+      onUpdate={onUpdate}>
+      <customCylinderBufferGeometry
+        attach='geometry'
+        args={[
+          {
+            radiusTop: SRADIUS,
+            radiusBottom: SRADIUS,
+            height: 1,
+            radialSegments: 25,
+            heightSegments: 2,
+            drawingMode: 'static'
+          }
+        ]}
       />
-      <axesHelper args={[2]} />
-      {/* // <mesh>
-    //   <customCylinderBufferGeometry
-    //     attach='geometry'
-    //     args={[
-    //       {
-    //         radiusTop: SRADIUS,
-    //         radiusBottom: SRADIUS,
-    //         height: mag - HHEIGHT, // we draw it shorter in order to let room for the Head!
-    //         radialSegments: 30,
-    //         heightSegments: 2
-    //       }
-    //     ]}
-    //     height={newH - HHEIGHT}
-    //   />
-    //   <meshPhongMaterial attach='material' color='blue' />
-    // </mesh> */}
-    </>
+      <meshBasicMaterial attach='material' color={color} />
+    </mesh>
   );
 };
 
 const AShaft = a(Shaft);
 
-// Head component
-const Head = ({ position }) => {
+// Head component:
+interface HeadProps {
+  position: number[];
+  direction: THREE.Vector3 | number[];
+  color?: ReactThreeFiber.Color;
+  onPointerDown: (e) => void;
+  hover: (e) => void;
+}
+const Head: React.FC<HeadProps> = ({
+  position,
+  direction,
+  color = '#3761fa',
+  onPointerDown,
+  hover
+}) => {
+  const onUpdate = (self: THREE.Mesh) => {
+    var curDir = calCurrentDirection(self);
+    const _dir =
+      direction instanceof THREE.Vector3
+        ? direction.clone().normalize()
+        : new THREE.Vector3().fromArray(direction).normalize();
+    var quaternion = new THREE.Quaternion();
+    quaternion.setFromUnitVectors(curDir, _dir);
+    self.applyQuaternion(quaternion);
+    self.updateMatrixWorld();
+  };
+
   return (
-    <mesh position={position}>
+    <mesh
+      onUpdate={onUpdate}
+      onPointerDown={onPointerDown}
+      onPointerOver={e => {
+        e.stopPropagation();
+        hover(true);
+      }}
+      onPointerOut={e => {
+        // e.stopPropagation();
+        hover(false);
+      }}
+      position={position}>
       <customCylinderBufferGeometry
         attach='geometry'
         args={[
@@ -154,113 +138,99 @@ const Head = ({ position }) => {
           }
         ]}
       />
-      <meshPhongMaterial attach='material' color='blue' />
+      <meshBasicMaterial attach='material' color={color} />
     </mesh>
   );
 };
 
 const AHead = a(Head);
 
+// vector component:
 interface VectorProps {
   vector: THREE.Vector3 | number[];
+  origin?: THREE.Vector3 | number[];
   thickness?: number;
   color?: ReactThreeFiber.Color;
-  showlabel?: boolean;
+  showlabel?: boolean; // TODO: implement this props or remove them!
   label?: string;
+  onPointerDown?: (e) => void;
 }
-
 const Vector: React.RefForwardingComponent<
   JSX.IntrinsicElements,
   VectorProps
-> = React.forwardRef(({ vector }, ref) => {
-  // calculate the magnitude and direction of the vector
-  // const mag = useMemo<number>(() => calMagnitude(vector), [vector]);
+> = React.forwardRef(
+  ({ vector, color, origin = ORIGIN, onPointerDown }, ref) => {
+    // NOTE: just for testing
+    //   const [clicked, toggle] = useState<boolean>(false);
 
-  const [clicked, toggle] = useState<boolean>(false);
-  // const [newDir, setNewDir] = useState<number[]>([0, 1, 0]);
+    const { _mag, _dir } = useMemo(() => {
+      const _vector =
+        vector instanceof THREE.Vector3
+          ? vector.clone()
+          : new THREE.Vector3(vector[0], vector[1], vector[2]);
 
-  // const _vector =
-  //   vector instanceof THREE.Vector3
-  //     ? vector.clone()
-  //     : new THREE.Vector3(vector[0], vector[1], vector[2]);
+      const _mag = _vector.length();
+      const _dir = _vector.normalize().toArray();
+      return { _mag, _dir };
+    }, [vector]);
 
-  const [{ newDir, mag }, set] = useSpring(() => ({
-    newDir: [0, 1, 0],
-    mag: 1
-  }));
-
-  const vecRef = useRef(null);
-
-  const onPointerDownHandler = () => {
-    // console.log('clicked');
-    toggle(cl => !cl);
-    set(
-      clicked ? { mag: 2, newDir: [1, 0, 0] } : { mag: 1, newDir: [0, 1, 0] }
+    const [{ newDir, mag }, set] = useSpring(() => ({
+      newDir: _dir,
+      mag: _mag
+    }));
+    // calculate the proper location of head based on direction and magnitude
+    const headInterp = interpolate([mag, newDir], (m: number, d: []) =>
+      new THREE.Vector3()
+        .fromArray(d)
+        .normalize()
+        .multiplyScalar(m - HHEIGHT)
+        .toArray()
     );
+    // NOTE: just for testing
+    //   const onPointerDownHandler = (e: PointerEvent) => {
+    //     e.stopPropagation();
+    //     toggle(cl => !cl);
+    //     set(
+    //       clicked ? { mag: 3, newDir: [0.6, -1, 0.8] } : { mag: _mag, newDir: _dir }
+    //     );
+    //   };
 
-    // console.log('clicked', clicked);
-    //   set({ newDir: [0, 0, 1] });
-  };
-
-  return (
-    <>
-      <group
-        ref={el => {
-          vecRef.current = el;
-        }}>
+    const [hovered, hover] = useState<boolean>(false);
+    useEffect(() => {
+      document.body.style.cursor = hovered ? 'pointer' : 'auto';
+    }, [hovered]);
+    return (
+      <group ref={ref} position={origin}>
         <AShaft
-          mag={mag}
+          mag={mag.interpolate(m => m - HHEIGHT)} // we have to change the lenght a little bit to make room for head!
           direction={newDir}
-          onPointerDown={onPointerDownHandler}
+          color={color}
+          onPointerDown={onPointerDown}
+          hover={hover}
         />
-
-        {/* <Head position={[0, mag - HHEIGHT, 0]} /> */}
+        <AHead
+          position={headInterp}
+          direction={newDir}
+          color={color}
+          onPointerDown={onPointerDown}
+          hover={hover}
+        />
+        {/* <axesHelper args={[1.5]} /> */}
       </group>
-      {/* <axesHelper /> */}
-    </>
-  );
-});
+    );
+  }
+);
 
-// calculates the angle and axes of rotation required for vec0 to be in direction of dir
-type Vec = THREE.Vector3 | number[];
-function calRotation(
-  vec: Vec,
-  dir: Vec
-): { rotAngle: number; rotAxes: THREE.Vector3 } {
-  const _vec =
-    vec instanceof THREE.Vector3
-      ? vec.clone()
-      : new THREE.Vector3(vec[0], vec[1], vec[2]);
-  const _dir =
-    dir instanceof THREE.Vector3
-      ? dir.clone().normalize()
-      : new THREE.Vector3(dir[0], dir[1], dir[2]).normalize();
-
-  const rotAngle = _vec.angleTo(_dir);
-  // calculate the axes of rotation
-  const rotAxes = _vec.normalize().cross(_dir.normalize());
-  console.log('rot');
-
-  return { rotAngle, rotAxes };
-}
-
-function calMagnitude(vec: Vec): number {
-  const _vec =
-    vec instanceof THREE.Vector3
-      ? vec
-      : new THREE.Vector3(vec[0], vec[1], vec[2]);
-  const mag = _vec.length();
-
-  return mag;
-}
+// utility functions:
 
 function calCurrentDirection(object3d) {
   var matrix = new THREE.Matrix4();
   matrix.extractRotation(object3d.matrix);
   var curDir = new THREE.Vector3(0, 1, 0);
-  curDir = matrix.multiplyVector3(curDir).normalize();
+  curDir.applyMatrix4(matrix).normalize();
+
   return curDir;
 }
 
+// exports:
 export default Vector;
-// onUpdate={self => self.rotateOnWorldAxis(rotAxes, rotAngle)}

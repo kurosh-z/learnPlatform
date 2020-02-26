@@ -1,4 +1,4 @@
-import range from './range';
+import range from './archive/range';
 
 export function compTickValues(
   min: number,

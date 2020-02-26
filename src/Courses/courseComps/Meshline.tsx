@@ -9,8 +9,8 @@ interface MeshlineProps {
   color?: ReactThreeFiber.Color;
   resolution: Vector2 | number[];
   lineWidth?: number;
-  near: number;
-  far: number;
+  near?: number;
+  far?: number;
   rotation?: [number, number, number];
   position?: [number, number, number];
   rest?: any;
@@ -25,7 +25,7 @@ const Meshline: React.RefForwardingComponent<
       points,
       color = 'blue',
       resolution,
-      lineWidth = 0.04,
+      lineWidth = 0.009,
       near,
       far,
       position,
@@ -48,11 +48,11 @@ const Meshline: React.RefForwardingComponent<
             : new THREE.Vector2(resolution[0], resolution[1]),
         sizeAttenuation: 1,
         lineWidth: lineWidth,
-        // near: -100,
-        // far: far,
-        dashArray: 0.1,
-        dashOffset: 0,
-        dashRatio: 0.7,
+        near: -100,
+        far: 100,
+        // dashArray: 0.1,
+        // dashOffset: 0,
+        // dashRatio: 1,
         transparent: true,
         depthWrite: false
       });
