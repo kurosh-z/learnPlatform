@@ -1928,6 +1928,11 @@ camelcase@^5.0.0, camelcase@^5.3.1:
   resolved "https://registry.yarnpkg.com/camelcase/-/camelcase-5.3.1.tgz#e3c9b31569e106811df242f715725a1f4c494320"
   integrity sha512-L28STB170nwWS63UjtlEOE3dldQApaJXZkOI1uMFfzf3rRuPegHaHesyee+YxQ+W6SvRDQV6UrdOdRiR153wJg==
 
+camera-controls@^1.19.1:
+  version "1.19.1"
+  resolved "https://registry.yarnpkg.com/camera-controls/-/camera-controls-1.19.1.tgz#ab38aa39a2c5b05575c606bfb51d309e1a730d62"
+  integrity sha512-iBMvk2F9pma7TeHbLx9E2nI6WEuUeF0x8VqJBM+BbnlqeE93itStpJDm7adkZ+t7dupuXgTnDgvn/7RWqiI56g==
+
 caniuse-lite@^1.0.30001015:
   version "1.0.30001015"
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001015.tgz#15a7ddf66aba786a71d99626bc8f2b91c6f0f5f0"

@@ -1,14 +1,10 @@
 import React, { useMemo } from 'react';
 import * as THREE from 'three';
-import { ReactThreeFiber, Dom, useThree } from 'react-three-fiber';
+import { ReactThreeFiber, Dom } from 'react-three-fiber';
 import { scaleLinear, ScaleLinear } from 'd3-scale';
 import { format as d3format } from 'd3-format';
 import Vector from './Vector';
-import Meshline from './Meshline';
 import { ORIGIN, I, J, K, PI } from './constants';
-import LineAxesHelper from './archive/LineAxisHelper';
-import { useTheme } from 'emotion-theming';
-import { Theme } from '../../theme/types';
 
 // axes tick component
 const calTicksRotation = (axes: 'xAxes' | 'yAxes' | 'zAxes') =>
@@ -31,6 +27,12 @@ const calAxesVector = (axes: 'xAxes' | 'yAxes' | 'zAxes', val: number) =>
     yAxes: [0, val, 0],
     zAxes: [0, 0, val]
   }[axes]);
+
+const defaultcolors = {
+  xAxes: 'rgb(255, 127, 14)', // orange
+  yAxes: 'rgb(23, 227, 57)', //green
+  zAxes: 'rgb(0,128,255)' // blue
+};
 
 interface TickProps {
   axes: 'xAxes' | 'yAxes' | 'zAxes';
@@ -60,21 +62,19 @@ const AxesTick: React.FC<TickProps> = ({
   format
 }) => {
   const tickrotation = useMemo(() => calTicksRotation(axes), [axes]);
+
   const ticks = tickValues.map((val, idx) => {
     return (
       <group key={idx}>
-        {idx !== (tickValues.length - 1) / 2 && (
-          <mesh
-            position={calTickPosition(axes, scale(val))}
-            rotation={tickrotation}>
-            <cylinderBufferGeometry
-              attach='geometry'
-              args={[thickness, thickness, length, 20]}
-            />
-            <meshBasicMaterial attach='material' color={color} />
-          </mesh>
-        )}
-
+        <mesh
+          position={calTickPosition(axes, scale(val))}
+          rotation={tickrotation}>
+          <cylinderBufferGeometry
+            attach='geometry'
+            args={[thickness, thickness, length, 20]}
+          />
+          <meshBasicMaterial attach='material' color={color} />
+        </mesh>
         <Dom position={calTickPosition(axes, scale(val))}>
           <div className='tick'>{format(val)}</div>
         </Dom>
@@ -83,6 +83,32 @@ const AxesTick: React.FC<TickProps> = ({
   });
 
   return <group>{ticks}</group>;
+};
+
+// Grids
+interface GridProps {
+  type?: 'xy' | 'xz' | 'yz';
+  length?: number;
+}
+
+const Grids: React.FC<GridProps> = ({ type = 'xy', length }) => {
+  const points = useMemo(() => {
+    ///
+  }, [type, length]);
+
+  const setPointsOnUpdate = (self: THREE.BufferGeometry) => {
+    self.setFromPoints([
+      new THREE.Vector3(1, 0, -1),
+      new THREE.Vector3(1, 0, 1)
+    ]);
+  };
+
+  return (
+    <line>
+      <bufferGeometry attach='geometry' onUpdate={setPointsOnUpdate} />
+      <lineBasicMaterial attach='material' color='black' />
+    </line>
+  );
 };
 
 // Axes component:
@@ -121,23 +147,18 @@ const Axes: React.FC<AxesProps> = ({
   origin = ORIGIN,
   rotation
 }) => {
+  const n = 10;
   const { tickValues, scale, format } = useMemo(() => {
     const scale = scaleLinear()
       .domain(domain)
       .range(range);
 
     const format = d3format('.0f');
-    let n = 10;
     const tickValues = scale.ticks(n);
 
     return { scale, tickValues, format };
   }, []);
 
-  const defaultcolors = {
-    xAxes: 'rgb(255, 127, 14)', // orange
-    yAxes: 'rgb(23, 227, 57)', //green
-    zAxes: 'rgb(0,128,255)' // blue
-  };
   return (
     <group>
       <Vector
@@ -145,13 +166,18 @@ const Axes: React.FC<AxesProps> = ({
         color={defaultcolors[axes]}
         origin={ORIGIN}
       />
-
       <AxesTick
-        tickValues={tickValues.slice(1, 10)}
+        tickValues={tickValues.slice(
+          tickValues.length / 2 + 1,
+          tickValues.length - 1
+        )}
         axes={axes}
         scale={scale}
         format={format}
       />
+      <Dom position={calAxesVector(axes, scale(tickValues.slice(-1)[0]))}>
+        <div>{axes}</div>
+      </Dom>
     </group>
   );
 };

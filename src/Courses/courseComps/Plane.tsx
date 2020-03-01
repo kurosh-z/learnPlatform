@@ -1,13 +1,16 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, ReactNode } from 'react';
 import * as THREE from 'three';
-import { useLoader, useThree } from 'react-three-fiber';
+import {
+  useLoader,
+  useThree,
+  useFrame,
+  ReactThreeFiber
+} from 'react-three-fiber';
 import LineAxisHelper from './archive/LineAxisHelper';
 // @ts-ignore
 import url from '../../img/matcap-porcelain-white.jpg';
-import { PlaneHelper } from 'three';
-import Vector from './archive/VectorOLD';
-// import Meshline from './Meshline';
-import { useTheme } from 'emotion-theming';
+
+import Vector from './Vector';
 
 interface PlaneProps {
   rotation?: [number, number, number];
@@ -70,13 +73,15 @@ const Plane: React.RefForwardingComponent<
     );
   }
   //material texture:
-  const texture = useLoader(THREE.TextureLoader, url);
+  // const texture = useLoader(THREE.TextureLoader, url);
   // plane geometry and edge geometry
+  const planeRef = useRef<THREE.Mesh>(null);
   const { planeGeo, edgesGeo } = useMemo<{
     planeGeo: THREE.Geometry | THREE.BufferGeometry;
     edgesGeo?: THREE.Geometry | THREE.BufferGeometry;
   }>(() => {
     const { width, height, widthSegments, heightSegments } = dimensions;
+
     const plane = new THREE.PlaneBufferGeometry(
       width,
       height,
@@ -88,46 +93,30 @@ const Plane: React.RefForwardingComponent<
     return { planeGeo: plane, edgesGeo: edges };
   }, []);
 
-  return (
-    <group
-      ref={ref}
-      visible={visible}
-      position={position}
-      rotation={rotation}
-      onClick={onClick}
-      onUpdate={onUpdate}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerOver={onPointerOver}
-      onPointerOut={onPointerOut}
-      onPointerEnter={onPointerEnter}
-      onPointerLeave={onPointerLeave}
-      onWheel={onWheel}
-      {...rest}>
-      {showSurface && (
-        <mesh geometry={planeGeo}>
-          <meshPhongMaterial
-            attach='material'
-            side={side}
-            color={'#c69ecc'} //{'#fff8ff'} //
+  const plane = new THREE.Plane(new THREE.Vector3(1, 1, 1), 1);
+  const onUpdateHandler = (self: THREE.Mesh) => {
+    self.lookAt(plane.normal);
+    self.rotateOnWorldAxis(plane.normal.normalize(), Math.PI / 6);
+    const posVec = plane.normal.multiplyScalar(0.5);
+    self.position.set(posVec.x, posVec.y, posVec.z);
+  };
 
-            // metalness={2}
-            // roughness={0.1}
-            // specular={new THREE.Color(0xffffff)}
-            // shininess={20}
-            // emissive={new THREE.Color(0xffffff)}
-            // emissiveIntensity={0.2}
-          />
-          {/* <meshMatcapMaterial
-            attach='material'
-            side={side}
-            color={color}
-            matcap={texture}
-          /> */}
+  return (
+    <group>
+      {showSurface && (
+        <mesh
+          ref={el => {
+            planeRef.current = el;
+          }}
+          geometry={planeGeo}
+          onUpdate={onUpdateHandler}
+          position={[0, 0, 0]}>
+          <meshPhongMaterial attach='material' side={side} color={'#ed81e1'} />
         </mesh>
       )}
+      <Vector vector={plane.normal} color={'black'} origin={[0, 0, 0]} />
 
+      {/* <planeHelper args={[plane, 10, 0x729ff2]} /> */}
       {/* <Edges geometry={edgesGeo} /> */}
       {showEdges && (
         <lineSegments geometry={edgesGeo}>
