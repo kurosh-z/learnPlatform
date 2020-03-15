@@ -7,11 +7,13 @@ type MathJaxNodeProps = {
   formula: string;
   inline?: boolean;
   onRender?: () => {};
+  style?: React.CSSProperties;
 };
 const MathJaxNode: React.FC<MathJaxNodeProps> = ({
   formula,
   inline = false,
   onRender = () => {},
+  style,
   ...rest
 }) => {
   const { MathJax, registerNode } = useMathJaxContext();
@@ -20,12 +22,13 @@ const MathJaxNode: React.FC<MathJaxNodeProps> = ({
   );
 
   const container = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     registerNode();
     if (!MathJax) {
       console.log('MathJax is not defined!');
     } else {
-      typeset(true);
+      typeset(false);
     }
     return () => clear();
   }, [MathJax]);
@@ -79,8 +82,8 @@ const MathJaxNode: React.FC<MathJaxNodeProps> = ({
 
   return (
     <>
-      inline && <span ref={container} />
-      !inline && <div ref={container} />
+      {inline && <span ref={container} style={style} {...rest} />}
+      {!inline && <div ref={container} style={style} {...rest} />}
     </>
   );
 };

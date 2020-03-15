@@ -51,14 +51,14 @@ export const MathJaxProvider: React.FC<PropsTypes> = ({
     setMathJaxState(curr => ({ ...curr, MathJax2: MathJax }));
   };
   useEffect(() => {
-    if (!loaded && !hasNode) {
+    if (!loaded && hasNode) {
       setloaded(true);
       // loadScript(script, onLoad);
       (function() {
         var script = document.createElement('script');
         script.type = 'text/javascript';
         script.src =
-          'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=default';
+          'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=default';
 
         var config =
           'MathJax.Hub.Config({' +
@@ -79,12 +79,13 @@ export const MathJaxProvider: React.FC<PropsTypes> = ({
           }
 
           setMathJaxState(curr => ({ ...curr, MathJax2: MathJax }));
+          console.log('mathjax loaded');
         });
 
         document.getElementsByTagName('head')[0].appendChild(script);
       })();
     }
-  }, []);
+  }, [hasNode]);
 
   const value = { MathJax: MathJax2, registerNode: registerNode };
   return (

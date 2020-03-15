@@ -1,7 +1,8 @@
 import * as React from 'react';
 import { ThemeProvider as EmotionThemeProvider } from 'emotion-theming';
 import defaultTheme from './theme';
-import { themeState, darkModeHook } from './types';
+
+import { themeState, darkModeHook, Theme } from './types';
 
 const defaultContexData = {
   dark: false,
@@ -38,7 +39,7 @@ const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem('themeDarkMode', JSON.stringify(themeDarkMode));
     setThemeState({ ...themeState, dark: themeDarkMode });
   };
-  const computedTheme = themeState.dark
+  const computedTheme: Theme = themeState.dark
     ? defaultTheme('dark')
     : defaultTheme('light');
 
