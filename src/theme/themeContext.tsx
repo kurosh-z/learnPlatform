@@ -7,7 +7,9 @@ const defaultContexData = {
   dark: false,
   toggle: () => {}
 };
-const ThemeContext = React.createContext(defaultContexData);
+const ThemeContext = React.createContext<typeof defaultContexData>(
+  defaultContexData
+);
 const useThemeToggler = () => React.useContext(ThemeContext);
 
 const initialThemeState = {

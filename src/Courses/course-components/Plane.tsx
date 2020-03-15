@@ -93,12 +93,12 @@ const Plane: React.RefForwardingComponent<
     return { planeGeo: plane, edgesGeo: edges };
   }, []);
 
-  const plane = new THREE.Plane(new THREE.Vector3(1, 1, 1), 1);
+  const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 1);
   const onUpdateHandler = (self: THREE.Mesh) => {
     self.lookAt(plane.normal);
-    self.rotateOnWorldAxis(plane.normal.normalize(), Math.PI / 6);
-    const posVec = plane.normal.multiplyScalar(0.5);
-    self.position.set(posVec.x, posVec.y, posVec.z);
+    // self.rotateOnWorldAxis(plane.normal.normalize(), Math.PI / 6);
+    // const posVec = plane.normal.multiplyScalar(-0.5);
+    // self.position.set(posVec.x, posVec.y, posVec.z);
   };
 
   return (
@@ -114,7 +114,7 @@ const Plane: React.RefForwardingComponent<
           <meshPhongMaterial attach='material' side={side} color={'#ed81e1'} />
         </mesh>
       )}
-      <Vector vector={plane.normal} color={'black'} origin={[0, 0, 0]} />
+      {/* <Vector vector={plane.normal} color={'black'} origin={[0, 0, 0]} /> */}
 
       {/* <planeHelper args={[plane, 10, 0x729ff2]} /> */}
       {/* <Edges geometry={edgesGeo} /> */}

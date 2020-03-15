@@ -1,15 +1,16 @@
 import ReactDOM from 'react-dom';
-// import { jsx } from '@emotion/core';
 import React from 'react';
 import './index.css';
 import App from './App';
 import { ThemeProvider } from './theme/themeContext';
-
+import { MathJaxProvider } from './mathjax/ MathJaxContext';
 // import * as serviceWorker from './serviceWorker';
 
 ReactDOM.render(
   <ThemeProvider>
-    <App />
+    <MathJaxProvider>
+      <App />
+    </MathJaxProvider>
   </ThemeProvider>,
   document.getElementById('root')
 );

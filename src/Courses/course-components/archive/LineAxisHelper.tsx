@@ -13,21 +13,21 @@ const ORIGIN = new THREE.Vector3(0, 0, 0);
 
 extend({ LineMaterial, LineGeometry, Line2 });
 
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      line2: ReactThreeFiber.Object3DNode<Line2, typeof Line2>;
-      lineMaterial: ReactThreeFiber.Object3DNode<
-        LineMaterial,
-        typeof LineMaterial
-      >;
-      lineGeometry: ReactThreeFiber.Object3DNode<
-        LineGeometry,
-        typeof LineGeometry
-      >;
-    }
-  }
-}
+// declare global {
+//   namespace JSX {
+//     interface IntrinsicElements {
+//       line2: ReactThreeFiber.Object3DNode<Line2, typeof Line2>;
+//       lineMaterial: ReactThreeFiber.Object3DNode<
+//         LineMaterial,
+//         typeof LineMaterial
+//       >;
+//       lineGeometry: ReactThreeFiber.Object3DNode<
+//         LineGeometry,
+//         typeof LineGeometry
+//       >;
+//     }
+//   }
+// }
 const shaftArr = len => ({
   xAxis: [0, 0, 0, len, 0, 0],
   yAxis: [0, 0, 0, 0, len, 0],
@@ -119,7 +119,7 @@ const Axisarrow: React.RefForwardingComponent<
         {shaftType === 'line2' && (
           <line2 geometry={shaftgeometry}>
             <lineMaterial
-              // attach='material'
+              attach='material'
               linewidth={1}
               // @ts-ignore
               color={'blue'}

@@ -9,17 +9,17 @@ import * as THREE from 'three';
 import { CustomCylinderBufferGeometry } from '../CustomCylinderGeometry';
 import { useSpring, a } from 'react-spring/three';
 
-extend({ CustomCylinderBufferGeometry });
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      customCylinderBufferGeometry: ReactThreeFiber.Object3DNode<
-        CustomCylinderBufferGeometry,
-        typeof CustomCylinderBufferGeometry
-      >;
-    }
-  }
-}
+// extend({ CustomCylinderBufferGeometry });
+// declare global {
+//   namespace JSX {
+//     interface IntrinsicElements {
+//       customCylinderBufferGeometry: ReactThreeFiber.Object3DNode<
+//         CustomCylinderBufferGeometry,
+//         typeof CustomCylinderBufferGeometry
+//       >;
+//     }
+//   }
+// }
 
 // size constants:
 const HRADIUS = 0.05;

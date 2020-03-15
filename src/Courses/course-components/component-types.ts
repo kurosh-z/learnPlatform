@@ -6,7 +6,6 @@ import { ReactThreeFiber, extend } from 'react-three-fiber';
 import { CustomCylinderBufferGeometry } from './CustomCylinderGeometry';
 
 extend({ LineMaterial, LineGeometry, Line2, CustomCylinderBufferGeometry });
-
 declare global {
   namespace JSX {
     interface IntrinsicElements {

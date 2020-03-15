@@ -6,7 +6,7 @@
   "scripts": {
     "bundle": "webpack",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "webpack-dev-server --mode development --open --hot",
+    "start": "webpack-dev-server --mode development --open firefox --hot",
     "build": "webpack --mode production ",
     "check-types": "tsc"
   },
@@ -22,6 +22,7 @@
     "@babylonjs/materials": "^4.0.3",
     "@types/chroma-js": "^1.4.3",
     "@types/d3": "^5.7.2",
+    "@types/katex": "^0.11.0",
     "awesome-typescript-loader": "^5.2.1",
     "babel-loader": "^8.0.6",
     "chroma-js": "^2.1.0",
@@ -55,6 +56,7 @@
     "d3-scale": "^3.2.1",
     "emotion-theming": "^10.0.19",
     "gsap": "^3.1.1",
+    "katex": "^0.11.1",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "react-reconciler": "^0.24.0",

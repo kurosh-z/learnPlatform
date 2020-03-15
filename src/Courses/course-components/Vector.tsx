@@ -222,13 +222,11 @@ const Vector: React.RefForwardingComponent<
 );
 
 // utility functions:
-
-function calCurrentDirection(object3d) {
-  var matrix = new THREE.Matrix4();
+var matrix = new THREE.Matrix4();
+function calCurrentDirection(object3d: THREE.Object3D) {
   matrix.extractRotation(object3d.matrix);
   var curDir = new THREE.Vector3(0, 1, 0);
   curDir.applyMatrix4(matrix).normalize();
-
   return curDir;
 }
 
