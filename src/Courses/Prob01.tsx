@@ -6,11 +6,12 @@ import Integral from './math-components/Integral';
 import Group from './math-components/Group';
 import Symb from './math-components/Symb';
 import Exponent from './math-components/Exponent';
-import MathJaxNode from '../mathjax/MathJaxNode';
+import Symbs from './math-components/Symbs';
+// import MathJaxNode from '../mathjax/MathJaxNode';
 
 const tex = ` f(x) = \\int_{-\\infty}^\\infty\\hat{f}(\\xi)\\,e^{2 \\pi i \\xi x}\\,d\\xi `;
 
-const Integrand: React.FC<{ dx?: number; dy?: number; className: string }> = ({
+const TestEl: React.FC<{ dx?: number; dy?: number; className?: string }> = ({
   dx,
   dy,
   className
@@ -18,7 +19,26 @@ const Integrand: React.FC<{ dx?: number; dy?: number; className: string }> = ({
   return (
     <Exponent dx={dx}>
       <Group>
-        <Symb symb={'x'} className={`letter ${className}`} />
+        <Symb symb={'y'} className={`letter ${className}`} />
+      </Group>
+      <Group>
+        <Symb symb={'\\beta'} className={`letter ${className}`} />
+        <Symb symb={'\\gamma'} className={`letter ${className}`} />
+      </Group>
+    </Exponent>
+  );
+};
+
+const Integrand: React.FC<{ dx?: number; dy?: number; className?: string }> = ({
+  dx,
+  dy,
+  className
+}) => {
+  return (
+    <Exponent dx={dx}>
+      <Group>
+        {/* <Symb symb={'x'} className={`letter ${className}`} /> */}
+        <TestEl />
       </Group>
       <Group>
         <Symb symb={'\\pi'} className={`letter ${className}`} />
@@ -69,11 +89,12 @@ const Prob01: React.FC<{}> = () => {
         width={600}
         height={'100%'}>
         <text x={150} y={100}>
-          <Integral>
+          {/* <Integral>
             <Group>
-              <Integrand className='integrand' />
+              <Integrand />
             </Group>
-          </Integral>
+          </Integral> */}
+          <Symbs symbs='097\beta23\alpha\gamma\Gamma' />
         </text>
       </svg>
       {/* <MathJaxNode

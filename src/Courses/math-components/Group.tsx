@@ -46,14 +46,16 @@ const setupdate = (attr: GroupAttribute, child: ReactElement) => {
   } else if ('update' in attr) {
     for (const key in attr['update']) {
       // if it should be updated: updatedvalue from attr object + currentvalue from child props
-      let oldVal = child.props[key];
 
+      // classNames can be undefined:
+      let oldVal = child.props[key];
+      if (!oldVal && typeof attr['update'][key] === 'string') oldVal = '';
       let newVal =
         typeof oldVal === 'string'
           ? attr['update'][key] + ' ' + oldVal
           : attr['update'][key] + oldVal;
       // console.log('name, old, new:, ', child, newVal);
-      // just for debugging purposes:
+
       if (typeof oldVal !== typeof attr['update'][key])
         throw new Error(
           `expected both numbers or both strings but got: child.props.${key}: ${

@@ -1,6 +1,6 @@
 import React, { SVGProps } from 'react';
 
-const symbols = {
+export const symbols = {
   '\\Alpha': 'Α',
   '\\alpha': 'α',
   '\\Beta': 'Β',
@@ -44,7 +44,6 @@ const symbols = {
 };
 type SymbProps = {
   symb?: string;
-  symbtype?: 'number' | 'letter' | 'operator';
   dx?: number;
   dy?: number;
   style?: React.CSSProperties;
@@ -54,7 +53,6 @@ const Symb: React.FC<SymbProps> = ({
   symb,
   dx,
   dy,
-  symbtype,
   className,
   children,
   ...rest
