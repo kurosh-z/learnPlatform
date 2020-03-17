@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { SVGProps } from 'react';
 
 const symbols = {
   '\\Alpha': 'Α',
@@ -42,18 +42,27 @@ const symbols = {
   '\\omega': 'ω',
   '\\Omega': 'Omega'
 };
-
 type SymbProps = {
   symb?: string;
+  symbtype: 'number' | 'letter' | 'operator';
   dx?: number;
   dy?: number;
-  type: 'number' | 'letter';
+  style?: React.CSSProperties;
   className?: string;
 };
-const Symb: React.FC<SymbProps> = ({ symb, dx, dy, type, className }) => {
+const Symb: React.FC<SymbProps> = ({
+  symb,
+  dx,
+  dy,
+  symbtype,
+  className,
+  children,
+  ...rest
+}) => {
   const symbol = symb in symbols ? symbols[symb] : symb;
+
   return (
-    <tspan dx={dx} dy={dy} className={`${className} ${type}`}>
+    <tspan dx={dx} dy={dy} className={`${className} ${symbtype}`} {...rest}>
       {symbol}
     </tspan>
   );

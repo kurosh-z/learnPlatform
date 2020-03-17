@@ -15,7 +15,7 @@ module.exports = {
   resolve: {
     extensions: ['.ts', '.tsx', '.js']
   },
-
+  devtool: 'eval-source-map',
   module: {
     rules: [
       // we use babel-loader to load our jsx and tsx files
