@@ -11,16 +11,18 @@ const Exponent: React.FC<ExponentProps> = ({ dx = 0, dy = 0, children }) => {
   // base
   const groupAttrs0: GroupAttributes = {
     0: { set: { dx: dx, dy: dy } },
-    any: { set: { className: 'base' } }
+    any: { update: { className: 'base' } }
   };
   // power: set dy and className of the first element of the power group by setting the groupAttrs
   const groupAttrs1: GroupAttributes = {
     0: { set: { dy: SUPERSCRIP_DY } },
-    any: { set: { className: 'power' } }
+    any: { update: { className: 'power' } }
   };
-  if (children.length > 2)
+  if (children.length !== 2)
     throw new Error(
-      `expected two Group Elements as children of Exponent Element got ${children.length}`
+      `expected two Group Elements as children of Exponent Element got ${
+        !children ? 0 : children.length | 1
+      }`
     );
 
   return (

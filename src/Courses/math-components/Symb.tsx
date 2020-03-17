@@ -44,11 +44,11 @@ const symbols = {
 };
 type SymbProps = {
   symb?: string;
-  symbtype: 'number' | 'letter' | 'operator';
+  symbtype?: 'number' | 'letter' | 'operator';
   dx?: number;
   dy?: number;
   style?: React.CSSProperties;
-  className?: string;
+  className: string;
 };
 const Symb: React.FC<SymbProps> = ({
   symb,
@@ -62,7 +62,7 @@ const Symb: React.FC<SymbProps> = ({
   const symbol = symb in symbols ? symbols[symb] : symb;
 
   return (
-    <tspan dx={dx} dy={dy} className={`${className} ${symbtype}`} {...rest}>
+    <tspan dx={dx} dy={dy} className={className} {...rest}>
       {symbol}
     </tspan>
   );

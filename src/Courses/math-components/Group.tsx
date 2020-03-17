@@ -46,14 +46,23 @@ const setupdate = (attr: GroupAttribute, child: ReactElement) => {
   } else if ('update' in attr) {
     for (const key in attr['update']) {
       // if it should be updated: updatedvalue from attr object + currentvalue from child props
-      let oldVal = child.props.key | 0;
-      let newVal = attr['update'][key] + oldVal;
-      console.log('old, new:', oldVal, newVal);
-      if (Number.isNaN(newVal))
+      let oldVal = child.props[key];
+
+      let newVal =
+        typeof oldVal === 'string'
+          ? attr['update'][key] + ' ' + oldVal
+          : attr['update'][key] + oldVal;
+      // console.log('name, old, new:, ', child, newVal);
+      // just for debugging purposes:
+      if (typeof oldVal !== typeof attr['update'][key])
         throw new Error(
-          `expected numbers but got: child.props.${key}: ${child.props.key}  attr.update.${key}: ${attr['update'][key]}`
+          `expected both numbers or both strings but got: child.props.${key}: ${
+            child.props[key]
+          } of type:${typeof child.props[key]}  attr.update.${key}: ${
+            attr['update'][key]
+          } of type:${typeof attr['update'][key]} `
         );
-      attr0 = { ...attr0, key: newVal };
+      attr0[key] = newVal;
     }
   }
   return attr0;

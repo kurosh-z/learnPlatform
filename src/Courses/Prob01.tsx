@@ -10,15 +10,19 @@ import MathJaxNode from '../mathjax/MathJaxNode';
 
 const tex = ` f(x) = \\int_{-\\infty}^\\infty\\hat{f}(\\xi)\\,e^{2 \\pi i \\xi x}\\,d\\xi `;
 
-const Integrand: React.FC<{ dx?: number; dy?: number }> = ({ dx, dy }) => {
+const Integrand: React.FC<{ dx?: number; dy?: number; className: string }> = ({
+  dx,
+  dy,
+  className
+}) => {
   return (
     <Exponent dx={dx}>
       <Group>
-        <Symb symb={'x'} symbtype='letter' />
+        <Symb symb={'x'} className={`letter ${className}`} />
       </Group>
       <Group>
-        <Symb symb={'\\pi'} symbtype='letter' />
-        <Symb symb={'\\xi'} symbtype='letter' />
+        <Symb symb={'\\pi'} className={`letter ${className}`} />
+        <Symb symb={'\\xi'} className={`letter ${className}`} />
       </Group>
     </Exponent>
   );
@@ -67,7 +71,7 @@ const Prob01: React.FC<{}> = () => {
         <text x={150} y={100}>
           <Integral>
             <Group>
-              <Integrand />
+              <Integrand className='integrand' />
             </Group>
           </Integral>
         </text>

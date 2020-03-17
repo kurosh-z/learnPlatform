@@ -11,12 +11,12 @@ type IntegralProps = {
 const Integral: React.FC<IntegralProps> = ({ dx, dy, children }) => {
   const groupAttrs: GroupAttributes = {
     0: { set: { dx: INEGRAND_DX } },
-    any: { set: { className: 'integrand' } }
+    any: { update: { className: 'integrand' } }
   };
+
   return (
     <Group>
-      <Symb symb='∫' symbtype='operator' dx={dx} dy={dy} />
-
+      <Symb symb='∫' className='operator' dx={dx} dy={dy} />
       {React.cloneElement(children, { ...children.props, groupAttrs })}
     </Group>
   );
