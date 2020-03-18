@@ -780,28 +780,11 @@
     lodash "^4.17.13"
     to-fast-properties "^2.0.0"
 
-"@babylonjs/core@4.0.3", "@babylonjs/core@^4.0.3":
+"@babylonjs/core@4.0.3":
   version "4.0.3"
   resolved "https://registry.yarnpkg.com/@babylonjs/core/-/core-4.0.3.tgz#67e04f42ecd2c68d2668e07c9c61f29081244a59"
   integrity sha512-M9UYwAwXLIBq+WzNdmYD3TjgHJ+Vb85/pjqt9vN6SqmkwfpmMibfKr3bXkNgodZrVS+UUjvf8A/aWI3cJH0MNg==
   dependencies:
-    tslib "^1.9.3"
-
-"@babylonjs/gui@^4.0.3":
-  version "4.0.3"
-  resolved "https://registry.yarnpkg.com/@babylonjs/gui/-/gui-4.0.3.tgz#044bf3be581108c5c3a2d820d994f8ba88d3c46d"
-  integrity sha512-cjjA8yjMZ94Dr1yTNFyLSTkFGUjknNVG3XnFCYVezrh4IxVG4mDtlCOrXRzgF5jBVgk3ErXiVrno5xhb+axC7g==
-  dependencies:
-    "@babylonjs/core" "4.0.3"
-    tslib "^1.9.3"
-
-"@babylonjs/loaders@^4.0.3":
-  version "4.0.3"
-  resolved "https://registry.yarnpkg.com/@babylonjs/loaders/-/loaders-4.0.3.tgz#3c5c98994f27a2f5ce486115035292d39120ec59"
-  integrity sha512-yjXqWFk9EHY2WbGbLQKB1bFSIrCuBsEX2Fw52A1SOIxL3TlRkICSKRvTGUJP8lvEGds/OikUD51VwZs2zX6SAw==
-  dependencies:
-    "@babylonjs/core" "4.0.3"
-    babylonjs-gltf2interface "4.0.3"
     tslib "^1.9.3"
 
 "@babylonjs/materials@^4.0.3":
@@ -935,11 +918,6 @@
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/@juggle/resize-observer/-/resize-observer-3.0.2.tgz#f4f326806826c0da5221411374e4c54902c327bb"
   integrity sha512-9fEfZIxZ1qTahMSX50pigfSJ/1N6X2oABhmgd4Dt2SsPkZi0lTlvoHu5V2yrGZ6m+oALfS4tJrpx9nbVIxwOYQ==
-
-"@types/cannon@^0.1.4":
-  version "0.1.4"
-  resolved "https://registry.yarnpkg.com/@types/cannon/-/cannon-0.1.4.tgz#71ef5dee4b9095adc3788afb8555dd6b7e29bad9"
-  integrity sha512-Du7ylapwErz90Q9g9RXzieg5EV6rcuCDMHkVX9mXbFEjhFcWKYA5QcBWz95mqYQxrcU5ukZMBhmeNqww953cfA==
 
 "@types/chroma-js@^1.4.3":
   version "1.4.3"
@@ -1422,11 +1400,6 @@ acorn@^6.2.1:
   resolved "https://registry.yarnpkg.com/acorn/-/acorn-6.4.0.tgz#b659d2ffbafa24baf5db1cdbb2c94a983ecd2784"
   integrity sha512-gac8OEcQ2Li1dxIEWGZzsp2BitJxwkwcOm0zHAJLcPJaVvm58FRnk6RkuLRpU1EujipU2ZFODv2P9DLMfnV8mw==
 
-acorn@^6.4.1:
-  version "6.4.1"
-  resolved "https://registry.yarnpkg.com/acorn/-/acorn-6.4.1.tgz#531e58ba3f51b9dacb9a6646ca4debf5b14ca474"
-  integrity sha512-ZVA9k326Nwrj3Cj9jlh3wGFutC2ZornPNARZwsNYqQYgN0EsV2d53w5RN/co65Ohn4sUAUtb1rSUAOD6XN9idA==
-
 ajv-errors@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/ajv-errors/-/ajv-errors-1.0.1.tgz#f35986aceb91afadec4102fbd85014950cefa64d"
@@ -1653,11 +1626,6 @@ babel-plugin-syntax-jsx@^6.18.0:
   version "6.18.0"
   resolved "https://registry.yarnpkg.com/babel-plugin-syntax-jsx/-/babel-plugin-syntax-jsx-6.18.0.tgz#0af32a9a6e13ca7a3fd5069e62d7b0f58d0d8946"
   integrity sha1-CvMqmm4Tyno/1QaeYtew9Y0NiUY=
-
-babylonjs-gltf2interface@4.0.3:
-  version "4.0.3"
-  resolved "https://registry.yarnpkg.com/babylonjs-gltf2interface/-/babylonjs-gltf2interface-4.0.3.tgz#e81cc65fac93b723feef4980b7497fa4643a8c4c"
-  integrity sha512-ys8cEhlkYmBCJ3F/aBemVNKPkaV5fPghR4wgQfvUTNCF9pFlwYZpJ1KXEPj4+z6OohXN14AQMcaiafL+bmVLlg==
 
 balanced-match@^1.0.0:
   version "1.0.0"
@@ -2074,7 +2042,7 @@ commander@2.17.x:
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.17.1.tgz#bd77ab7de6de94205ceacc72f1716d29f20a77bf"
   integrity sha512-wPMUt6FnH2yzG95SA6mzjQOEKUU3aLaDEmzs1ti+1E9h+CsrZghRlqEM/EJ4KscsQVG8uNN4uVreUeT8+drlgg==
 
-commander@^2.12.1, commander@^2.19.0, commander@^2.20.0:
+commander@^2.12.1, commander@^2.20.0:
   version "2.20.3"
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.20.3.tgz#fd485e84c03eb4881c20722ba48035e8531aeb33"
   integrity sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==
@@ -3900,13 +3868,6 @@ json5@^2.1.0:
   integrity sha512-l+3HXD0GEI3huGq1njuqtzYK8OYJyXMkOLtQ53pjWh89tvWS2h6l+1zMkYWqlb57+SiQodKZyvMEFb2X+KrFhQ==
   dependencies:
     minimist "^1.2.0"
-
-katex@^0.11.1:
-  version "0.11.1"
-  resolved "https://registry.yarnpkg.com/katex/-/katex-0.11.1.tgz#df30ca40c565c9df01a466a00d53e079e84ffaa2"
-  integrity sha512-5oANDICCTX0NqYIyAiFCCwjQ7ERu3DQG2JFHLbYOf+fXaMoH8eg/zOq5WSYJsKMi/QebW+Eh3gSM+oss1H/bww==
-  dependencies:
-    commander "^2.19.0"
 
 killable@^1.0.1:
   version "1.0.1"

@@ -1,6 +1,8 @@
-import React, { SVGProps } from 'react';
-
-export const symbols = {
+export type SymbolObject = {
+  [key: string]: string;
+};
+// TODO: change it to a singleton pattern?
+export const symbolObject: SymbolObject = {
   '\\Alpha': 'Α',
   '\\alpha': 'α',
   '\\Beta': 'Β',
@@ -42,33 +44,17 @@ export const symbols = {
   '\\omega': 'ω',
   '\\Omega': 'Omega'
 };
-export const symbBank: string[] = [];
-for (const symb in symbols) {
-  symbBank.push(symbols[symb]);
+
+export const defineSymbols: (newSymbols: SymbolObject) => void = newSymbols => {
+  Object.assign(symbolObject, newSymbols);
+};
+
+export const symbolBank: string[] = [];
+for (const symb in symbolObject) {
+  symbolBank.push(symbolObject[symb]);
 }
 
-type SymbProps = {
-  symb?: string;
-  dx?: number;
-  dy?: number;
-  style?: React.CSSProperties;
-  className: string;
-};
-const Symb: React.FC<SymbProps> = ({
-  symb,
-  dx,
-  dy,
-  className,
-  children,
-  ...rest
-}) => {
-  const symbol = symb in symbols ? symbols[symb] : symb;
-
-  return (
-    <tspan dx={dx} dy={dy} className={className} {...rest}>
-      {symbol}
-    </tspan>
-  );
-};
-
-export default Symb;
+export var symbolBankString: string = '';
+for (const str of symbolBank) {
+  symbolBankString += str;
+}

@@ -94,7 +94,7 @@ const Prob01: React.FC<{}> = () => {
               <Integrand />
             </Group>
           </Integral> */}
-          <Symbs symbs='097\beta23\alpha\gamma\Gamma' />
+          <Symbs symbs='4945.8abc23\alpha\gamma kjk9\Gamma 9.45' />
         </text>
       </svg>
       {/* <MathJaxNode
