@@ -3,21 +3,49 @@ import Symb from './Symb';
 import Group, { GroupAttributes } from './Group';
 
 const INEGRAND_DX = 10;
+const FROM_DY = 12;
+const TO_DY = -12;
 type IntegralProps = {
   dx?: number;
   dy?: number;
-  children: ReactElement;
+  children: ReactElement[] | ReactElement;
 };
+// children should alwasy be given as Group element
+// first children: child0: int_from, child1: int_to, child2: integrand
+// if just one child is provided it rendered as integrand
 const Integral: React.FC<IntegralProps> = ({ dx, dy, children }) => {
-  const groupAttrs: GroupAttributes = {
+  const inegrandGroupAttrs: GroupAttributes = {
     0: { set: { dx: INEGRAND_DX } },
     any: { update: { className: 'integrand' } }
+  };
+
+  const fromGroupAttrs: GroupAttributes = {
+    0: { set: { dy: FROM_DY } },
+    any: { update: { className: 'int_from' } }
+  };
+  const toGroupAttrs: GroupAttributes = {
+    0: { set: { dy: TO_DY } },
+    any: { update: { className: 'int_to' } }
   };
 
   return (
     <Group>
       <Symb symb='∫' className='operator' dx={dx} dy={dy} />
-      {React.cloneElement(children, { ...children.props, groupAttrs })}
+      <>
+        {React.Children.map(children, (child: ReactElement, idx: number) => {
+          if ((idx === 0 && !children['length']) || idx === 2) {
+            return React.cloneElement(child, {
+              ...child.props,
+              groupAttrs: inegrandGroupAttrs
+            });
+          } else if (idx !== 2) {
+            return React.cloneElement(child, {
+              ...child.props,
+              groupAttrs: idx === 0 ? fromGroupAttrs : toGroupAttrs
+            });
+          }
+        })}
+      </>
     </Group>
   );
 };

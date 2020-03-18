@@ -7,16 +7,16 @@ interface ExponentProps {
   dy?: number;
   children: ReactElement[];
 }
-const Exponent: React.FC<ExponentProps> = ({ dx = 0, dy = 0, children }) => {
+const Power: React.FC<ExponentProps> = ({ dx = 0, dy = 0, children }) => {
   // base
   const groupAttrs0: GroupAttributes = {
     0: { set: { dx: dx, dy: dy } },
-    any: { update: { className: 'base' } }
+    any: { update: { className: 'power_base' } }
   };
   // power: set dy and className of the first element of the power group by setting the groupAttrs
   const groupAttrs1: GroupAttributes = {
     0: { set: { dy: SUPERSCRIP_DY } },
-    any: { update: { className: 'power' } }
+    any: { update: { className: 'power_exp' } }
   };
   if (children.length !== 2)
     throw new Error(
@@ -46,4 +46,4 @@ const Exponent: React.FC<ExponentProps> = ({ dx = 0, dy = 0, children }) => {
   );
 };
 
-export default Exponent;
+export default Power;

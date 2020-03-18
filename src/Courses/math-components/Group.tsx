@@ -23,6 +23,7 @@ const Group: React.FC<GroupProps> = ({ children, groupAttrs = {} }) => {
     <>
       {React.Children.map(children, (child: ReactElement, idx: number) => {
         const cookedDefaultAttr = setupdate(rawDefalutlAttr, child);
+        // console.log(child.type.name, child.props);
         let childAttr =
           idx in groupAttrs
             ? { ...setupdate(groupAttrs[idx], child), ...cookedDefaultAttr }

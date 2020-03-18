@@ -5,29 +5,11 @@ import { Theme } from '../theme/types';
 import Integral from './math-components/Integral';
 import Group from './math-components/Group';
 import Symb from './math-components/Symb';
-import Exponent from './math-components/Exponent';
+import Power from './math-components/Power';
 import Symbs from './math-components/Symbs';
 // import MathJaxNode from '../mathjax/MathJaxNode';
 
 const tex = ` f(x) = \\int_{-\\infty}^\\infty\\hat{f}(\\xi)\\,e^{2 \\pi i \\xi x}\\,d\\xi `;
-
-const TestEl: React.FC<{ dx?: number; dy?: number; className?: string }> = ({
-  dx,
-  dy,
-  className
-}) => {
-  return (
-    <Exponent dx={dx}>
-      <Group>
-        <Symb symb={'y'} className={`letter ${className}`} />
-      </Group>
-      <Group>
-        <Symb symb={'\\beta'} className={`letter ${className}`} />
-        <Symb symb={'\\gamma'} className={`letter ${className}`} />
-      </Group>
-    </Exponent>
-  );
-};
 
 const Integrand: React.FC<{ dx?: number; dy?: number; className?: string }> = ({
   dx,
@@ -35,16 +17,17 @@ const Integrand: React.FC<{ dx?: number; dy?: number; className?: string }> = ({
   className
 }) => {
   return (
-    <Exponent dx={dx}>
+    <Power dx={dx} dy={dy}>
       <Group>
-        {/* <Symb symb={'x'} className={`letter ${className}`} /> */}
-        <TestEl />
+        <Symb symb={'x'} className={`letter ${className}`} />
+        {/* <Symbs symbs='4945.8abc23\alpha\gamma kjk9\Gamma 9.45' /> */}
       </Group>
       <Group>
-        <Symb symb={'\\pi'} className={`letter ${className}`} />
-        <Symb symb={'\\xi'} className={`letter ${className}`} />
+        {/* <Symb symb={'\\pi'} className={`letter ${className}`} />
+        <Symb symb={'\\xi'} className={`letter ${className}`} /> */}
+        <Symbs symbs='4945.8abc23\alpha\gamma kjk9\Gamma 9.45' />
       </Group>
-    </Exponent>
+    </Power>
   );
 };
 const Prob01: React.FC<{}> = () => {
@@ -74,7 +57,7 @@ const Prob01: React.FC<{}> = () => {
         fontFamily: 'KaTeX_Size2',
         fontSize: '1.2rem'
       },
-      '.power': {
+      '.power_exp': {
         fontSize: '.7em'
       }
     }
@@ -89,12 +72,11 @@ const Prob01: React.FC<{}> = () => {
         width={600}
         height={'100%'}>
         <text x={150} y={100}>
-          {/* <Integral>
+          <Integral>
             <Group>
               <Integrand />
             </Group>
-          </Integral> */}
-          <Symbs symbs='4945.8abc23\alpha\gamma kjk9\Gamma 9.45' />
+          </Integral>
         </text>
       </svg>
       {/* <MathJaxNode
