@@ -23,6 +23,7 @@
     "@types/chroma-js": "^1.4.3",
     "@types/d3": "^5.7.2",
     "@types/katex": "^0.11.0",
+    "acorn": "^6.4.1",
     "awesome-typescript-loader": "^5.2.1",
     "babel-loader": "^8.0.6",
     "chroma-js": "^2.1.0",

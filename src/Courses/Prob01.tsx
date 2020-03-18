@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { css as emoCss, Global } from '@emotion/core';
 import { useTheme } from 'emotion-theming';
 import { Theme } from '../theme/types';
@@ -7,7 +7,7 @@ import Group from './math-components/Group';
 import Symb from './math-components/Symb';
 import Power from './math-components/Power';
 import Symbs from './math-components/Symbs';
-// import MathJaxNode from '../mathjax/MathJaxNode';
+import MathJaxNode from '../mathjax/MathJaxNode';
 
 const tex = ` f(x) = \\int_{-\\infty}^\\infty\\hat{f}(\\xi)\\,e^{2 \\pi i \\xi x}\\,d\\xi `;
 
@@ -32,6 +32,16 @@ const Integrand: React.FC<{ dx?: number; dy?: number; className?: string }> = ({
 };
 const Prob01: React.FC<{}> = () => {
   const theme = useTheme<Theme>();
+  const [textHovered, setTextHover] = useState<boolean>(false);
+  // useEffect(() => {
+  //   const expEl = document.querySelectorAll('.power_exp');
+  //   expEl.forEach((el, idx) => {
+  //     el.addEventListener('click', () => {
+  //       setTextHover(true);
+  //       console.log('onmouseover');
+  //     });
+  //   });
+  // }, []);
   const prob01 = emoCss({
     backgroundColor: theme.palette.white.dark,
     width: '100vw',
@@ -40,6 +50,7 @@ const Prob01: React.FC<{}> = () => {
   const mathsvg = emoCss({
     background: 'transparent'
   });
+
   const mathexpression = emoCss({
     '.katexfont': {
       fontFamily: 'KaTeX_Main',
@@ -55,10 +66,13 @@ const Prob01: React.FC<{}> = () => {
       },
       '.operator': {
         fontFamily: 'KaTeX_Size2',
-        fontSize: '1.2rem'
+        fontSize: '1em'
       },
       '.power_exp': {
         fontSize: '.7em'
+      },
+      '.int_from , .int_to': {
+        fontSize: '.85em'
       }
     }
   });
@@ -71,19 +85,38 @@ const Prob01: React.FC<{}> = () => {
         xmlns='http://www.w3.org/2000/svg'
         width={600}
         height={'100%'}>
-        <text x={150} y={100}>
+        <text
+          transform={`scale(${textHovered ? 2 : 1})`}
+          // style={{
+          //   cursor: textHovered ? 'pointer' : 'default',
+          //   fontSize: textHovered ? '2rem' : '1.2rem '
+          // }}
+          x={!textHovered ? 100 : 50}
+          y={!textHovered ? 50 : 40}
+          onMouseEnter={() => {
+            setTextHover(() => true);
+          }}
+          onMouseLeave={() => {
+            setTextHover(() => false);
+          }}>
           <Integral>
+            <Group>
+              <Symbs symbs='x2' />
+            </Group>
+            <Group>
+              <Symbs symbs='y2' />
+            </Group>
             <Group>
               <Integrand />
             </Group>
           </Integral>
         </text>
       </svg>
-      {/* <MathJaxNode
+      <MathJaxNode
         formula={tex}
         inline
         style={{ position: 'absolute', top: 400, left: 200 }}
-      /> */}
+      />
     </div>
   );
 };

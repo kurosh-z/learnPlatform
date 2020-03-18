@@ -1,4 +1,4 @@
-import React, { SVGProps } from 'react';
+import React, { SVGProps, useEffect, useRef } from 'react';
 
 export const symbols = {
   '\\Alpha': 'Α',
@@ -63,9 +63,16 @@ const Symb: React.FC<SymbProps> = ({
   ...rest
 }) => {
   const symbol = symb in symbols ? symbols[symb] : symb;
+  const elRef = useRef<SVGTSpanElement>(null);
 
+  //TODO: change the position of things with respect to fontSize (if you don't whant to scale things)
+  // useEffect(() => {
+  //   console.log(
+  //     window.getComputedStyle(elRef.current, null).getPropertyValue('font-size')
+  //   );
+  // }, []);
   return (
-    <tspan dx={dx} dy={dy} className={className} {...rest}>
+    <tspan dx={dx} dy={dy} className={className} {...rest} ref={elRef}>
       {symbol}
     </tspan>
   );
