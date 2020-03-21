@@ -1,58 +1,20 @@
-import React, { SVGProps, useEffect, useRef } from 'react';
-
-export const symbols = {
-  '\\Alpha': 'Α',
-  '\\alpha': 'α',
-  '\\Beta': 'Β',
-  '\\beta': 'β',
-  '\\gamma': 'γ',
-  '\\Gamma': 'Γ',
-  '\\delta': 'δ',
-  '\\Delta': 'Δ',
-  '\\epsilon': 'ϵ',
-  '\\zeta': 'ζ',
-  '\\Zeta': 'Z',
-  '\\eta': 'η',
-  '\\theta': 'θ',
-  '\\Theta': 'Θ',
-  '\\iota': 'ι',
-  '\\Iota': 'I',
-  '\\kappa': 'κ',
-  '\\Kappa': 'K',
-  '\\lambda': 'λ',
-  '\\Lambda': 'Λ',
-  '\\mu': 'μ',
-  '\\nu': 'ν',
-  '\\omicron': 'ο',
-  '\\pi': 'π',
-  '\\Pi': 'Π',
-  '\\rho': 'ρ',
-  '\\siqma': 'σ',
-  '\\Siqma': 'Σ',
-  '\\tau': 'τ',
-  '\\upsilon': 'υ',
-  '\\Upsilon': 'Υ',
-  '\\phi': 'ϕ',
-  '\\Phi': 'Φ',
-  '\\chi': 'χ',
-  '\\Xi': 'Ξ',
-  '\\xi': 'ξ',
-  '\\psi': 'ψ',
-  '\\Psi': 'Ψ',
-  '\\omega': 'ω',
-  '\\Omega': 'Omega'
-};
-export const symbBank: string[] = [];
-for (const symb in symbols) {
-  symbBank.push(symbols[symb]);
-}
-
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  ReactElement,
+  useMemo
+} from 'react';
+import { getlatexSymbol } from './mathsymbols';
+// const mathSymbols = Mathsymbols.getInstance();
 type SymbProps = {
-  symb?: string;
+  symb: string;
   dx?: number;
   dy?: number;
   style?: React.CSSProperties;
-  className: string;
+  className?: string;
+  children?: ReactElement;
+  widthArr: { char: string; width: number }[];
 };
 const Symb: React.FC<SymbProps> = ({
   symb,
@@ -60,22 +22,49 @@ const Symb: React.FC<SymbProps> = ({
   dy,
   className,
   children,
+  widthArr,
   ...rest
 }) => {
-  const symbol = symb in symbols ? symbols[symb] : symb;
+  const symbol = getlatexSymbol(symb);
+  console.log('symhols');
+  // console.log(symbol);
   const elRef = useRef<SVGTSpanElement>(null);
 
   //TODO: change the position of things with respect to fontSize (if you don't whant to scale things)
-  // useEffect(() => {
-  //   console.log(
-  //     window.getComputedStyle(elRef.current, null).getPropertyValue('font-size')
-  //   );
-  // }, []);
+
+  const [{ x, y, height, width }, set] = useState({
+    x: null,
+    y: null,
+    height: null,
+    width: null
+  });
+
+  useEffect(() => {
+    // console.log(
+    //   window.getComputedStyle(elRef.current, null).getPropertyValue('font-size')
+    // );
+    // console.log(
+    //   symbol,
+    //   elRef.current.getBBox().width,
+    //   elRef.current.getBBox().x
+    // );
+    widthArr.push({ char: symbol, width: elRef.current.getBBox().height });
+    set(() => elRef.current.getBBox());
+  }, [dx, dy]);
+
   return (
-    <tspan dx={dx} dy={dy} className={className} {...rest} ref={elRef}>
-      {symbol}
-    </tspan>
+    <>
+      <tspan dx={dx} dy={dy} className={className} {...rest} ref={elRef}>
+        {symbol}
+      </tspan>
+
+      {/* {React.cloneElement(children, { ...children.props })} */}
+    </>
   );
 };
 
 export default Symb;
+
+const TestEl: React.FC<{ x: number; y: number }> = ({ x, y }) => {
+  return <circle cx={x} cy={y} r={20} fill='black' />;
+};

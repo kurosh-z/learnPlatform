@@ -17,13 +17,16 @@
     "jsx": "react",
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
+    "allowUnreachableCode": false,
     "noImplicitReturns": true,
     "noImplicitThis": true,
     "noImplicitAny": true,
     "importHelpers": true,
     "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,
-    "noUnusedLocals": true
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["./src/**/*."],
   "exclude": [

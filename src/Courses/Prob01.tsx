@@ -11,28 +11,9 @@ import MathJaxNode from '../mathjax/MathJaxNode';
 
 const tex = ` f(x) = \\int_{-\\infty}^\\infty\\hat{f}(\\xi)\\,e^{2 \\pi i \\xi x}\\,d\\xi `;
 
-const Integrand: React.FC<{ dx?: number; dy?: number; className?: string }> = ({
-  dx,
-  dy,
-  className
-}) => {
-  return (
-    <Power dx={dx} dy={dy}>
-      <Group>
-        <Symb symb={'x'} className={`letter ${className}`} />
-        {/* <Symbs symbs='4945.8abc23\alpha\gamma kjk9\Gamma 9.45' /> */}
-      </Group>
-      <Group>
-        {/* <Symb symb={'\\pi'} className={`letter ${className}`} />
-        <Symb symb={'\\xi'} className={`letter ${className}`} /> */}
-        <Symbs symbs='4945.8abc23\alpha\gamma kjk9\Gamma 9.45' />
-      </Group>
-    </Power>
-  );
-};
 const Prob01: React.FC<{}> = () => {
   const theme = useTheme<Theme>();
-  const [textHovered, setTextHover] = useState<boolean>(false);
+  // const [textHovered, setTextHover] = useState<boolean>(false);
   // useEffect(() => {
   //   const expEl = document.querySelectorAll('.power_exp');
   //   expEl.forEach((el, idx) => {
@@ -58,8 +39,9 @@ const Prob01: React.FC<{}> = () => {
       lineHeight: '1.2rem',
 
       '.letter': {
-        fontFamily: 'KaTeX_Math',
+        fontFamily: 'KaTeX_Size2',
         fontStyle: 'italic'
+        // fontWeight: 'bold'
       },
       '.number': {
         fontFamily: 'KaTex_Main'
@@ -76,49 +58,49 @@ const Prob01: React.FC<{}> = () => {
       }
     }
   });
+
   return (
     <div css={prob01}>
       <Global styles={mathexpression} />
+
       <svg
         css={mathsvg}
         className='katexfont'
         xmlns='http://www.w3.org/2000/svg'
+        xmlnsXlink='http://www.w3.org/1999/xlink'
         width={600}
         height={'100%'}>
-        <text
-          transform={`scale(${textHovered ? 2 : 1})`}
-          // style={{
-          //   cursor: textHovered ? 'pointer' : 'default',
-          //   fontSize: textHovered ? '2rem' : '1.2rem '
-          // }}
-          x={!textHovered ? 100 : 50}
-          y={!textHovered ? 50 : 40}
-          onMouseEnter={() => {
-            setTextHover(() => true);
-          }}
-          onMouseLeave={() => {
-            setTextHover(() => false);
-          }}>
-          <Integral>
-            <Group>
-              <Symbs symbs='x2' />
-            </Group>
-            <Group>
-              <Symbs symbs='y2' />
-            </Group>
-            <Group>
-              <Integrand />
-            </Group>
-          </Integral>
-        </text>
+        {/* <Symbs symbs='ABCDEF\beta\alpha\gamma kd' x={100} y={200} /> */}
+        <Integral x={100} y={100}>
+          <Symbs symbs={'f(x)'} x={0} y={0} />
+          <Symbs symbs={'g(x)'} x={0} y={0} />
+          <Symbs symbs={'h(x)'} x={0} y={0} />
+        </Integral>
       </svg>
-      <MathJaxNode
+      {/* <MathJaxNode
         formula={tex}
         inline
         style={{ position: 'absolute', top: 400, left: 200 }}
-      />
+      /> */}
     </div>
   );
 };
 
 export default Prob01;
+
+const El = ({ x, y }) => {
+  return (
+    <>
+      <Symbs symbs={'g(x)'} x={x} y={y} />
+      <El2 x={x + 40} y={y} />
+    </>
+  );
+};
+
+const El2 = ({ x, y }) => {
+  return (
+    <>
+      <Symbs symbs={'p(y)'} x={x} y={y} />
+    </>
+  );
+};
