@@ -11,6 +11,24 @@ import MathJaxNode from '../mathjax/MathJaxNode';
 
 const tex = ` f(x) = \\int_{-\\infty}^\\infty\\hat{f}(\\xi)\\,e^{2 \\pi i \\xi x}\\,d\\xi `;
 
+const FirstInt: React.FC<{ opacity?: number; x?: number }> = ({
+  x = 0,
+  opacity = 1
+}) => {
+  return (
+    <Integral x={100} y={100}>
+      <Symbs symbs={'f(x)'} x={0} y={0} />
+      <Symbs symbs={'g(x)'} x={0} y={0} />
+      <g
+        style={{ opacity: opacity, transform: `translate(${x}px, 0)` }}
+        // transform={`translate(${x} 0)`}
+      >
+        <Symbs symbs={'h(x)'} x={x} y={0} />
+      </g>
+    </Integral>
+  );
+};
+
 const Prob01: React.FC<{}> = () => {
   const theme = useTheme<Theme>();
   // const [textHovered, setTextHover] = useState<boolean>(false);
@@ -71,12 +89,9 @@ const Prob01: React.FC<{}> = () => {
         width={600}
         height={'100%'}>
         {/* <Symbs symbs='ABCDEF\beta\alpha\gamma kd' x={100} y={200} /> */}
-        <Integral x={100} y={100}>
-          <Symbs symbs={'f(x)'} x={0} y={0} />
-          <Symbs symbs={'g(x)'} x={0} y={0} />
-          <Symbs symbs={'h(x)'} x={0} y={0} />
-        </Integral>
+        <FirstInt />
       </svg>
+
       {/* <MathJaxNode
         formula={tex}
         inline
@@ -87,20 +102,3 @@ const Prob01: React.FC<{}> = () => {
 };
 
 export default Prob01;
-
-const El = ({ x, y }) => {
-  return (
-    <>
-      <Symbs symbs={'g(x)'} x={x} y={y} />
-      <El2 x={x + 40} y={y} />
-    </>
-  );
-};
-
-const El2 = ({ x, y }) => {
-  return (
-    <>
-      <Symbs symbs={'p(y)'} x={x} y={y} />
-    </>
-  );
-};

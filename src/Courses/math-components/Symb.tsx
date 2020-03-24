@@ -5,7 +5,8 @@ import React, {
   ReactElement,
   useMemo
 } from 'react';
-import { getlatexSymbol } from './mathsymbols';
+import mathSymols from './mathsymbols';
+const getlatexSymbol = mathSymols.getlatexSymbol;
 // const mathSymbols = Mathsymbols.getInstance();
 type SymbProps = {
   symb: string;

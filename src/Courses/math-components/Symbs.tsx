@@ -1,7 +1,9 @@
 import React, { useMemo, useRef } from 'react';
 import Symb from './Symb';
-import { getlatexSymbol, getCharWidth } from './mathsymbols';
+import mathSymols from './mathsymbols';
 
+const getlatexSymbol = mathSymols.getlatexSymbol;
+const getStringWidth = mathSymols.getStringWidth;
 type SymbsProps = {
   symbs: string;
   x: number;
@@ -31,28 +33,22 @@ const Symbs: React.FC<SymbsProps> = ({
         lastPos +=
           idx === 0
             ? 0
-            : getCharWidth(mathcharArr[idx - 1]['expr']) + letterSpacing;
+            : getStringWidth(mathcharArr[idx - 1]['expr']) + letterSpacing;
 
         // console.log(expr, lastPos);
         return idx === 0 ? (
           <text
             transform={`translate(${lastPos} ${y})`} // TODO: decide btw. translate or x,y attributes
             key={idx}
-            // symb={expr}
-            // x={lastPos}
-            // y={dy}
             className={className ? `${type} ${className}` : type}
             {...rest}>
             {expr}
           </text>
         ) : (
           <text
-            // widthArr={widthArr.current}
             key={idx}
             x={lastPos}
             y={y}
-            // letterSpacing={letterSpacing ? letterSpacing : null}
-            // symb={expr}
             className={className ? `${type} ${className}` : type}
             {...rest}>
             {expr}

@@ -1,14 +1,9 @@
-import React, {
-  ReactElement,
-  useState,
-  useEffect,
-  useRef,
-  useLayoutEffect
-} from 'react';
+import React, { ReactElement, useState, useRef, useLayoutEffect } from 'react';
 import Symbs from './Symbs';
-import Group, { GroupAttributes } from './Group';
-import { getCharWidth, getStringWidth } from './mathsymbols';
+import mathSymols from './mathsymbols';
+const getCharWidth = mathSymols.getCharWidth;
 
+const INT_WIDTH = getCharWidth('∫');
 const FROM_DX = 16;
 const TO_DX = 16;
 const FROM_DY = 18;
@@ -23,22 +18,16 @@ type IntegralProps = {
 // first children: child0: int_from, child1: int_to, child2: integrand
 // if just one child is provided it rendered integrand
 const Integral: React.FC<IntegralProps> = ({ x, y, children }) => {
-  const [{ fromLength, toLength, intergrandX }, setLenght] = useState({
-    fromLength: 0,
-    toLength: 0,
-    intergrandX: 0
-  });
+  const [intergrandX, setLenght] = useState(x + TO_DX + INT_WIDTH);
   const fromRef = useRef<SVGGElement>(null);
   const toRef = useRef<SVGAElement>(null);
   useLayoutEffect(() => {
     if (fromRef.current && toRef.current) {
       const fromWidth = fromRef.current.getBBox().width;
-      setLenght(lObj => ({ ...lObj, fromWidth: fromWidth }));
       const toWidth = toRef.current.getBBox().width;
-      setLenght(lObj => ({ ...lObj, toWidth: toWidth }));
       let intergrandX = fromWidth >= toWidth ? fromWidth : toWidth;
-      intergrandX += x + getCharWidth('∫') + TO_DX;
-      setLenght(lObj => ({ ...lObj, intergrandX: intergrandX }));
+      intergrandX += x + TO_DX + INT_WIDTH;
+      setLenght(() => intergrandX);
     }
   }, []);
 
@@ -48,7 +37,7 @@ const Integral: React.FC<IntegralProps> = ({ x, y, children }) => {
       <>
         {React.Children.map(children, (child: ReactElement, idx: number) => {
           if ((idx === 0 && !children['length']) || idx === 2) {
-            // the only child rendered as Integrand
+            // the only child gets rendered as Integrand
 
             return (
               <g
@@ -62,13 +51,13 @@ const Integral: React.FC<IntegralProps> = ({ x, y, children }) => {
             );
           }
           if (idx === 0 && children['length']) {
-            // the first child is being renderd as int_from
+            // the first child gets renderd as int_from
 
             return (
               <g
                 ref={fromRef}
                 className='int_from'
-                transform={`translate(${x + getCharWidth('∫') + FROM_DX} ${y +
+                transform={`translate(${x + INT_WIDTH + FROM_DX} ${y +
                   FROM_DY})`}>
                 >
                 {React.cloneElement(child, {
@@ -78,13 +67,12 @@ const Integral: React.FC<IntegralProps> = ({ x, y, children }) => {
             );
           }
           if (idx === 1) {
-            // second child rendered as int_to
+            // second child gets rendered as int_to
             return (
               <g
                 ref={toRef}
                 className='int_to'
-                transform={`translate(${x + getCharWidth('∫') + TO_DX} ${y +
-                  TO_DY})`}>
+                transform={`translate(${x + INT_WIDTH + TO_DX} ${y + TO_DY})`}>
                 >
                 {React.cloneElement(child, {
                   ...child.props
