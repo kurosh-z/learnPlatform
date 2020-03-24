@@ -7,8 +7,9 @@ import Group from './math-components/Group';
 import Symb from './math-components/Symb';
 import Power from './math-components/Power';
 import Symbs from './math-components/Symbs';
-import MathJaxNode from '../mathjax/MathJaxNode';
-
+// import MathJaxNode from '../mathjax/MathJaxNode';
+import { allAtoms } from './math-components/Symbs';
+console.log('atoms', allAtoms);
 const tex = ` f(x) = \\int_{-\\infty}^\\infty\\hat{f}(\\xi)\\,e^{2 \\pi i \\xi x}\\,d\\xi `;
 
 const FirstInt: React.FC<{ opacity?: number; x?: number }> = ({

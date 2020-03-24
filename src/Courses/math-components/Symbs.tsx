@@ -1,6 +1,8 @@
 import React, { useMemo, useRef } from 'react';
 import Symb from './Symb';
 import mathSymols from './mathsymbols';
+import Pattern from './Pattern';
+import Parser from './Parser';
 
 const getlatexSymbol = mathSymols.getlatexSymbol;
 const getStringWidth = mathSymols.getStringWidth;
@@ -154,65 +156,35 @@ const manageTypes2 = (expr: string, tspanArr: Tspandata[]) => {
   }
 };
 
-// const calExpresions: (str: string) => MathExprObj[] = str => {
-//   var nstr = str;
-//   // first change latex symbols to theier actual symbols
-//   const latexRegexpr = /\\[a-zA-Z@]+/gm;
-//   var m: RegExpExecArray;
-//   // in whihle condition we use str instead of nstr cuase we want to change nstr!
-//   // otherwise lastIndex changes every time we change nstr!
-//   while ((m = latexRegexpr.exec(str)) !== null) {
-//     if (m.index === latexRegexpr.lastIndex) {
-//       latexRegexpr.lastIndex++;
-//     }
+// const patt1Str = '_{([(_{(a-z0-9)+?})?]+)?}';
+// const patt1Str = '_{[(_{(a-z0-9)+?})?]+}';
+const allLetters = 'a-zA-Z@αβγΓδΔϵζηθΘιIκλΛμνοπΠρσΣτυϕΦχΞξψΨω';
+const patt1Str = `_{[(_^{},0-9 ${allLetters})?]+}`;
 
-//     m.forEach(match => {
-//       nstr = nstr.replace(match, getlatexSymbol(match));
-//     });
-//   }
-//   // then seperate numbers and letters
+const patt2Str = `_[0-9 ${allLetters}@]`;
 
-//   var lastIndex = 0;
-//   var newIndex = 0;
-//   var numMatch: RegExpExecArray;
+const extractExpr1 = function(expr: string) {
+  return expr.slice(2, -1);
+};
+const extractExpr2 = function(expr: string) {
+  return expr.slice(1, expr.length);
+};
 
-//   var tspanArr: Tspandata[] = [];
-//   var expr: string, type: string;
-//   const numRegexp = /[0-9.]+/gm;
-//   let flag = true;
-//   while (flag) {
-//     numMatch = numRegexp.exec(nstr);
-//     if (!numMatch) {
-//       if (lastIndex !== nstr.length) {
-//         expr = nstr.slice(lastIndex, nstr.length);
-//         manageTypes(expr, tspanArr);
-//       }
-//       flag = false;
-//     } else {
-//       newIndex = numRegexp.lastIndex;
-//       expr = nstr.slice(lastIndex, numMatch.index);
-//       manageTypes(expr, tspanArr);
-//       expr = nstr.slice(numMatch.index, newIndex);
-//       manageTypes(expr, tspanArr);
-//       lastIndex = newIndex;
-//     }
-//   }
-//   return tspanArr;
-// };
+const pattern1 = new Pattern({
+  name: 'patt1',
+  regString: patt1Str,
+  extExprCb: extractExpr1,
+  attr: { dy: -12, className: 'underscript' }
+});
 
-// // seperate letters form numbers push number as a whole and letters seperatly to the tspanArr
-// const manageTypes = (expr: string, tspanArr: Tspandata[]) => {
-//   let type = isNumberString(expr) ? 'number' : 'letter';
-//   var tspandata: Tspandata;
-//   // console.log(expr, type);
-//   if (type === 'number') {
-//     tspandata = { expr: expr, type: type };
-//     tspanArr.push(tspandata);
-//   } else if (type === 'letter') {
-//     const chars = expr.split('');
-//     for (const char of chars) {
-//       tspandata = { expr: char, type: 'letter' };
-//       tspanArr.push(tspandata);
-//     }
-//   }
-// };
+const pattern2 = new Pattern({
+  name: 'patt2',
+  regString: patt2Str,
+  extExprCb: extractExpr2,
+  attr: { dy: -12, className: 'underscript' }
+});
+
+const patternList = [pattern1, pattern2];
+const parser = new Parser(patternList);
+const str = 'd_{c u_{m,4} d} a';
+export const allAtoms = parser.stringToAtom(str);
