@@ -3,32 +3,29 @@ import { css as emoCss, Global } from '@emotion/core';
 import { useTheme } from 'emotion-theming';
 import { Theme } from '../theme/types';
 import Integral from './math-components/Integral';
-import Group from './math-components/Group';
-import Symb from './math-components/Symb';
-import Power from './math-components/Power';
-import Symbs from './math-components/Symbs';
+// import Symbs from './math-components/Symbs';
+import Latex from './math-components/Latex';
 // import MathJaxNode from '../mathjax/MathJaxNode';
-import { allAtoms } from './math-components/Symbs';
-console.log('atoms', allAtoms);
+
 const tex = ` f(x) = \\int_{-\\infty}^\\infty\\hat{f}(\\xi)\\,e^{2 \\pi i \\xi x}\\,d\\xi `;
 
-const FirstInt: React.FC<{ opacity?: number; x?: number }> = ({
-  x = 0,
-  opacity = 1
-}) => {
-  return (
-    <Integral x={100} y={100}>
-      <Symbs symbs={'f(x)'} x={0} y={0} />
-      <Symbs symbs={'g(x)'} x={0} y={0} />
-      <g
-        style={{ opacity: opacity, transform: `translate(${x}px, 0)` }}
-        // transform={`translate(${x} 0)`}
-      >
-        <Symbs symbs={'h(x)'} x={x} y={0} />
-      </g>
-    </Integral>
-  );
-};
+// const FirstInt: React.FC<{ opacity?: number; x?: number }> = ({
+//   x = 0,
+//   opacity = 1
+// }) => {
+//   return (
+//     <Integral x={100} y={100}>
+//       <Symbs symbs={'f(x)'} x={0} y={0} />
+//       <Symbs symbs={'g(x)'} x={0} y={0} />
+//       <g
+//         style={{ opacity: opacity, transform: `translate(${x}px, 0)` }}
+//         // transform={`translate(${x} 0)`}
+//       >
+//         <Symbs symbs={'h(x)'} x={x} y={0} />
+//       </g>
+//     </Integral>
+//   );
+// };
 
 const Prob01: React.FC<{}> = () => {
   const theme = useTheme<Theme>();
@@ -90,7 +87,7 @@ const Prob01: React.FC<{}> = () => {
         width={600}
         height={'100%'}>
         {/* <Symbs symbs='ABCDEF\beta\alpha\gamma kd' x={100} y={200} /> */}
-        <FirstInt />
+        <Latex x={100} y={60} math={'ab_{c_{i}}np'} />
       </svg>
 
       {/* <MathJaxNode

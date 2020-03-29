@@ -1,139 +1,98 @@
-import Pattern from './Pattern';
-import ExprChild from './ExprChildren';
-
-/* Class Parser  ------------------------------------------------
-
-
-
------------------------------------------------------------------
-*/
-const allAtoms: ExprChild[] = [];
-
+import React from 'react';
+import { AtomPattern, SscriptPattern, Pattern } from './Pattern';
+const allPatterns = [
+  new SscriptPattern({ regString: '([a-z0-9])((_{)|(^{))', name: 'sScript' })
+];
+const atomPatterns = [
+  new AtomPattern({ regString: '[a-zA-Z@]+', name: 'letters' })
+];
+export type CompProps = {
+  component: React.RefForwardingComponent<any, any>;
+  props: Object;
+};
 export default class Parser {
-  patternList: Pattern[] = [];
-  patternObj: { [key: string]: Pattern } = {};
-  regStringAll: string = '';
-  allAtoms: ExprChild[] = [];
+  str: string;
+  nstr: string;
+  patternList: typeof allPatterns = allPatterns;
+  atomPatternsList: typeof atomPatterns = atomPatterns;
+  allRegStrings: string;
+  allAtomRegStrings: string;
+  componentList: CompProps[] = [];
+  xPos: number;
 
-  constructor(patternList: Pattern[]) {
-    this.patternList = patternList;
-    this._makePatternObj();
-    this._makeRegStringAll();
+  constructor(str: string, x: number) {
+    this.str = str;
+    this.nstr = str;
+    this.xPos = x;
+    this.allRegStrings = this._makeAllregStrings(this.patternList);
+    this.allAtomRegStrings = this._makeAllregStrings(this.atomPatternsList);
   }
-  _makeRegStringAll() {
-    var regStringAll = '';
-    let idx = 0;
-    for (const pattern of this.patternList) {
-      let newStr = idx === 0 ? pattern.regString : '|' + pattern.regString;
-      regStringAll += newStr;
+  _makeAllregStrings(patternList: typeof allPatterns | typeof atomPatterns) {
+    let allRegStrings = '';
+    var idx = 0;
+    for (const pattern of patternList) {
+      if (idx === 0) allRegStrings = pattern.regString;
+      else {
+        allRegStrings += '|' + pattern.regString;
+      }
       idx++;
     }
-    this.regStringAll = regStringAll;
+    return allRegStrings;
   }
-  _makePatternObj() {
-    var patternObj = {};
-    for (const pattern of this.patternList) {
-      Object.defineProperty(patternObj, pattern.name, {
-        value: pattern,
-        enumerable: true
-      });
+  whitchPattern(
+    expr: string,
+    patternList: typeof allPatterns | typeof atomPatterns
+  ) {
+    let matchingPattern;
+    for (const pattern of patternList) {
+      if (pattern.isPattern(expr)) return pattern;
     }
-    this.patternObj = patternObj;
+    if (!matchingPattern) throw new Error(`expr containts no latex code!`);
   }
-  whichPattern(expr: string): string {
-    for (const pattern of this.patternList) {
-      if (pattern.isPattern(expr)) return pattern.name;
+  consume(expr: string, startingIndex: number) {
+    // console.log('consume', startingIndex, expr);
+    const reducedExpr = expr.slice(startingIndex, expr.length);
+    return reducedExpr;
+  }
+  _handleAtoms(expr: string) {
+    const regexAll = new RegExp(this.allAtomRegStrings, 'mg');
+    const match = regexAll.exec(expr);
+    if (!match || match.index !== 0) {
+      throw new Error(`expr: ${expr} is not latex`);
     }
-    return 'atom';
-  }
-  _patternToChild(exprRaw: string, seperatedExprList: ExprChild[]) {
-    let pattName = this.whichPattern(exprRaw);
+    const pattern = this.whitchPattern(match[0], this.atomPatternsList);
 
-    let exprExt =
-      pattName === 'atom'
-        ? exprRaw
-        : this.patternObj[pattName].extExpr(exprRaw);
-
-    let exprAttr = pattName === 'atom' ? {} : this.patternObj[pattName].attr;
-
-    let child = new ExprChild({
-      exprRaw: exprRaw, // raw expression mainly for debugging purposes
-      exprExt: exprExt, // extraced expression to be processes again
-      pattName: pattName // pattern name needed to assing required attrs to expressions
+    pattern.exprToProps(expr, match.index);
+    this.componentList.push({
+      component: pattern.getComponent(),
+      props: pattern.props
     });
-    child.attr = exprAttr;
-    if (child._pattName === 'atom') {
-      allAtoms.push(child);
-      console.log('atom found:', child._exprRaw);
-    }
-    seperatedExprList.push(child);
+    expr = this.consume(expr, pattern.endingIndex);
+    return expr;
   }
 
-  _exprToChildren(str: string): ExprChild[] {
-    var seperatedExprList: ExprChild[] = [];
-    const regexAll = new RegExp(this.regStringAll, 'mg');
-
-    var flag = true;
-    var lastIndex = 0;
-    var newIndex = 0;
+  exprToComponents() {
     let idx = 0;
-    while (flag) {
-      let match = regexAll.exec(str);
-      idx += 1;
-      if (idx >= 10) flag = false;
-      if (!match) {
-        if (lastIndex !== str.length) {
-          let exprRaw = str.slice(lastIndex, str.length);
-          this._patternToChild(exprRaw, seperatedExprList);
-        }
-        flag = false;
+    while (this.nstr.length !== 0) {
+      const regexAll = new RegExp(this.allRegStrings, 'mg');
+      const match = regexAll.exec(this.nstr);
+      if (!match || match.index !== 0) {
+        this.nstr = this._handleAtoms(this.nstr);
       } else {
-        newIndex = regexAll.lastIndex;
-        if (lastIndex !== match.index) {
-          let exprRaw = str.slice(lastIndex, match.index);
-          this._patternToChild(exprRaw, seperatedExprList);
-        }
-        // console.log("expr", expr);
-        let exprRaw = str.slice(match.index, newIndex);
-        this._patternToChild(exprRaw, seperatedExprList);
-        lastIndex = newIndex;
+        const pattern = this.whitchPattern(match[0], this.patternList);
+
+        pattern.exprToProps(this.nstr, match.index);
+        this.componentList.push({
+          component: pattern.getComponent(),
+          props: pattern.props
+        });
+        this.nstr = this.consume(this.nstr, pattern.endingIndex);
       }
-    }
-    // console.log(seperatedExprList);
+      idx++;
 
-    return seperatedExprList;
-  }
-
-  _areAllChildrenAtoms(children: ExprChild[]) {
-    let isAtomized = true;
-    for (const child of children) {
-      if (child._pattName !== 'atom') isAtomized = false;
+      if (idx > this.str.length || idx > 100)
+        throw new Error(`parsing loop is not stable!`);
     }
-    return isAtomized;
-  }
-  _processChildren(children: ExprChild[]) {
-    for (const child of children) {
-      //   console.log('childRaw', child._exprExt);
-      let exprExt = child._exprExt;
-      if (child._pattName !== 'atom') {
-        let childrenList = this._exprToChildren(exprExt);
-        child.children = childrenList;
-        // console.log('children of childRaw:', childrenList);
-        // console.log('-----------------------------------');
-        if (!this._areAllChildrenAtoms(childrenList)) {
-          this._processChildren(childrenList);
-        }
-      }
-    }
-    return;
-    // console.log('process', children);
-  }
-
-  stringToAtom(str: string) {
-    let level0Children = this._exprToChildren(str); //first children form str;
-    this._processChildren(level0Children);
-    // console.log(level0Children);
-    // console.log('atoms', this.allAtoms);
-    return allAtoms;
+    return this.componentList;
   }
 }

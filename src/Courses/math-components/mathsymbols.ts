@@ -206,6 +206,14 @@ class MSymbols {
       throw new Error(`latex symbol ${latexString} is not recognized!`);
     }
   };
+  getGreekKeys: () => string = () => {
+    let greekKeys = '';
+
+    for (const gKey in this.latexSymbs) {
+      greekKeys += gKey;
+    }
+    return greekKeys;
+  };
   getCharWidth: (
     char: string,
     fontSize?: number,
