@@ -54,23 +54,29 @@ const Prob01: React.FC<{}> = () => {
       fontSize: '1.2rem',
       lineHeight: '1.2rem',
 
-      '.letter': {
+      '.math_letter': {
         fontFamily: 'KaTeX_Size2',
         fontStyle: 'italic'
         // fontWeight: 'bold'
       },
-      '.number': {
+      '.math_number': {
         fontFamily: 'KaTex_Main'
       },
-      '.operator': {
+      '.math_op': {
         fontFamily: 'KaTeX_Size2',
         fontSize: '1em'
       },
-      '.power_exp': {
+      '.math_power_exp': {
         fontSize: '.7em'
       },
-      '.int_from , .int_to': {
+      '.math_int_from , .math_int_to': {
         fontSize: '.85em'
+      },
+      '.scriptSize': {
+        fontSize: '0.7em'
+      },
+      '.tiny': {
+        fontSize: '.7em'
       }
     }
   });
@@ -87,9 +93,9 @@ const Prob01: React.FC<{}> = () => {
         width={600}
         height={'100%'}>
         {/* <Symbs symbs='ABCDEF\beta\alpha\gamma kd' x={100} y={200} /> */}
-        <Latex x={100} y={60} math={'ab_{c_{i}}np'} />
+        <Latex x={100} y={60} math={'a_{b_{k}}^{d}h'} />
       </svg>
-
+      {/* math={'ab_{c_{k}^{t}}^{d}'} */}
       {/* <MathJaxNode
         formula={tex}
         inline
