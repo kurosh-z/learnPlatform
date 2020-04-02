@@ -1,8 +1,11 @@
 import { patternFactory, MathExpr, SscriptPattern } from './Pattern';
 import mathsymbols from './mathsymbols';
+import { FontSizesType } from './mathCss';
+
 const getStringWidth = mathsymbols.getStringWidth;
-const allPatterns = [patternFactory('sScript')];
-const atomPatterns = [patternFactory('atom')];
+// TODO: right now I use just one instance of pattern object for everything pay attention to the confilicts it my couse!
+//       any default values there should be considred as potential risk!
+
 // export type CompProps = {
 //   component: React.RefForwardingComponent<any, any>;
 //   props: Object;
@@ -15,26 +18,43 @@ type ParserArgs = {
   str: string;
   x?: number;
   y?: number;
+  baseFont?: keyof FontSizesType;
+  configs: PConfigs;
 };
-export default class Parser {
+class Parser {
   str: string;
   currStr: string;
-  patternList: typeof allPatterns = allPatterns;
-  atomPatternsList: typeof atomPatterns = atomPatterns;
+  baseFont: keyof FontSizesType;
+  configs: PConfigs;
+  fontSizes: FontSizesType;
+  patternList: PConfigs['allPatterns'];
+  atomPatternsList: PConfigs['atomPatterns'];
   allRegStrings: string;
   allAtomRegStrings: string;
   rawMathExprList: MathExpr[] = [];
   currPos: { currX: number; currY: number };
-  currClassName: string;
   cookedMathExprList: CookedMathExpr[] = [];
 
-  constructor({ str, x = 0, y = 0 }: ParserArgs) {
+  constructor({
+    str,
+    x = 0,
+    y = 0,
+    configs,
+    baseFont = 'normalsize'
+  }: ParserArgs) {
     this.str = str;
+    this.configs = configs;
+    this.fontSizes = this.configs.fontSizes;
+    this.patternList = this.configs.allPatterns;
+    this.atomPatternsList = this.configs.atomPatterns;
+    this.baseFont = baseFont;
     this.currPos = { currX: x, currY: y };
     this.allRegStrings = this._makeAllregStrings(this.patternList);
     this.allAtomRegStrings = this._makeAllregStrings(this.atomPatternsList);
   }
-  _makeAllregStrings(patternList: typeof allPatterns | typeof atomPatterns) {
+  _makeAllregStrings(
+    patternList: PConfigs['allPatterns'] | PConfigs['atomPatterns']
+  ) {
     let allRegStrings = '';
     var idx = 0;
     for (const pattern of patternList) {
@@ -48,7 +68,7 @@ export default class Parser {
   }
   whitchPattern(
     expr: string,
-    patternList: typeof allPatterns | typeof atomPatterns
+    patternList: PConfigs['allPatterns'] | PConfigs['atomPatterns']
   ) {
     let matchingPattern;
     for (const pattern of patternList) {
@@ -60,6 +80,38 @@ export default class Parser {
     // console.log('consume', startingIndex, expr);
     const reducedExpr = expr.slice(startingIndex, expr.length);
     return reducedExpr;
+  }
+
+  strToMathExpressions(str: string) {
+    let nstr = str;
+    let idx = 0;
+
+    while (nstr.length !== 0) {
+      const regexAll = new RegExp(this.allRegStrings, 'mg');
+      const match = regexAll.exec(nstr);
+      if (!match || match.index !== 0) {
+        nstr = this._handleAtoms(nstr);
+        console.log('parserStr', this.str);
+        console.log('str: ', str);
+        console.log('nstr', nstr);
+        console.log('------------------------');
+      } else {
+        const pattern = this.whitchPattern(match[0], this.patternList);
+        pattern.baseFont = this.baseFont;
+        pattern.strToMathExpr(nstr, match.index);
+        // nstr = nstr.slice(pattern.endingIndex, nstr.length);
+        nstr = this.consume(nstr, pattern.endingIndex);
+        console.log('parserStr', this.str);
+        console.log('str: ', str);
+        console.log('nstr', nstr);
+        console.log('------------------------');
+        this._handleNonAtoms(pattern);
+        // TODO: correct the types _handleNoneAtoms should recieve!
+      }
+      idx++;
+
+      if (idx > str.length) throw new Error(`parsing loop is not stable!`);
+    }
   }
   _handleAtoms(str: string) {
     const regexAll = new RegExp(this.allAtomRegStrings, 'mg');
@@ -81,11 +133,12 @@ export default class Parser {
         attr: {
           x: currX,
           y: currY,
-          className: this.currClassName + ' ' + className
+          className: className
         }
       };
       this.cookedMathExprList.push(coockedmathExpr);
-      const exprWidth = getStringWidth(expr);
+      let font_size = this.fontSizes[this.baseFont];
+      const exprWidth = getStringWidth(expr, font_size);
       currX += exprWidth;
       // console.log('atom', expr);
       // console.log('width', exprWidth);
@@ -97,99 +150,141 @@ export default class Parser {
     str = this.consume(str, pattern.endingIndex);
     return str;
   }
-
-  strToMathExpressions(str: string) {
-    let nstr = str;
-    let idx = 0;
-
-    while (nstr.length !== 0) {
-      const regexAll = new RegExp(this.allRegStrings, 'mg');
-      const match = regexAll.exec(nstr);
-      if (!match || match.index !== 0) {
-        nstr = this._handleAtoms(nstr);
-        console.log('parserStr', this.str);
-        console.log('str: ', str);
-        console.log('nstr', nstr);
-        console.log('------------------------');
-      } else {
-        const pattern = this.whitchPattern(match[0], this.patternList);
-        pattern.strToMathExpr(nstr, match.index);
-        // nstr = nstr.slice(pattern.endingIndex, nstr.length);
-        nstr = this.consume(nstr, pattern.endingIndex);
-        console.log('parserStr', this.str);
-        console.log('str: ', str);
-        console.log('nstr', nstr);
-        console.log('------------------------');
-        this._handleNonAtoms(pattern);
-        // TODO: correct the types _handleNoneAtoms should recieve!
-      }
-      idx++;
-
-      if (idx > str.length || idx > 200)
-        //TODO: remove idx>100
-        throw new Error(`parsing loop is not stable!`);
-    }
-  }
-
+  // TODO: do something
+  // _calFontSize(classNames: string) {
+  //   let font_size = fontSizes['normalsize'];
+  //   for (const font_key in fontSizes) {
+  //     if (this._isExprInStr(font_key, classNames)) {
+  //       font_size = fontSizes[font_key];
+  //       break;
+  //     }
+  //   }
+  //   return font_size;
+  // }
   _handleNonAtoms(pattern: SscriptPattern) {
     if (pattern.isParallel()) this._handleParallel(pattern);
     else {
       for (const mathExpr of pattern.mathExpressions) {
         const { currX, currY } = this.currPos;
+        // const parserFontFactor = this.fontFactor ===
         const parser = parserFactory({
           str: mathExpr.expr,
           x: currX + mathExpr.attr.dx,
-          y: currY + mathExpr.attr.dy
+          y: currY + mathExpr.attr.dy,
+          baseFont: mathExpr.attr.fontKey
         });
-
-        for (const cookedMathExpr of parser.cookedMathExprList) {
-          this.cookedMathExprList.push(cookedMathExpr);
-        }
+        this._pushCookedMathExprList(parser.cookedMathExprList, mathExpr);
         this.currPos.currX = parser.currPos.currX;
       }
     }
   }
 
   _handleParallel(pattern: SscriptPattern) {
-    const baseExpr = pattern.mathExpressions[0]; ///base expresion how to handle?
-    const index1Expr = pattern.mathExpressions[1];
-    const index2Expr = pattern.mathExpressions[2];
-    let { currX, currY } = this.currPos;
-
-    const parser0 = parserFactory({
-      str: baseExpr.expr,
-      x: currX + baseExpr.attr.dx,
-      y: currY + baseExpr.attr.dy
-    });
-    for (const cookedMathExpr of parser0.cookedMathExprList) {
-      this.cookedMathExprList.push(cookedMathExpr);
+    let idx = 0;
+    let paralleX = [];
+    for (const mathExpr of pattern.mathExpressions) {
+      const { currX, currY } = this.currPos;
+      const parser = parserFactory({
+        str: mathExpr.expr,
+        x: currX + mathExpr.attr.dx,
+        y: currY + mathExpr.attr.dy,
+        baseFont: mathExpr.attr.fontKey
+      });
+      this._pushCookedMathExprList(parser.cookedMathExprList, mathExpr);
+      if (idx === 0) {
+        // if idx=0 it's base we have to update the currPos
+        this.currPos.currX = parser.currPos.currX;
+      } else {
+        paralleX.push(parser.currPos.currX);
+      }
+      idx++;
     }
-    this.currPos = parser0.currPos;
-    // TODO: should here just set the currX or not?
-
-    const parser1 = parserFactory({
-      str: index1Expr.expr,
-      x: this.currPos.currX + index1Expr.attr.dx,
-      y: this.currPos.currY + index1Expr.attr.dy
-    });
-
-    const parser2 = parserFactory({
-      str: index2Expr.expr,
-      x: this.currPos.currX + index2Expr.attr.dx,
-      y: this.currPos.currY + index2Expr.attr.dy
-    });
-
-    for (const cookedMathExpr of parser1.cookedMathExprList) {
-      this.cookedMathExprList.push(cookedMathExpr);
-    }
-    for (const cookedMathExpr of parser2.cookedMathExprList) {
-      this.cookedMathExprList.push(cookedMathExpr);
-    }
-    const currX1 = parser1.currPos.currX;
-    const currX2 = parser2.currPos.currX;
-    //push results of parser1 and parser2 to to the list
-    this.currPos.currX = currX1 >= currX2 ? currX1 : currX2;
+    // compare 2nd and last mathexprs and update currPos accordingly
+    this.currPos.currX = paralleX[0] >= paralleX[1] ? paralleX[0] : paralleX[1];
   }
+
+  // get the cookedMathExprList results from parser and the parent pattern of it
+  // merge pattern's classNames with parser's classNames and push the cookedMathExpr
+  _pushCookedMathExprList(
+    cookedMathExprList: CookedMathExpr[],
+    patternExpr: MathExpr
+  ) {
+    for (const cookedMathExpr of cookedMathExprList) {
+      const mathexprClNames = cookedMathExpr.attr.className;
+      const patternClName = patternExpr.attr.className;
+      // console.log(cookedMathExpr.expr);
+      // console.log('mathexpr :', mathexprClNames);
+      // console.log('pattern  :', patternClName);
+      const newClNames = this._updateClassName(mathexprClNames, patternClName);
+      // console.log('newclName:', newClNames);
+      // console.log('-------------------');
+      cookedMathExpr.attr.className = newClNames;
+      this.cookedMathExprList.push(cookedMathExpr);
+    }
+  }
+  _isExprInStr(expr: string, str: string, range?: boolean) {
+    const regexp = RegExp(expr, 'mg');
+    if (range) {
+      const match = regexp.exec(str);
+      const test = match ? true : false;
+      const startIdx = match ? match.index : null;
+      const endIdx = match ? regexp.lastIndex : null;
+      return { test, range: [startIdx, endIdx] };
+    }
+    return regexp.test(str);
+  }
+  _createReplacer(replaceStr: string) {
+    return function() {
+      return [replaceStr].join(' ');
+    };
+  }
+  // find exprOld in str and replace it with exprNew
+  _replaceStr(str: string, exprOld: string, exprNew: string) {
+    let newStr = str.replace(
+      new RegExp(exprOld, 'mg'),
+      this._createReplacer(exprNew)
+    );
+    return newStr;
+  }
+
+  _updateClassName(currClassNames: string, newClassName: string) {
+    let updatedClassNames: string = '';
+    if (this._isExprInStr('math_letter', newClassName)) {
+      updatedClassNames = this._replaceStr(
+        currClassNames,
+        'math_number',
+        'math_letter'
+      );
+    } else if (this._isExprInStr('math_number', newClassName)) {
+      updatedClassNames = this._replaceStr(
+        currClassNames,
+        'math_letter',
+        'math_number'
+      );
+    } else if (
+      this._isExprInStr('sub', newClassName) ||
+      this._isExprInStr('sup', newClassName)
+    ) {
+      if (this._isExprInStr('scriptsize', currClassNames)) {
+        updatedClassNames += ' ' + newClassName;
+        updatedClassNames = this._replaceStr(
+          currClassNames,
+          'scriptsize',
+          'tiny'
+        );
+      } else {
+        updatedClassNames = currClassNames + ' ' + 'scriptsize';
+      }
+    } else {
+      if (this._isExprInStr(newClassName, currClassNames))
+        updatedClassNames = currClassNames;
+      else {
+        updatedClassNames = currClassNames + ' ' + newClassName;
+      }
+    }
+    return updatedClassNames;
+  }
+
   parse() {
     let str = this.str;
     this.strToMathExpressions(str);
@@ -197,8 +292,43 @@ export default class Parser {
   }
 }
 
-export function parserFactory({ str, x, y }: ParserArgs) {
-  const parser = new Parser({ str, x, y });
+export default function parserFactory({
+  str,
+  x,
+  y,
+  baseFont,
+  pfontSizes
+}: Omit<ParserArgs, 'configs'> & { pfontSizes?: FontSizesType }) {
+  const configs = pfontSizes
+    ? PConfigs.getInstance(pfontSizes)
+    : PConfigs.getInstance();
+
+  const parser = new Parser({ str, x, y, baseFont, configs });
   parser.parse();
   return parser;
+}
+
+class PConfigs {
+  fontSizes: FontSizesType;
+  allPatterns;
+  atomPatterns;
+  public static instance: PConfigs;
+
+  private constructor(fontSizes: FontSizesType) {
+    this.fontSizes = fontSizes;
+    this.allPatterns = [patternFactory('sScript', fontSizes)];
+    this.atomPatterns = [
+      patternFactory('math_letter', fontSizes),
+      patternFactory('math_number', fontSizes)
+    ];
+  }
+  public static getInstance(fontSizes?: FontSizesType) {
+    if (!PConfigs.instance) {
+      PConfigs.instance = new PConfigs(fontSizes);
+    }
+    return PConfigs.instance;
+  }
+  public getFontSizes() {
+    return this.fontSizes;
+  }
 }

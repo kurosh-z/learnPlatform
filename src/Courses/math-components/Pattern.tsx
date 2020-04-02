@@ -1,38 +1,46 @@
-import React from 'react';
-import Sscript, { IndexString } from './Sscript';
-import Text from './Text';
-import mathsymbols from './mathsymbols';
+import { FontSizesType } from './MathCss';
+const IDX_DY = 8;
 
-const getStringWidth = mathsymbols.getStringWidth;
+export type IndexType = 'subscript' | 'supscript';
 export type MathExpr = {
   expr: string;
-  attr: { dx: number; dy: number; className: string };
+  attr: {
+    dx: number;
+    dy: number;
+    className: string;
+    fontKey: keyof FontSizesType;
+  };
 };
 
-export type PatternProps = {
+export type PatternArgs = {
   name: string;
   regString: string;
+  fontSizes: FontSizesType;
 };
-
 export abstract class Pattern {
-  regString: string;
-  name: string;
+  regString: PatternArgs['regString'];
+  name: PatternArgs['name'];
+  fontSizes: PatternArgs['fontSizes'];
+  private _baseFont: keyof FontSizesType;
   abstract mathExpressions: MathExpr[];
   // abstract props: Object;
   abstract stratingIndex: number;
   abstract endingIndex: number;
-  constructor(regString: string, name: string) {
+  constructor({ regString, name, fontSizes }: PatternArgs) {
     this.regString = regString;
     this.name = name;
+    this.fontSizes = fontSizes;
   }
   abstract isPattern(expr: string): boolean;
   abstract strToMathExpr(str: string, startIdx?: number): void;
   abstract isParallel(): boolean;
 
-  // abstract getComponent():
-  //   | React.FC<any>
-  //   | React.RefForwardingComponent<any, any>;
-  // // abstract makeComponent: () => React.ReactElement;
+  set baseFont(baseFont: keyof FontSizesType) {
+    this._baseFont = baseFont;
+  }
+  get baseFont() {
+    return this._baseFont;
+  }
   findmatchingPairs({
     openregStr,
     closeregStr,
@@ -95,8 +103,8 @@ export class SscriptPattern extends Pattern {
   endingIndex: number;
   isType2: boolean = false;
 
-  constructor({ regString, name }: PatternProps) {
-    super(regString, name);
+  constructor({ regString, name, fontSizes }: PatternArgs) {
+    super({ regString, name, fontSizes });
   }
   /* 
   test the given str for pattern
@@ -122,7 +130,7 @@ export class SscriptPattern extends Pattern {
       str: str,
       startIdx: startIdx
     });
-    let type1: IndexString['indexType'], type2: IndexString['indexType'];
+    let type1: IndexType, type2: IndexType;
     if (str[startIdx + 1] === '_') type1 = 'subscript';
     else if (str[startIdx + 1] === '^') type1 = 'supscript';
     else
@@ -159,7 +167,11 @@ export class SscriptPattern extends Pattern {
     }
     if (type2) this.isType2 = true;
     else this.isType2 = false;
-
+    let indexFontKey: keyof FontSizesType;
+    if (this.baseFont === 'scriptsize') indexFontKey = 'tiny';
+    else if (this.baseFont === 'tiny') indexFontKey = 'tiny';
+    else indexFontKey = 'scriptsize';
+    const INDEX_DY = this.fontSizes[indexFontKey] * IDX_DY;
     const mathExpressions: MathExpr[] = type2
       ? [
           {
@@ -167,7 +179,8 @@ export class SscriptPattern extends Pattern {
             attr: {
               dx: 0,
               dy: 0,
-              className: 'base'
+              className: 'base',
+              fontKey: this.baseFont
             }
           },
 
@@ -175,16 +188,18 @@ export class SscriptPattern extends Pattern {
             expr: indexStr1,
             attr: {
               dx: 0,
-              dy: type1 === 'subscript' ? 12 : -12,
-              className: type1
+              dy: type1 === 'subscript' ? INDEX_DY : -INDEX_DY,
+              className: type1 === 'subscript' ? 'sub' : 'sup',
+              fontKey: indexFontKey
             }
           },
           {
             expr: indexStr2,
             attr: {
               dx: 0,
-              dy: type2 === 'subscript' ? 12 : -12,
-              className: type2
+              dy: type2 === 'subscript' ? INDEX_DY : -INDEX_DY,
+              className: type2 === 'subscript' ? 'sub' : 'sup',
+              fontKey: indexFontKey
             }
           }
         ]
@@ -194,24 +209,22 @@ export class SscriptPattern extends Pattern {
             attr: {
               dx: 0,
               dy: 0,
-              className: 'base'
+              className: 'base',
+              fontKey: this.baseFont
             }
           },
           {
             expr: indexStr1,
             attr: {
               dx: 0,
-              dy: type1 === 'subscript' ? 12 : -12,
-              className: type1
+              dy: type1 === 'subscript' ? INDEX_DY : -INDEX_DY,
+              className: type1 === 'subscript' ? 'sub' : 'sup',
+              fontKey: indexFontKey
             }
           }
         ];
     this.mathExpressions = mathExpressions;
-    // const props = {
-    //   base: base,
-    //   indexStrings: indexStrings
-    // };
-    // this.props = props;
+
     this.stratingIndex = startIdx;
     this.endingIndex = type2 ? endIdx2 : endIdx1;
   }
@@ -223,14 +236,16 @@ export class AtomPattern extends Pattern {
   mathExpressions: MathExpr[];
   stratingIndex: number;
   endingIndex: number;
-  constructor({ regString, name }: PatternProps) {
-    super(regString, name);
+  constructor({ regString, name, fontSizes }: PatternArgs) {
+    super({ regString, name, fontSizes });
   }
   isParallel() {
     return false;
   }
   isPattern(str: string) {
-    const regex = new RegExp(this.regString);
+    //for the point char(.) between numbers.
+    if (str === '.') return true;
+    const regex = new RegExp(this.regString, 'mg');
     return regex.test(str);
   }
   findRange(expr: string) {
@@ -246,20 +261,37 @@ export class AtomPattern extends Pattern {
     this.stratingIndex = startIdx;
     this.endingIndex = endingIndex;
     const atomExpr = str.slice(this.stratingIndex, this.endingIndex);
-    const attr = { dx: 0, dy: 0, className: 'math_default' };
+    const attr: MathExpr['attr'] = {
+      dx: 0,
+      dy: 0,
+      className: this.name,
+      fontKey: this.baseFont
+    };
     const mathExpressions: MathExpr[] = [{ expr: atomExpr, attr: attr }];
     this.mathExpressions = mathExpressions;
-    const props = { expr: atomExpr };
-    this.props = props;
   }
 }
+const allLetters = 'a-zA-Z@αβγΓδΔϵζηθΘιIκλΛμνοπΠρσΣτυϕΦχΞξψΨω';
+const sscript_string = `([${allLetters}0-9])((_{)|(^{))`;
+const atom_letter_string = `[${allLetters}]+`;
+const atom_number_string = '([-+]?)(\\d+.?\\d*)';
+export function patternFactory(
+  patternName: 'math_letter' | 'math_number' | 'sScript',
+  fontSizes: FontSizesType
+) {
+  if (patternName === 'math_letter' || patternName === 'math_number')
+    return new AtomPattern({
+      name: patternName,
+      regString:
+        patternName === 'math_letter' ? atom_letter_string : atom_number_string,
+      fontSizes: fontSizes
+    });
 
-const sscript_string = '([a-z0-9])((_{)|(^{))';
-const atom_string = '[a-zA-Z@]+';
-export function patternFactory(patternName: 'atom' | 'sScript') {
-  if (patternName === 'atom')
-    return new AtomPattern({ name: 'atom', regString: atom_string });
   if (patternName === 'sScript')
-    return new SscriptPattern({ name: 'Sscirpt', regString: sscript_string });
+    return new SscriptPattern({
+      name: 'Sscirpt',
+      regString: sscript_string,
+      fontSizes: fontSizes
+    });
   else throw new Error(`pattern name ${patternName} is not recognized!`);
 }

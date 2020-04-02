@@ -1,9 +1,7 @@
-import React, { useMemo, useEffect, useLayoutEffect, useState } from 'react';
-import mathSymols from './mathsymbols';
-import Parser from './Parser';
-const getlatexSymbol = mathSymols.getlatexSymbol;
-const getStringWidth = mathSymols.getStringWidth;
-const greekKeys = mathSymols.getGreekKeys();
+import React, { useMemo } from 'react';
+
+import MathCss from './MathCss';
+import parserFactory from './Parser';
 
 type SymbsProps = {
   math: string;
@@ -24,14 +22,15 @@ const Latex: React.FC<SymbsProps> = ({
 }) => {
   if (children) throw new Error('symbs element accepts no children!');
 
-  const mathExprList = useMemo(() => {
-    const parser = new Parser({ str: math });
-    const mathExprList = parser.parse();
-    return mathExprList;
+  const { mathExprList, mathcss } = useMemo(() => {
+    const mathcss = new MathCss(1.2);
+    const parser = parserFactory({ str: math, pfontSizes: mathcss.fontSizes });
+    const mathExprList = parser.cookedMathExprList;
+    return { mathExprList, mathcss };
   }, [math]);
 
   return (
-    <g transform={`translate(${x} ${y})`}>
+    <g css={mathcss.css} transform={`translate(${x} ${y})`}>
       {mathExprList.map((mathexpr, idx: number) => {
         const { expr, attr } = mathexpr;
         return (
