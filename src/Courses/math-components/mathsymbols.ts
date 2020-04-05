@@ -35,7 +35,7 @@ class MSymbols {
     '\\xi': 'ξ',
     '\\psi': 'ψ',
     '\\Psi': 'Ψ',
-    '\\omega': 'ω'
+    '\\omega': 'ω',
   };
   lettersWidth = {
     a: 9.549999618530273,
@@ -69,7 +69,7 @@ class MSymbols {
     w: 12.8,
     x: 10.003333587646484,
     y: 9.399999618530273,
-    z: 8.933333396911621
+    z: 8.933333396911621,
   };
 
   capLettersWidth = {
@@ -98,7 +98,7 @@ class MSymbols {
     W: 18.116666793823242,
     X: 15.899999618530273,
     Y: 11.149999618530273,
-    Z: 13.116666793823242
+    Z: 13.116666793823242,
   };
 
   greekLettersWidth = {
@@ -135,7 +135,7 @@ class MSymbols {
     ξ: 8.416666984558105,
     ψ: 12.5,
     Ψ: 11.75,
-    ω: 11.949999809265137
+    ω: 11.949999809265137,
   };
 
   numbersWidth = {
@@ -148,7 +148,7 @@ class MSymbols {
     6: 9.600000381469727,
     7: 9.600000381469727,
     8: 9.600000381469727,
-    9: 9.600000381469727
+    9: 9.600000381469727,
   };
 
   signsWidth = {
@@ -178,7 +178,7 @@ class MSymbols {
     '≤': 14.933333396911621,
     '.': 5.333333492279053,
     '∫': 5.266666889190674, // char: "∫", height: 43.5,
-    ' ': 10 // empty char
+    ' ': 10, // empty char
   };
   widthBank: { [key: string]: number };
   private static instance: MSymbols;
@@ -188,7 +188,7 @@ class MSymbols {
       ...this.capLettersWidth,
       ...this.numbersWidth,
       ...this.greekLettersWidth,
-      ...this.signsWidth
+      ...this.signsWidth,
     };
   }
 
@@ -199,7 +199,7 @@ class MSymbols {
     return MSymbols.instance;
   }
 
-  getlatexSymbol: (latexString: string) => string = latexString => {
+  getlatexSymbol: (latexString: string) => string = (latexString) => {
     if (latexString in this.latexSymbs) return this.latexSymbs[latexString];
     else if (latexString.charAt(0) !== '\\') return latexString;
     else {

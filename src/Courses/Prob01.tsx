@@ -14,10 +14,10 @@ const Prob01: React.FC<{}> = () => {
   const prob01 = emoCss({
     backgroundColor: theme.palette.white.dark,
     width: '100vw',
-    height: '30vh'
+    height: '30vh',
   });
   const mathsvg = emoCss({
-    background: 'transparent'
+    background: 'transparent',
   });
 
   return (
@@ -30,7 +30,7 @@ const Prob01: React.FC<{}> = () => {
         width={600}
         height={'100%'}>
         {/* <Symbs symbs='ABCDEF\beta\alpha\gamma kd' x={100} y={200} /> */}
-        <Latex x={100} y={60} math={'ab_{t_{2}}^{c_{1}}'} />
+        <Latex x={100} y={60} math={'b_{1}'} />
       </svg>
       {/* math={'ab_{c_{k}^{t}}^{d}'} */}
       {/* <MathJaxNode

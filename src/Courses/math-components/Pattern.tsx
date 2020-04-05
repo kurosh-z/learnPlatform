@@ -1,5 +1,6 @@
 import { FontSizesType } from './MathCss';
-const IDX_DY = 8;
+const SUP_DY = -10;
+const SUB_DY = 6;
 
 export type IndexType = 'subscript' | 'supscript';
 export type MathExpr = {
@@ -45,7 +46,7 @@ export abstract class Pattern {
     openregStr,
     closeregStr,
     str,
-    startIdx = 0
+    startIdx = 0,
   }: {
     openregStr: string;
     closeregStr: string;
@@ -116,6 +117,22 @@ export class SscriptPattern extends Pattern {
   isParallel() {
     return this.isType2;
   }
+  calHeight({
+    baseH,
+    sub,
+    sup,
+  }: {
+    baseH: number;
+    sup?: { h: number; dy: number };
+    sub?: { h: number; dy: number };
+  }) {
+    let height: number;
+    if (sup && sub) height = baseH + sup.h - sup.dy + sub.h - sub.dy;
+    else if (sup) height = baseH + sup.h - sup.dy;
+    else if (sub) baseH + sub.h - sub.dy;
+    else throw new Error('at least one of sub or sup should be exist');
+    return height;
+  }
 
   strToMathExpr(str: string, startIdx: number = 0) {
     const base = str.slice(startIdx, startIdx + 1);
@@ -128,7 +145,7 @@ export class SscriptPattern extends Pattern {
       openregStr: '{',
       closeregStr: '}',
       str: str,
-      startIdx: startIdx
+      startIdx: startIdx,
     });
     let type1: IndexType, type2: IndexType;
     if (str[startIdx + 1] === '_') type1 = 'subscript';
@@ -161,7 +178,7 @@ export class SscriptPattern extends Pattern {
         openregStr: '{',
         closeregStr: '}',
         str: str,
-        startIdx: endIdx1
+        startIdx: endIdx1,
       });
       indexStr2 = str.slice(startIdx2, endIdx2 - 1);
     }
@@ -171,7 +188,10 @@ export class SscriptPattern extends Pattern {
     if (this.baseFont === 'scriptsize') indexFontKey = 'tiny';
     else if (this.baseFont === 'tiny') indexFontKey = 'tiny';
     else indexFontKey = 'scriptsize';
-    const INDEX_DY = this.fontSizes[indexFontKey] * IDX_DY;
+    let sub_dy = this.fontSizes[indexFontKey] * SUB_DY;
+    let sup_dy = this.fontSizes[indexFontKey] * SUP_DY;
+    // TODO: calculate the height sizes here!
+
     const mathExpressions: MathExpr[] = type2
       ? [
           {
@@ -180,28 +200,28 @@ export class SscriptPattern extends Pattern {
               dx: 0,
               dy: 0,
               className: 'base',
-              fontKey: this.baseFont
-            }
+              fontKey: this.baseFont,
+            },
           },
 
           {
             expr: indexStr1,
             attr: {
               dx: 0,
-              dy: type1 === 'subscript' ? INDEX_DY : -INDEX_DY,
+              dy: type1 === 'subscript' ? sub_dy : sup_dy,
               className: type1 === 'subscript' ? 'sub' : 'sup',
-              fontKey: indexFontKey
-            }
+              fontKey: indexFontKey,
+            },
           },
           {
             expr: indexStr2,
             attr: {
               dx: 0,
-              dy: type2 === 'subscript' ? INDEX_DY : -INDEX_DY,
+              dy: type2 === 'subscript' ? sub_dy : sup_dy,
               className: type2 === 'subscript' ? 'sub' : 'sup',
-              fontKey: indexFontKey
-            }
-          }
+              fontKey: indexFontKey,
+            },
+          },
         ]
       : [
           {
@@ -210,18 +230,18 @@ export class SscriptPattern extends Pattern {
               dx: 0,
               dy: 0,
               className: 'base',
-              fontKey: this.baseFont
-            }
+              fontKey: this.baseFont,
+            },
           },
           {
             expr: indexStr1,
             attr: {
               dx: 0,
-              dy: type1 === 'subscript' ? INDEX_DY : -INDEX_DY,
+              dy: type1 === 'subscript' ? sub_dy : sup_dy,
               className: type1 === 'subscript' ? 'sub' : 'sup',
-              fontKey: indexFontKey
-            }
-          }
+              fontKey: indexFontKey,
+            },
+          },
         ];
     this.mathExpressions = mathExpressions;
 
@@ -265,14 +285,14 @@ export class AtomPattern extends Pattern {
       dx: 0,
       dy: 0,
       className: this.name,
-      fontKey: this.baseFont
+      fontKey: this.baseFont,
     };
     const mathExpressions: MathExpr[] = [{ expr: atomExpr, attr: attr }];
     this.mathExpressions = mathExpressions;
   }
 }
 const allLetters = 'a-zA-Z@αβγΓδΔϵζηθΘιIκλΛμνοπΠρσΣτυϕΦχΞξψΨω';
-const sscript_string = `([${allLetters}0-9])((_{)|(^{))`;
+const sscript_string = `([${allLetters}0-9])((_{)|(\\^{))`;
 const atom_letter_string = `[${allLetters}]+`;
 const atom_number_string = '([-+]?)(\\d+.?\\d*)';
 export function patternFactory(
@@ -284,14 +304,14 @@ export function patternFactory(
       name: patternName,
       regString:
         patternName === 'math_letter' ? atom_letter_string : atom_number_string,
-      fontSizes: fontSizes
+      fontSizes: fontSizes,
     });
 
   if (patternName === 'sScript')
     return new SscriptPattern({
       name: 'Sscirpt',
       regString: sscript_string,
-      fontSizes: fontSizes
+      fontSizes: fontSizes,
     });
   else throw new Error(`pattern name ${patternName} is not recognized!`);
 }

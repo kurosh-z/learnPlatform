@@ -22,13 +22,12 @@ export default class MathCss {
   private LLARGE: number;
   private HUGE: number;
   private HHUGE: number;
-
   private _fontSizes: FontSizesType;
 
   private _math_css: SerializedStyles;
   constructor(sizeFactor: number) {
     this._sizeFactor = sizeFactor;
-    this.TINY = this._sizeFactor * 0.55;
+    this.TINY = this._sizeFactor * 0.6;
     this.SCRIPTSIZE = this._sizeFactor * 0.85;
     this.FOOTNOTESIZE = this._sizeFactor * 9.6;
     this.SMALL = this._sizeFactor * 1.1;
@@ -48,6 +47,7 @@ export default class MathCss {
       huge: this.HUGE,
       Huge: this.HHUGE
     };
+
     this._math_css = emoCss({
       fontFamily: 'KaTeX_Main',
       fontSize: `${this.NORMALSIZE}rem`,
