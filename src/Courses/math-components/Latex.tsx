@@ -12,10 +12,11 @@ type SymbsProps = {
   className?: string;
 };
 
-type Gobj = {
+type LatexGroup = {
   open: boolean;
   gElements: CookedMathExpr[];
   gattrs: CookedMathExpr['attr'];
+  numOpenChildGroups: number;
 };
 const Latex: React.FC<SymbsProps> = ({
   math,
@@ -28,15 +29,16 @@ const Latex: React.FC<SymbsProps> = ({
 }) => {
   if (children) throw new Error('symbs element accepts no children!');
 
-  const gobjList: Gobj[] = [];
+  const groupList: LatexGroup[] = [];
   const { mathExprList, mathcss } = useMemo(() => {
-    const mathcss = new MathCss(1.2);
+    const mathcss = new MathCss(1);
     const parser = parserFactory({
       str: math,
       pfontSizes: mathcss.fontSizes,
     });
 
     const mathExprList = parser.cookedMathExprList;
+
     return { mathExprList, mathcss };
   }, [math]);
 
@@ -45,26 +47,49 @@ const Latex: React.FC<SymbsProps> = ({
       {mathExprList.map((mathexpr, idx: number) => {
         const { expr, attr } = mathexpr;
         if (expr === 'CREATE_GROUP') {
-          const gObj: Gobj = { open: true, gElements: [], gattrs: attr };
-          gobjList.push(gObj);
+          if (groupList.length !== 0) {
+            var lastIdx = groupList.length - 1;
+            var isLastOpen = groupList[lastIdx].open;
+          }
+          // if last goup is closed or there is still no group create one
+          if (groupList.length === 0 || !isLastOpen) {
+            const group: LatexGroup = {
+              open: true,
+              gElements: [],
+              gattrs: attr,
+              numOpenChildGroups: 0,
+            };
+            groupList.push(group);
+          }
+          // otherwise push the goup as an element for the exsiting open group
+          else {
+            groupList[lastIdx].gElements.push(mathexpr);
+            groupList[lastIdx].numOpenChildGroups += 1;
+          }
         } else if (expr === 'CLOSE_GROUP') {
-          let lastIdx = gobjList.length - 1;
-          gobjList[lastIdx].open = false;
-          // consume the last group
-          const gEl = gobjList[lastIdx];
-          gobjList.pop();
+          var lastIdx = groupList.length - 1;
+          var numChild = groupList[lastIdx].numOpenChildGroups;
+          if (numChild !== 0) {
+            groupList[lastIdx].numOpenChildGroups += -1;
+            groupList[lastIdx].gElements.push(mathexpr);
+          } else {
+            groupList[lastIdx].open = false;
+            // consume the last group
+            const groupEl = groupList[lastIdx];
+            groupList.pop();
 
-          return (
-            <SvgGroup
-              groupElList={gEl.gElements}
-              gattrs={gEl.gattrs}
-              key={idx}
-            />
-          );
-        } else if (gobjList.length !== 0) {
-          const lastIdx = gobjList.length - 1;
-          if (gobjList[lastIdx].open)
-            gobjList[lastIdx].gElements.push(mathexpr);
+            return (
+              <SvgGroup
+                mathExprList={groupEl.gElements}
+                gattrs={groupEl.gattrs}
+                key={idx}
+              />
+            );
+          }
+        } else if (groupList.length !== 0) {
+          const lastIdx = groupList.length - 1;
+          if (groupList[lastIdx].open)
+            groupList[lastIdx].gElements.push(mathexpr);
         } else {
           return (
             <text {...attr} key={idx}>
@@ -80,21 +105,68 @@ const Latex: React.FC<SymbsProps> = ({
 export default Latex;
 
 const SvgGroup = ({
-  groupElList,
+  mathExprList,
   gattrs,
 }: {
-  groupElList: CookedMathExpr[];
+  mathExprList: CookedMathExpr[];
   gattrs: CookedMathExpr['attr'];
 }) => {
+  const groupList: LatexGroup[] = [];
   return (
     <g {...gattrs}>
-      {groupElList.map((mathexpr, idx: number) => {
+      {mathExprList.map((mathexpr, idx: number) => {
         const { expr, attr } = mathexpr;
-        return (
-          <text {...attr} key={idx}>
-            {expr}
-          </text>
-        );
+        if (expr === 'CREATE_GROUP') {
+          if (groupList.length !== 0) {
+            var lastIdx = groupList.length - 1;
+            var isLastOpen = groupList[lastIdx].open;
+          }
+          // if last goup is closed or there is still no group create one
+          if (groupList.length === 0 || !isLastOpen) {
+            const group: LatexGroup = {
+              open: true,
+              gElements: [],
+              gattrs: attr,
+              numOpenChildGroups: 0,
+            };
+            groupList.push(group);
+          }
+          // otherwise push the goup as an element for the exsiting open group
+          else {
+            groupList[lastIdx].gElements.push(mathexpr);
+            groupList[lastIdx].numOpenChildGroups += 1;
+          }
+        } else if (expr === 'CLOSE_GROUP') {
+          var lastIdx = groupList.length - 1;
+          var numChild = groupList[lastIdx].numOpenChildGroups;
+          if (numChild !== 0) {
+            groupList[lastIdx].numOpenChildGroups += -1;
+            groupList[lastIdx].gElements.push(mathexpr);
+          } else {
+            groupList[lastIdx].open = false;
+            // consume the last group
+            const groupEl = groupList[lastIdx];
+            groupList.pop();
+
+            return (
+              <SvgGroup
+                mathExprList={groupEl.gElements}
+                gattrs={groupEl.gattrs}
+                key={idx}
+              />
+            );
+          }
+        } else if (groupList.length !== 0) {
+          const lastIdx = groupList.length - 1;
+          if (groupList[lastIdx].open)
+            groupList[lastIdx].gElements.push(mathexpr);
+        } else {
+          return (
+            <text {...attr} key={idx}>
+              {expr}
+            </text>
+          );
+        }
       })}
     </g>
   );

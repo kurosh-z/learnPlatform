@@ -31,7 +31,7 @@ export default class MathCss {
     this.SCRIPTSIZE = this._sizeFactor * 0.85;
     this.FOOTNOTESIZE = this._sizeFactor * 9.6;
     this.SMALL = this._sizeFactor * 1.1;
-    this.NORMALSIZE = this._sizeFactor * 1.3;
+    this.NORMALSIZE = this._sizeFactor * 1.2;
     this.LARGE = this._sizeFactor * 1.3;
     this.LLARGE = this._sizeFactor * 1.9;
     this.HUGE = this._sizeFactor * 2.3;
@@ -45,7 +45,7 @@ export default class MathCss {
       large: this.LARGE,
       Large: this.LLARGE,
       huge: this.HUGE,
-      Huge: this.HHUGE
+      Huge: this.HHUGE,
     };
 
     this._math_css = emoCss({
@@ -55,14 +55,14 @@ export default class MathCss {
 
       '.math_letter': {
         fontFamily: 'KaTeX_Math',
-        fontStyle: 'italic'
+        fontStyle: 'italic',
         // fontWeight: 'bold'
       },
       '.math_number': {
-        fontFamily: 'KaTex_Main'
+        fontFamily: 'KaTex_Main',
       },
       '.math_op': {
-        fontFamily: 'KaTeX_Size2'
+        fontFamily: 'KaTeX_Size2',
         // fontSize: '1em'
       },
       '.math_power_exp': {
@@ -75,32 +75,32 @@ export default class MathCss {
         // fontSize: '0.7em'
       },
       '.tiny': {
-        fontSize: `${this.TINY}rem`
+        fontSize: `${this.TINY}rem`,
       },
       '.scriptsize': {
-        fontSize: `${this.SCRIPTSIZE}rem`
+        fontSize: `${this.SCRIPTSIZE}rem`,
       },
       '.footnotesize': {
-        fontSize: `${this.FOOTNOTESIZE}rem`
+        fontSize: `${this.FOOTNOTESIZE}rem`,
       },
       '.small': {
-        fontSize: `${this.SMALL}rem`
+        fontSize: `${this.SMALL}rem`,
       },
       '.normalsize': {
-        fontSize: `${this.NORMALSIZE}rem`
+        fontSize: `${this.NORMALSIZE}rem`,
       },
       '.large': {
-        fontSize: `${this.LARGE}rem`
+        fontSize: `${this.LARGE}rem`,
       },
       '.Large': {
-        fontSize: `${this.LLARGE}rem`
+        fontSize: `${this.LLARGE}rem`,
       },
       '.huge': {
-        fontSize: `${this.HUGE}rem`
+        fontSize: `${this.HUGE}rem`,
       },
       '.Huge': {
-        fontSize: `${this.HHUGE}rem`
-      }
+        fontSize: `${this.HHUGE}rem`,
+      },
     });
   }
   get sizeFactor() {

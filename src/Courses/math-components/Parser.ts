@@ -1,4 +1,10 @@
-import { patternFactory, MathExpr, SscriptPattern } from './Pattern';
+import {
+  patternFactory,
+  MathExpr,
+  SscriptPattern,
+  AtomPattern,
+  MatrixPattern,
+} from './Pattern';
 import mathsymbols from './mathsymbols';
 import { FontSizesType } from './mathCss';
 // import './test.css';
@@ -14,6 +20,13 @@ export type CookedMathExpr = {
   expr: string;
   attr: { x?: number; y?: number; className?: string; transform?: string };
 };
+
+type RawMatrixRow = {
+  elementsCookedExprs: CookedMathExpr[];
+  width: number;
+  height: number;
+}[];
+
 type ParserArgs = {
   str: string;
   x?: number;
@@ -31,8 +44,11 @@ class Parser {
   atomPatternsList: PConfigs['atomPatterns'];
   allRegStrings: string;
   allAtomRegStrings: string;
-  rawMathExprList: MathExpr[] = [];
   currPos: { currX: number; currY: number };
+  _maxPosi: { x: number; y: number };
+  _maxNega: { x: number; y: number };
+  _maxWH: { w: number; h: number };
+
   cookedMathExprList: CookedMathExpr[] = [];
 
   constructor({
@@ -51,7 +67,50 @@ class Parser {
     this.currPos = { currX: x, currY: y };
     this.allRegStrings = this._makeAllregStrings(this.patternList);
     this.allAtomRegStrings = this._makeAllregStrings(this.atomPatternsList);
+    this._maxPosi = { x: 0, y: 0 };
+    this._maxNega = { x: 0, y: 0 };
+    this._maxWH = { w: 0, h: 0 };
   }
+  _updateMaxWH() {
+    const { currX, currY } = this.currPos;
+
+    if (currY > 0) {
+      if (currY > this._maxPosi.y) this._maxPosi.y = currY;
+    } else if (currY < 0) {
+      if (currY < this._maxNega.y) this._maxNega.y = currY;
+    }
+    if (currX > 0) {
+      if (currX > this._maxPosi.x) this._maxPosi.x = currX;
+    } else if (currX < 0) {
+      if (currX < this._maxNega.x) this._maxNega.x = currX;
+    }
+    this._maxWH.w = this._maxPosi.x - this._maxNega.x;
+    this._maxWH.h = this._maxPosi.y - this._maxNega.y;
+  }
+  _updateMaxWHFromParser(parser: Parser) {
+    const parserMaxPosi = parser._maxPosi;
+    const parserMaxNega = parser._maxNega;
+    if (parserMaxPosi.x > this._maxPosi.x) {
+      this._maxPosi.x = parserMaxPosi.x;
+    }
+    if (parserMaxPosi.y > this._maxPosi.y) {
+      this._maxPosi.y = parserMaxPosi.y;
+    }
+    if (parserMaxNega.x < this._maxNega.x) {
+      this._maxNega.x = parserMaxNega.x;
+    }
+    if (parserMaxNega.y < this._maxNega.y) {
+      this._maxNega.y = parserMaxNega.y;
+    }
+    this._maxWH.w = this._maxPosi.x - this._maxNega.x;
+    this._maxWH.h = this._maxPosi.y - this._maxNega.y;
+  }
+  get maxWH() {
+    const _maxWH = this._maxWH;
+    return { w: _maxWH.w, h: _maxWH.h + 10 }; // 10 is the avarage height of the charachter! it should be
+    //                                           accurate enought for now!
+  }
+
   _makeAllregStrings(
     patternList: PConfigs['allPatterns'] | PConfigs['atomPatterns']
   ) {
@@ -66,7 +125,7 @@ class Parser {
     }
     return allRegStrings;
   }
-  whitchPattern(
+  whichPattern(
     expr: string,
     patternList: PConfigs['allPatterns'] | PConfigs['atomPatterns']
   ) {
@@ -96,7 +155,7 @@ class Parser {
         // console.log('nstr', nstr);
         // console.log('------------------------');
       } else {
-        const pattern = this.whitchPattern(match[0], this.patternList);
+        const pattern = this.whichPattern(match[0], this.patternList);
         pattern.baseFont = this.baseFont;
         pattern.strToMathExpr(nstr, match.index);
         // nstr = nstr.slice(pattern.endingIndex, nstr.length);
@@ -117,21 +176,22 @@ class Parser {
     const regexAll = new RegExp(this.allAtomRegStrings, 'mg');
     return regexAll.test(str);
   }
+
   _handleAtoms(str: string) {
     const regexAll = new RegExp(this.allAtomRegStrings, 'mg');
     const match = regexAll.exec(str);
     if (!match || match.index !== 0) {
       throw new Error(`expr: ${str} is not latex`);
     }
-    const pattern = this.whitchPattern(match[0], this.atomPatternsList);
+    const pattern = this.whichPattern(match[0], this.atomPatternsList);
     pattern.strToMathExpr(str, match.index);
     const mathexprList = pattern.mathExpressions;
     for (const mathexpr of mathexprList) {
       const { expr, attr } = mathexpr;
-      const { dx, dy } = attr;
+      // const { dx, dy } = attr;
       let { currX, currY } = this.currPos;
-      currX += dx;
-      currY += dy;
+      // currX += dx;
+      // currY += dy;
       let className = attr.className;
       let font_size = this.fontSizes[this.baseFont];
       className += ' ' + this.baseFont;
@@ -148,99 +208,198 @@ class Parser {
 
       // console.log(coockedmathExpr.expr, this.baseFont);
       const exprWidth = getStringWidth(expr, font_size);
-      currX += exprWidth;
+      currX += exprWidth + 0.0;
+      // console.log(currX);
+
       // console.log('atom', expr);
       // console.log('width', exprWidth);
       // console.log('before widht', this.currPos.currX);
       this.currPos = { currX, currY };
       // console.log('after width', this.currPos.currX);
+      this._updateMaxWH();
+
+      // console.log('maxW', this._maxWH.w);
+      // console.log('maxH', this._maxWH.h);
+      // console.log(expr, currX);
       // console.log('-----------------');
     }
     str = this.consume(str, pattern.endingIndex);
     return str;
   }
 
-  _handleNonAtoms(pattern: SscriptPattern) {
-    const shouldCalList = this._shouldMeasureHeight(pattern);
-    let parallel = pattern.isParallel();
-    let paralleX = [];
-    let idx = 0;
-    for (const mathExpr of pattern.mathExpressions) {
-      const { currX, currY } = this.currPos;
-      // const parserFontFactor = this.fontFactor ===
-      const parser = parserFactory({
-        str: mathExpr.expr,
-        x: currX + mathExpr.attr.dx,
-        y: currY + mathExpr.attr.dy,
-        baseFont: mathExpr.attr.fontKey,
-        pfontSizes: this.fontSizes,
-      });
+  _handleNonAtoms(pattern: SscriptPattern | MatrixPattern) {
+    if (pattern instanceof MatrixPattern) this._handleMatrix(pattern);
+    else {
+      const shouldCalList = this._shouldMeasureHeight(pattern);
+      let parallel = pattern.isParallel();
+      let paralleX = [];
+      let idx = 0;
+      for (const mathExpr of pattern.mathExpressions) {
+        const { currX, currY } = this.currPos;
+        // const parserFontFactor = this.fontFactor ===
+        const parser = parserFactory({
+          str: mathExpr.expr,
+          x: currX + mathExpr.attr.dx,
+          y: currY + mathExpr.attr.dy,
+          baseFont: mathExpr.attr.fontKey,
+          parentParser: this,
+        });
 
-      if (shouldCalList[idx]) {
-        const heightChange = this._maxHeightChange(
-          parser.cookedMathExprList,
-          currY,
-          shouldCalList[idx] === 'DOWN' ? 'DOWN' : 'UP'
-        );
+        if (shouldCalList[idx]) {
+          const heightChange = this._maxHeightChange(
+            parser.cookedMathExprList,
+            currY,
+            shouldCalList[idx] === 'DOWN' ? 'DOWN' : 'UP'
+          );
 
-        // console.log(parser.cookedMathExprList, heightChange, mathExpr.attr.dy);
+          // console.log(parser.cookedMathExprList, heightChange, mathExpr.attr.dy);
 
+          const createGroup: CookedMathExpr = {
+            expr: 'CREATE_GROUP',
+            attr: {
+              transform: `translate(0 ${heightChange})`,
+              className: 'vshift',
+            },
+          };
+          this.cookedMathExprList.push(createGroup);
+        }
+        this._pushCookedMathExprList(parser.cookedMathExprList, mathExpr);
+        if (shouldCalList[idx]) {
+          const closeGroup: CookedMathExpr = {
+            expr: 'CLOSE_GROUP',
+            attr: {},
+          };
+          this.cookedMathExprList.push(closeGroup);
+        }
+        if ((idx === 0 && parallel) || !parallel) {
+          // if idx=0 it's base we have to update the currPos
+          this.currPos.currX = parser.currPos.currX;
+        } else {
+          paralleX.push(parser.currPos.currX);
+        }
+        // this.currPos.currX = parser.currPos.currX;
+        idx++;
+      }
+      if (parallel) {
+        // compare 2nd and last mathexprs and update currPos accordingly
+        this.currPos.currX =
+          paralleX[0] >= paralleX[1] ? paralleX[0] : paralleX[1];
+      }
+    }
+  }
+  _handleMatrix(pattern: MatrixPattern) {
+    const matrixElements = pattern.matrixElements;
+    let currX = 0;
+    let currY = 0;
+
+    let rawMatrixRow: RawMatrixRow = [];
+    let rawMatrixElements: RawMatrixRow[] = [];
+
+    let rowMaxH: number[] = [];
+    let columnMaxW: number[] = [];
+
+    let i = 0; //row index
+    let j = 0; // column index
+
+    for (const row of matrixElements) {
+      for (const elm of row) {
+        const expr = elm.expr;
+        // console.log('expr', expr);
+
+        const parser = parserFactory({
+          str: expr,
+          x: currX,
+          y: currY,
+          baseFont: this.baseFont,
+        });
+
+        const elMaxWH = parser.maxWH;
+        const elMaxW = elMaxWH.w;
+        const elMaxH = elMaxWH.h;
+        // console.log('ij:   ', i, j, expr);
+        // console.log('maxW', elMaxW);
+        // console.log('maxH', elMaxH);
+
+        rawMatrixRow.push({
+          elementsCookedExprs: parser.cookedMathExprList,
+          width: elMaxW,
+          height: elMaxH,
+        });
+
+        if (j === 0) {
+          rowMaxH.push(elMaxH);
+        } else {
+          if (rowMaxH[i] < elMaxH) rowMaxH[i] = elMaxH;
+        }
+
+        if (i === 0) {
+          columnMaxW.push(elMaxW);
+        } else {
+          if (columnMaxW[j] < elMaxW) columnMaxW[j] = elMaxW;
+        }
+
+        j++;
+      }
+      j = 0;
+      i++;
+      rawMatrixElements.push(rawMatrixRow);
+
+      // console.log('rawMatrixRow', rawMatrixRow);
+      rawMatrixRow = [];
+      // console.log('-------------------------------');
+    }
+    // console.log(rowMaxH, columnMaxW);
+    // console.log(rawMatrixElements);
+    const FONT_FACTOR = this.fontSizes[this.baseFont];
+    const TOP = 5 * FONT_FACTOR;
+    const BOTTOM = 5 * FONT_FACTOR;
+    const LEFT = 8 * FONT_FACTOR;
+    const RIGHT = 8 * FONT_FACTOR;
+    i = 0;
+    j = 0;
+    const currX0 = this.currPos.currX;
+    const currY0 = this.currPos.currY;
+    for (const rawMatrixRow of rawMatrixElements) {
+      for (const elem of rawMatrixRow) {
+        const elementsCookedExprs = elem.elementsCookedExprs;
+        const { currX, currY } = this.currPos;
+        const posX = (columnMaxW[j] - elem.width) / 2 + currX;
+        // const posY = (rowMaxH[i] - elem.height) / 2 + currY;
+        const posY = currY;
+        // open a group and shift the group by (posX,poxY)
         const createGroup: CookedMathExpr = {
           expr: 'CREATE_GROUP',
           attr: {
-            transform: `translate(0 ${heightChange})`,
-            className: 'vshift',
+            transform: `translate(${posX} ${posY})`,
+            className: `mat_${i}_${j}`,
           },
         };
         this.cookedMathExprList.push(createGroup);
-      }
-      this._pushCookedMathExprList(parser.cookedMathExprList, mathExpr);
-      if (shouldCalList[idx]) {
+        this._pushCookedMatrixElements({ elementsCookedExprs });
         const closeGroup: CookedMathExpr = {
           expr: 'CLOSE_GROUP',
           attr: {},
         };
         this.cookedMathExprList.push(closeGroup);
+        this.currPos.currX += LEFT + columnMaxW[j] + RIGHT;
+        j++;
       }
-      if ((idx === 0 && parallel) || !parallel) {
-        // if idx=0 it's base we have to update the currPos
-        this.currPos.currX = parser.currPos.currX;
-      } else {
-        paralleX.push(parser.currPos.currX);
-      }
-      // this.currPos.currX = parser.currPos.currX;
-      idx++;
-    }
-    if (parallel) {
-      // compare 2nd and last mathexprs and update currPos accordingly
-      this.currPos.currX =
-        paralleX[0] >= paralleX[1] ? paralleX[0] : paralleX[1];
+      this.currPos.currX = currX0;
+      this.currPos.currY = currY0 + (rowMaxH[i] + TOP + BOTTOM);
+
+      j = 0;
+      i++;
     }
   }
 
-  _handleParallel(pattern: SscriptPattern) {
-    let idx = 0;
-    let paralleX = [];
-    for (const mathExpr of pattern.mathExpressions) {
-      const { currX, currY } = this.currPos;
-      const parser = parserFactory({
-        str: mathExpr.expr,
-        x: currX + mathExpr.attr.dx,
-        y: currY + mathExpr.attr.dy,
-        baseFont: mathExpr.attr.fontKey,
-        pfontSizes: this.fontSizes,
-      });
-      this._pushCookedMathExprList(parser.cookedMathExprList, mathExpr);
-      if (idx === 0) {
-        // if idx=0 it's base we have to update the currPos
-        this.currPos.currX = parser.currPos.currX;
-      } else {
-        paralleX.push(parser.currPos.currX);
-      }
-      idx++;
+  _pushCookedMatrixElements({
+    elementsCookedExprs,
+  }: {
+    elementsCookedExprs: CookedMathExpr[];
+  }) {
+    for (const mathExpr of elementsCookedExprs) {
+      this.cookedMathExprList.push(mathExpr);
     }
-    // compare 2nd and last mathexprs and update currPos accordingly
-    this.currPos.currX = paralleX[0] >= paralleX[1] ? paralleX[0] : paralleX[1];
   }
 
   // get the cookedMathExprList results from parser and the parent pattern of it
@@ -287,37 +446,7 @@ class Parser {
     return shouldCal;
     // return [false, false, false];
   }
-  _measureHeight(matExprList: CookedMathExpr[]) {
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 
-    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    group.classList.add('math_css');
-    // svg.style.visibility = 'hidden';
-    for (const mathExpr of matExprList) {
-      const text = this._createSVGText(mathExpr.expr, mathExpr.attr);
-      group.appendChild(text);
-    }
-    group.setAttribute('transform', 'translate(0 100)');
-    svg.appendChild(group);
-    document.body.appendChild(svg);
-    const height = group.getBBox().height;
-    // svg.remove();
-
-    return height;
-  }
-  _createSVGText(textContent: string, attrs: CookedMathExpr['attr']) {
-    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    text.textContent = textContent;
-    for (const key in attrs) {
-      if (key === 'className') {
-        const clNames = attrs[key].split(' ');
-        for (const clname of clNames) {
-          text.classList.add(clname);
-        }
-      } else text.setAttribute(key, attrs[key]);
-    }
-    return text;
-  }
   _maxHeightChange(
     parserRes: CookedMathExpr[],
     currY: number,
@@ -346,6 +475,14 @@ class Parser {
       // TODO: pron to bug!
       return maxVerChange - baseline / 2;
     }
+  }
+  _isGrowingUP(str: string) {
+    const regexp = new RegExp('\\^', 'mg');
+    return regexp.test(str);
+  }
+  _isGrowingDOWN(str: string) {
+    const regexp = new RegExp('_', 'mg');
+    return regexp.test(str);
   }
   _isExprInStr(expr: string, str: string, range?: boolean) {
     const regexp = RegExp(expr, 'mg');
@@ -412,14 +549,7 @@ class Parser {
 
     return updatedClassNames;
   }
-  _isGrowingUP(str: string) {
-    const regexp = new RegExp('\\^', 'mg');
-    return regexp.test(str);
-  }
-  _isGrowingDOWN(str: string) {
-    const regexp = new RegExp('_', 'mg');
-    return regexp.test(str);
-  }
+
   parse() {
     let str = this.str;
     this.strToMathExpressions(str);
@@ -433,40 +563,51 @@ export default function parserFactory({
   y,
   baseFont,
   pfontSizes,
+  parentParser,
 }: Omit<ParserArgs, 'configs'> & {
-  pfontSizes: FontSizesType;
+  pfontSizes?: FontSizesType;
+  parentParser?: Parser;
 }) {
-  // const configs = pfontSizes
-  //   ? PConfigs.getInstance(pfontSizes)
-  //   : PConfigs.getInstance();
-  const configs = new PConfigs(pfontSizes);
+  const configs = pfontSizes
+    ? PConfigs.getInstance(pfontSizes)
+    : PConfigs.getInstance();
+  // const configs = new PConfigs(pfontSizes);
   const parser = new Parser({ str, x, y, baseFont, configs });
   parser.parse();
+  // if parentParse update maxWH of the parent!
+  if (parentParser) {
+    parentParser._updateMaxWHFromParser(parser);
+  }
   return parser;
 }
 
 class PConfigs {
   fontSizes: FontSizesType;
   cssName: any;
-  allPatterns;
-  atomPatterns;
-  // public static instance: PConfigs;
+  allPatterns: [SscriptPattern, MatrixPattern];
+  atomPatterns: AtomPattern[];
+  public static instance: PConfigs;
 
-  constructor(fontSizes: FontSizesType) {
+  private constructor(fontSizes: FontSizesType) {
     this.fontSizes = fontSizes;
-    this.allPatterns = [patternFactory('sScript', fontSizes)];
+    this.allPatterns = [
+      // @ts-ignore
+      patternFactory('sScript', fontSizes),
+      // @ts-ignore
+      patternFactory('matrix'),
+    ];
     this.atomPatterns = [
-      patternFactory('math_letter', fontSizes),
-      patternFactory('math_number', fontSizes),
+      // @ts-ignore
+      patternFactory('atom', fontSizes),
     ];
   }
-  // public static getInstance(fontSizes?: FontSizesType) {
-  //   if (!PConfigs.instance) {
-  //     PConfigs.instance = new PConfigs(fontSizes);
-  //   }
-  //   return PConfigs.instance;
-  // }
-  // public getFontSizes() {
-  //   return this.fontSizes;
-  // }
+  public static getInstance(fontSizes?: FontSizesType) {
+    if (!PConfigs.instance) {
+      PConfigs.instance = new PConfigs(fontSizes);
+    }
+    return PConfigs.instance;
+  }
+  public getFontSizes() {
+    return this.fontSizes;
+  }
 }
