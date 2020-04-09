@@ -62,14 +62,14 @@ type ParserArgs = {
   str: string;
   x?: number;
   y?: number;
-  baseFont?: keyof FontSizesType;
+  fontKey?: keyof FontSizesType;
   configs: PConfigs;
 };
 class Parser {
   outputs: ParserOutputList = [];
   str: string;
   currStr: string;
-  baseFont: keyof FontSizesType;
+  fontKey: keyof FontSizesType;
   configs: PConfigs;
   fontSizes: FontSizesType;
   patternList: PConfigs['allPatterns'];
@@ -86,14 +86,14 @@ class Parser {
     x = 0,
     y = 0,
     configs,
-    baseFont = 'normalsize',
+    fontKey = 'normalsize',
   }: ParserArgs) {
     this.str = str;
     this.configs = configs;
     this.fontSizes = this.configs.fontSizes;
     this.patternList = this.configs.allPatterns;
     this.atomPatternsList = this.configs.atomPatterns;
-    this.baseFont = baseFont;
+    this.fontKey = fontKey;
     this.currPos = { currX: x, currY: y };
     this.allRegStrings = this._makeAllregStrings(this.patternList);
     this.allAtomRegStrings = this._makeAllregStrings(this.atomPatternsList);
@@ -137,7 +137,7 @@ class Parser {
   }
   get maxWH() {
     const _maxWH = this._maxWH;
-    return { w: _maxWH.w, h: _maxWH.h + 10 * this.fontSizes[this.baseFont] };
+    return { w: _maxWH.w, h: _maxWH.h + 10 * this.fontSizes[this.fontKey] };
     // 10 is the avarage height of the charachter! it should be
     // accurate enought for now!
   }
@@ -191,7 +191,7 @@ class Parser {
         // console.log('------------------------');
       } else {
         const pattern = this.whichPattern(match[0], this.patternList);
-        pattern.baseFont = this.baseFont;
+        pattern.fontKey = this.fontKey;
         pattern.strToMathExpr(nstr, match.index);
         // nstr = nstr.slice(pattern.endingIndex, nstr.length);
         nstr = this.consume(nstr, pattern.endingIndex);
@@ -218,7 +218,10 @@ class Parser {
     if (!match || match.index !== 0) {
       throw new Error(`expr: ${str} is not latex`);
     }
-    const pattern = this.whichPattern(match[0], this.atomPatternsList);
+    // const pattern = this.whichPattern(match[0], this.atomPatternsList);
+    //TODO: decide btw. having multiple atom patterns vs just one containing all!
+
+    const pattern = this.configs.atomPatterns[0] as AtomPattern;
     pattern.strToMathExpr(str, match.index);
     const mathexprList = pattern.mathExpressions;
     for (const mathexpr of mathexprList) {
@@ -228,8 +231,16 @@ class Parser {
       // currX += dx;
       // currY += dy;
       let className = attr.className;
-      let font_size = this.fontSizes[this.baseFont];
-      className += ' ' + this.baseFont;
+
+      let font_size: number;
+
+      if (pattern.isNumber(expr)) {
+        className += ' ' + this.fontKey;
+        font_size = 0.9 * this.fontSizes[this.fontKey];
+      } else {
+        className += ' ' + this.fontKey;
+        font_size = this.fontSizes[this.fontKey];
+      }
 
       const output: ParserOutput<Ptext> = {
         component: 'text',
@@ -238,7 +249,7 @@ class Parser {
       };
       this.outputs.push(output);
 
-      // console.log(coockedmathExpr.expr, this.baseFont);
+      // console.log(coockedmathExpr.expr, this.fontKey);
       const exprWidth = getStringWidth(expr, font_size);
       currX += exprWidth + 0.0;
       // console.log(currX);
@@ -273,7 +284,7 @@ class Parser {
           str: mathExpr.expr,
           x: currX + mathExpr.attr.dx,
           y: currY + mathExpr.attr.dy,
-          baseFont: mathExpr.attr.fontKey,
+          fontKey: mathExpr.attr.fontKey,
           parentParser: this,
         });
         this._pushParserOutputs({ parser: parser, patternExpr: mathExpr });
@@ -346,7 +357,7 @@ class Parser {
           str: expr,
           x: 0,
           y: 0,
-          baseFont: this.baseFont,
+          fontKey: this.fontKey,
         });
 
         const elMaxWH = parser.maxWH;
@@ -387,7 +398,7 @@ class Parser {
     // center the matrix vertically based on the current baseline
     const currX0 = this.currPos.currX;
     const currY0 = this.currPos.currY;
-    const FONT_FACTOR = this.fontSizes[this.baseFont];
+    const FONT_FACTOR = this.fontSizes[this.fontKey];
     const V_MARGIN = 8 * FONT_FACTOR;
     const H_MARGIN = 12 * FONT_FACTOR;
     const D_MARGIN = 5 * FONT_FACTOR; // Delimiter's horizontal margin
@@ -409,7 +420,7 @@ class Parser {
     }
     mWidth = (V_MARGIN + mWidth) * nColumn;
 
-    const matrixX = currX0 + 2 * D_MARGIN;
+    const matrixX = currX0 + D_MARGIN;
     const matrixY = currY0 - mHeight / 2 - ADJ_CONST / 2;
     let matrixGroup: PGroup = {
       component: 'group',
@@ -493,8 +504,9 @@ class Parser {
     this.outputs.push(matrixGroup);
 
     // update positions:
-    this.currPos.currX += currX + 3 * D_MARGIN;
+    this.currPos.currX += currX + D_MARGIN;
     this.currPos.currY = currY0;
+    // this.outputs.push(this._checkline(this.currPos.currX, this.currPos.currY));
   }
   _checkline(x: number, y: number) {
     const check_line: Pdelimiter = {
@@ -638,7 +650,7 @@ export default function parserFactory({
   str,
   x,
   y,
-  baseFont,
+  fontKey,
   pfontSizes,
   parentParser,
 }: Omit<ParserArgs, 'configs'> & {
@@ -649,7 +661,7 @@ export default function parserFactory({
     ? PConfigs.getInstance(pfontSizes)
     : PConfigs.getInstance();
   // const configs = new PConfigs(pfontSizes);
-  const parser = new Parser({ str, x, y, baseFont, configs });
+  const parser = new Parser({ str, x, y, fontKey, configs });
   parser.parse();
   // if parentParse update maxWH of the parent!
   if (parentParser) {
@@ -669,7 +681,7 @@ class PConfigs {
     this.fontSizes = fontSizes;
     this.allPatterns = [
       // @ts-ignore
-      patternFactory('sScript', fontSizes),
+      patternFactory('supsub', fontSizes),
       // @ts-ignore
       patternFactory('matrix'),
     ];

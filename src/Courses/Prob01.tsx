@@ -38,23 +38,14 @@ const Prob01: React.FC<{}> = () => {
         <Latex
           x={40}
           y={130}
-          // math={'abc_{df} kf'}
-          // math={`kdf\\begin{bmatrix}
-          //           a_1 & a_2 & a_3\\\\
-          //           b_1 & b_2 & b_3 \\\\
-          //           1 & 2 & 3 \\\\
-          //           4 & 5 &6 \\\\
-          //           8 & 9 & 10
-          //           \\end{bmatrix}
-          //           `}
-          math={`kdf\\begin{bmatrix}
-                    a_1 & a_2 & a_3\\\\
-                    b_1 & b_2 & b_3 \\\\
-                    \\end{bmatrix} jhh
-                    `}
-        />
+          math={String.raw`
+          \begin{bmatrix}
+          a_0 & a_2 & a_3\\
+          a_{1n} & b_2 & b_3 \\
+          1n & 2 & 3 
+          \end{bmatrix}`}></Latex>
       </svg>
-      {/* math={'ab_{c_{k}^{t}}^{d}'} */}
+
       {/* <MathJaxNode
         formula={tex}
         inline

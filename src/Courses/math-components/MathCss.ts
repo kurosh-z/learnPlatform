@@ -56,58 +56,74 @@ export default class MathCss {
       '.math_letter': {
         fontFamily: 'KaTeX_Math',
         fontStyle: 'italic',
+        '&.tiny': {
+          fontSize: `${this.TINY}rem`,
+        },
+        '&.scriptsize': {
+          fontSize: `${this.SCRIPTSIZE}rem`,
+        },
+        '&.footnotesize': {
+          fontSize: `${this.FOOTNOTESIZE}rem`,
+        },
+        '&.small': {
+          fontSize: `${this.SMALL}rem`,
+        },
+        '&.normalsize': {
+          fontSize: `${this.NORMALSIZE}rem`,
+        },
+        '&.large': {
+          fontSize: `${this.LARGE}rem`,
+        },
+        '&.Large': {
+          fontSize: `${this.LLARGE}rem`,
+        },
+        '&.huge': {
+          fontSize: `${this.HUGE}rem`,
+        },
+        '&.Huge': {
+          fontSize: `${this.HHUGE}rem`,
+        },
         // fontWeight: 'bold'
       },
       '.math_number': {
         fontFamily: 'KaTex_Main',
+        '&.tiny': {
+          fontSize: `${0.9 * this.TINY}rem`,
+        },
+        '&.scriptsize': {
+          fontSize: `${0.9 * this.SCRIPTSIZE}rem`,
+        },
+        '&.footnotesize': {
+          fontSize: `${0.9 * this.FOOTNOTESIZE}rem`,
+        },
+        '&.small': {
+          fontSize: `${0.9 * this.SMALL}rem`,
+        },
+        '&.normalsize': {
+          fontSize: `${0.9 * this.NORMALSIZE}rem`,
+        },
+        '&.large': {
+          fontSize: `${0.9 * this.LARGE}rem`,
+        },
+        '&.Large': {
+          fontSize: `${0.9 * this.LLARGE}rem`,
+        },
+        '&.huge': {
+          fontSize: `${0.9 * this.HUGE}rem`,
+        },
+        '&.Huge': {
+          fontSize: `${0.9 * this.HHUGE}rem`,
+        },
       },
       '.math_op': {
         fontFamily: 'KaTeX_Size2',
         // fontSize: '1em'
       },
-      '.math_power_exp': {
-        // fontSize: '.7em'
-      },
-      '.math_int_from , .math_int_to': {
-        // fontSize: '.85em'
-      },
-      '.sub': {
-        // fontSize: '0.7em'
-      },
-      '.tiny': {
-        fontSize: `${this.TINY}rem`,
-      },
-      '.scriptsize': {
-        fontSize: `${this.SCRIPTSIZE}rem`,
-      },
-      '.footnotesize': {
-        fontSize: `${this.FOOTNOTESIZE}rem`,
-      },
-      '.small': {
-        fontSize: `${this.SMALL}rem`,
-      },
-      '.normalsize': {
-        fontSize: `${this.NORMALSIZE}rem`,
-      },
-      '.large': {
-        fontSize: `${this.LARGE}rem`,
-      },
-      '.Large': {
-        fontSize: `${this.LLARGE}rem`,
-      },
-      '.huge': {
-        fontSize: `${this.HUGE}rem`,
-      },
-      '.Huge': {
-        fontSize: `${this.HHUGE}rem`,
-      },
-      '.size3': {
-        fontFamily: 'KaTeX_Size3',
-      },
+
       path: {
         fill: 'none',
         stroke: 'black',
-        strokeWidth: 1.3,
+        strokeWidth: 1.7,
         strokeLinejoin: 'round',
       },
       '.check_line': {

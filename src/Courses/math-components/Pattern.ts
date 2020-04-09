@@ -1,6 +1,7 @@
 import { FontSizesType } from './MathCss';
-const SUP_DY = -10;
-const SUB_DY = 6;
+const LETTERS = 'a-zA-Z@αβγΓδΔϵζηθΘιIκλΛμνοπΠρσΣτυϕΦχΞξψΨω';
+const SUP_DY = -8;
+const SUB_DY = 5;
 
 export type IndexType = 'subscript' | 'supscript';
 export type MathExpr = {
@@ -15,21 +16,19 @@ export type MathExpr = {
 
 export type PatternArgs = {
   name: string;
-  regString: string;
   fontSizes?: FontSizesType;
 };
 export abstract class Pattern {
-  regString: PatternArgs['regString'];
+  abstract regString: string;
   name: PatternArgs['name'];
   fontSizes?: PatternArgs['fontSizes'];
-  private _baseFont?: keyof FontSizesType;
+  private _fontKey?: keyof FontSizesType;
   mathExpressions?: MathExpr[];
 
   // abstract props: Object;
   abstract stratingIndex: number;
   abstract endingIndex: number;
-  constructor({ regString, name, fontSizes }: PatternArgs) {
-    this.regString = regString;
+  constructor({ name, fontSizes }: PatternArgs) {
     this.name = name;
     if (fontSizes) {
       this.fontSizes = fontSizes;
@@ -39,11 +38,11 @@ export abstract class Pattern {
   abstract strToMathExpr(str: string, startIdx?: number): void;
   abstract isParallel(): boolean;
 
-  set baseFont(baseFont: keyof FontSizesType) {
-    this._baseFont = baseFont;
+  set fontKey(fontKey: keyof FontSizesType) {
+    this._fontKey = fontKey;
   }
-  get baseFont() {
-    return this._baseFont;
+  get fontKey() {
+    return this._fontKey;
   }
   findmatchingPairs({
     openregStr,
@@ -101,15 +100,16 @@ export abstract class Pattern {
   }
 }
 
-export class SscriptPattern extends Pattern {
+export class ScriptPattern extends Pattern {
   // props: Object;
+  regString = `([${LETTERS}0-9])((_{)|(\\^{))|([${LETTERS}0-9])((_)|(\\^))([${LETTERS}0-9])`;
   mathExpressions: Required<MathExpr>[];
   stratingIndex: number;
   endingIndex: number;
   isType2: boolean = false;
 
-  constructor({ regString, name, fontSizes }: PatternArgs) {
-    super({ regString, name, fontSizes });
+  constructor({ name, fontSizes }: PatternArgs) {
+    super({ name, fontSizes });
   }
   /* 
   test the given str for pattern
@@ -122,71 +122,89 @@ export class SscriptPattern extends Pattern {
     return this.isType2;
   }
 
-  strToMathExpr(str: string, startIdx: number = 0) {
-    const base = str.slice(startIdx, startIdx + 1);
-    // [a-z]_[a-z0-9]
-
+  _findFirstIndex(str: string) {
     const regexp = new RegExp(this.regString, 'mg');
     const match = regexp.exec(str);
-    if (!match)
-      throw new Error(`math expresion dosen't containt ${this.name} pattern!`);
 
     // check if its []_[] or []_{[]} ?
-    let type1: IndexType, type2: IndexType;
-    let endIdx1: number, endIdx2: number;
-    let indexStr1: string, indexStr2: string;
-    if (str[startIdx + 2] !== '{') {
-      type1 = str[startIdx + 1] === '_' ? (type1 = 'subscript') : 'supscript';
-      indexStr1 = str[startIdx + 2];
-      endIdx1 = startIdx + 3;
+    var type: IndexType;
+    var endIdx: number;
+    var indexStr: string;
+
+    if (str[2] !== '{') {
+      indexStr = str[2];
+      endIdx = 3;
     } else {
-      endIdx1 = this.findmatchingPairs({
+      endIdx = this.findmatchingPairs({
         openregStr: '{',
         closeregStr: '}',
         str: str,
-        startIdx: startIdx,
+        startIdx: 0,
       });
-
-      if (str[startIdx + 1] === '_') type1 = 'subscript';
-      else if (str[startIdx + 1] === '^') type1 = 'supscript';
-      else
-        throw new Error(
-          `Error at index ${startIdx} expected _{ or ^{ got ${str.slice(
-            startIdx + 1,
-            startIdx + 3
-          )}`
-        );
-
-      if (str[endIdx1] === '_') {
-        if (type1 === 'subscript')
-          throw new Error(`double subscript at index ${endIdx1}`);
-        else type2 = 'subscript';
-      } else if (str[endIdx1] === '^') {
-        if (type1 === 'supscript')
-          throw new Error(`double supscript at index ${endIdx1}`);
-        else type2 = 'supscript';
-      } else type2 = null;
-
-      indexStr1 = str.slice(startIdx + 3, endIdx1 - 1);
-      let startIdx2: number;
-      let endIdx2: number;
-      if (type2) {
-        startIdx2 = endIdx1 + 2; //  _{...}^{...}
-        endIdx2 = this.findmatchingPairs({
-          openregStr: '{',
-          closeregStr: '}',
-          str: str,
-          startIdx: endIdx1,
-        });
-        indexStr2 = str.slice(startIdx2, endIdx2 - 1);
-      }
+      indexStr = str.slice(3, endIdx - 1);
     }
+    type = str[1] === '_' ? (type = 'subscript') : 'supscript';
+
+    return { indexStr, type, endIdx };
+  }
+  _findSecondIndex(str: string, startIdx: number) {
+    const regexp = /(_{)|(\^{)|(_)|(\^)/gm;
+    regexp.lastIndex = startIdx;
+    const match = regexp.exec(str);
+
+    // check if its []_[] or []_{[]} ?
+    var type: IndexType;
+    var endIdx: number;
+    var indexStr: string;
+
+    if (match[0] === '_' || match[0] === '^') {
+      indexStr = str[startIdx + 2];
+      endIdx = startIdx + 3;
+    } else if (match[0] === '_{' || match[0] === '^{') {
+      endIdx = this.findmatchingPairs({
+        openregStr: '{',
+        closeregStr: '}',
+        str: str,
+        startIdx: match.index + 1,
+      });
+      indexStr = str.slice(startIdx + 3, endIdx - 1);
+    }
+    if (match[0] === '_' || match[0] === '_{') type = 'subscript';
+    else if (match[0] === '^' || match[0] === '^{') type = 'supscript';
+
+    return { indexStr, type, endIdx };
+  }
+  strToMathExpr(str: string, startIdx: number = 0) {
+    const base = str.slice(startIdx, startIdx + 1);
+
+    let type1: IndexType, type2: IndexType;
+    let endIdx1: number, endIdx2: number;
+    let indexStr1: string, indexStr2: string;
+    let nextIndex = this._findFirstIndex(str);
+    type1 = nextIndex.type;
+    endIdx1 = nextIndex.endIdx;
+    indexStr1 = nextIndex.indexStr;
+
+    //check if thre is another index
+    if (str[endIdx1] === '_' || str[endIdx1] === '^') {
+      let nextIndex = this._findSecondIndex(str, endIdx1 - 1);
+      type2 = nextIndex.type;
+      endIdx2 = nextIndex.endIdx;
+      indexStr2 = nextIndex.indexStr;
+    }
+
+    if (
+      (type1 === 'subscript' && type2 === 'subscript') ||
+      (type1 === 'supscript' && type2 === 'supscript')
+    )
+      throw new Error(`double subscript at index ${endIdx1}`);
 
     if (type2) this.isType2 = true;
     else this.isType2 = false;
+
     let indexFontKey: keyof FontSizesType;
-    if (this.baseFont === 'scriptsize') indexFontKey = 'tiny';
-    else if (this.baseFont === 'tiny') indexFontKey = 'tiny';
+    if (this.fontKey === 'scriptsize') indexFontKey = 'tiny';
+    else if (this.fontKey === 'tiny') indexFontKey = 'tiny';
     else indexFontKey = 'scriptsize';
     let sub_dy = this.fontSizes[indexFontKey] * SUB_DY;
     let sup_dy = this.fontSizes[indexFontKey] * SUP_DY;
@@ -199,7 +217,7 @@ export class SscriptPattern extends Pattern {
               dx: 0,
               dy: 0,
               className: 'base',
-              fontKey: this.baseFont,
+              fontKey: this.fontKey,
             },
           },
 
@@ -229,7 +247,7 @@ export class SscriptPattern extends Pattern {
               dx: 0,
               dy: 0,
               className: 'base',
-              fontKey: this.baseFont,
+              fontKey: this.fontKey,
             },
           },
           {
@@ -252,17 +270,11 @@ export class AtomPattern extends Pattern {
   mathExpressions: MathExpr[];
   stratingIndex: number;
   endingIndex: number;
-  numRegStr: string;
-  lettRegStr: string;
-  constructor({
-    regString,
-    name,
-    numRegStr,
-    lettRegStr,
-  }: PatternArgs & { numRegStr: string; lettRegStr: string }) {
-    super({ regString, name });
-    this.numRegStr = numRegStr;
-    this.lettRegStr = lettRegStr;
+  numRegStr = '([-+]?)(\\d+.?\\d*)';
+  lettRegStr = `[${LETTERS}]+`;
+  regString = `[${LETTERS}]+|([-+]?)(\\d+.?\\d*)`;
+  constructor({ name }: PatternArgs) {
+    super({ name });
   }
   isParallel() {
     return false;
@@ -341,23 +353,25 @@ export class AtomPattern extends Pattern {
 
 const DELIMITERS = {
   matrix: { open: '', close: '' },
-  pmatrix: { open: '(', close: ')' },
-  bmatrix: { open: '[', close: ']' },
+  pmatrix: { open: 'parentheses_open', close: 'parentheses_close' },
+  bmatrix: { open: 'bracket_open', close: 'bracket_close' },
   Bmatrix: { open: '{', close: '}' },
-  vmatrix: { open: '|', close: '|' },
+  vmatrix: { open: 'vertical_bar', close: 'vertical_bar' },
 };
 type Delimiters = typeof DELIMITERS;
 type MatrixType = keyof Delimiters;
 type Delimiter = { open: string; close: string };
 export class MatrixPattern extends Pattern {
+  regString =
+    '(\\\\begin)(({matrix})|({pmatrix})|({bmatrix})|({Bmatrix})|({vmatrix})|({Vmatrix}))';
   matrixElements: MathExpr[][];
   stratingIndex: number;
   endingIndex: number;
   mtype: MatrixType;
   delimiter: Delimiter;
 
-  constructor({ name, regString }: PatternArgs) {
-    super({ name, regString });
+  constructor({ name }: PatternArgs) {
+    super({ name });
   }
   isParallel() {
     return false;
@@ -390,6 +404,7 @@ export class MatrixPattern extends Pattern {
     this.stratingIndex = startingIndex;
     // thre is one char more in closeregStr (because of scaping backslash);
     this.endingIndex = endingIndex - 1;
+    // console.log(startIdx, endingIndex);
     let matrixElements: MathExpr[][] = [];
 
     let matrixStr = str.slice(startingIndex, endingIndex - closeregStr.length);
@@ -459,35 +474,24 @@ export class MatrixPattern extends Pattern {
   }
 }
 
-const allLetters = 'a-zA-Z@αβγΓδΔϵζηθΘιIκλΛμνοπΠρσΣτυϕΦχΞξψΨω';
-const sscript_string = `([${allLetters}0-9])((_{)|(\\^{))|([${allLetters}0-9])((_)|(\\^))([${allLetters}0-9])`;
-const atom_letter = `[${allLetters}]+`;
-const atom_number = '([-+]?)(\\d+.?\\d*)';
-const matrix_sring =
-  '(\\\\begin)(({matrix})|({pmatrix})|({bmatrix})|({Bmatrix})|({vmatrix})|({Vmatrix}))';
 export function patternFactory(
-  patternName: 'atom' | 'sScript' | 'matrix',
+  patternName: 'atom' | 'supsub' | 'matrix',
   fontSizes?: FontSizesType
 ) {
   if (patternName === 'atom')
     return new AtomPattern({
       name: patternName,
-      regString: atom_letter + '|' + atom_number,
-      lettRegStr: atom_letter,
-      numRegStr: atom_number,
       fontSizes: fontSizes,
     });
 
-  if (patternName === 'sScript')
-    return new SscriptPattern({
-      name: 'Sscirpt',
-      regString: sscript_string,
+  if (patternName === 'supsub')
+    return new ScriptPattern({
+      name: 'supsub',
       fontSizes: fontSizes,
     });
   if (patternName === 'matrix')
     return new MatrixPattern({
       name: 'matrix',
-      regString: matrix_sring,
     });
   else throw new Error(`pattern name ${patternName} is not recognized!`);
 }

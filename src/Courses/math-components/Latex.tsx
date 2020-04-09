@@ -9,8 +9,8 @@ import parserFactory, {
   Pdelimiter,
 } from './Parser';
 
-type SymbsProps = {
-  math: string;
+type LatexProps = {
+  math?: string;
   x: number;
   y: number;
   style?: React.CSSProperties;
@@ -18,19 +18,14 @@ type SymbsProps = {
   className?: string;
 };
 
-type LatexGroup = {
-  open: boolean;
-  gElements: CookedMathExpr[];
-  gattrs: CookedMathExpr['attr'];
-  numOpenChildGroups: number;
-};
-const Latex: React.FC<SymbsProps> = ({ math, x, y, children }) => {
-  if (children) throw new Error('symbs element accepts no children!');
-
+const Latex: React.FC<LatexProps> = ({ math, x, y, children }) => {
+  if (!children && !math)
+    throw new Error('one of the math propertie or child should be given!');
+  const mathFormula = children ? children.toString() : math;
   const { parserOutput, mathcss } = useMemo(() => {
     const mathcss = new MathCss(1.2);
     const parser = parserFactory({
-      str: math,
+      str: mathFormula,
       pfontSizes: mathcss.fontSizes,
     });
 
@@ -96,5 +91,5 @@ const DelimiterComp: React.FC<DelimiterProps> = ({ dattr, dtype }) => {
 const DELIMITER_PATH = {
   bracket_open: (height: number) => `M8 -${height / 2} h-8 v${height} h8 `,
   bracket_close: (height: number) => `M-8 -${height / 2} h8 v${height} h-8 `,
-  check_line: (height: number) => `M0 0 h130 `,
+  check_line: (height: number) => `M-10 0 h20 m-10 -10 v20 `,
 };
