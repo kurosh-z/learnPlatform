@@ -21,10 +21,41 @@ export type CookedMathExpr = {
   attr: { x?: number; y?: number; className?: string; transform?: string };
 };
 
+export type Ptext = {
+  component: 'text';
+  attr: { x: number; y: number; className: string };
+  mathExpr: string;
+};
+export type Pdelimiter = {
+  component: 'delimiter';
+  dtype:
+    | 'bracket_open'
+    | 'bracket_close'
+    | 'parentheses_open'
+    | 'parentheses_close'
+    | 'vertical_bar'
+    | 'check_line';
+  dattr: { transform: string; height?: number; width?: number };
+};
+export type PGroup = {
+  component: 'group';
+  gattr: { className?: string; transform?: string };
+  gelements: ParserOutputList;
+};
+type ParserOutput<T extends Ptext | Pdelimiter | PGroup> = {
+  [key in keyof T]: T[key];
+};
+
+export type ParserOutputList = (
+  | ParserOutput<Ptext>
+  | ParserOutput<Pdelimiter>
+  | ParserOutput<PGroup>
+)[];
+
 type RawMatrixRow = {
-  elementsCookedExprs: CookedMathExpr[];
-  width: number;
-  height: number;
+  elements: ParserOutputList;
+  elwidth: number;
+  elheight: number;
 }[];
 
 type ParserArgs = {
@@ -35,6 +66,7 @@ type ParserArgs = {
   configs: PConfigs;
 };
 class Parser {
+  outputs: ParserOutputList = [];
   str: string;
   currStr: string;
   baseFont: keyof FontSizesType;
@@ -48,8 +80,6 @@ class Parser {
   _maxPosi: { x: number; y: number };
   _maxNega: { x: number; y: number };
   _maxWH: { w: number; h: number };
-
-  cookedMathExprList: CookedMathExpr[] = [];
 
   constructor({
     str,
@@ -107,8 +137,9 @@ class Parser {
   }
   get maxWH() {
     const _maxWH = this._maxWH;
-    return { w: _maxWH.w, h: _maxWH.h + 10 }; // 10 is the avarage height of the charachter! it should be
-    //                                           accurate enought for now!
+    return { w: _maxWH.w, h: _maxWH.h + 10 * this.fontSizes[this.baseFont] };
+    // 10 is the avarage height of the charachter! it should be
+    // accurate enought for now!
   }
 
   _makeAllregStrings(
@@ -140,9 +171,13 @@ class Parser {
     const reducedExpr = expr.slice(startingIndex, expr.length);
     return reducedExpr;
   }
+  _consumeWhiteSpaces(str: string): string {
+    const newStr = str.replace(/\s+|\t+/gm, '');
+    return newStr;
+  }
 
   strToMathExpressions(str: string) {
-    let nstr = str;
+    let nstr = this._consumeWhiteSpaces(str);
     let idx = 0;
 
     while (nstr.length !== 0) {
@@ -195,16 +230,13 @@ class Parser {
       let className = attr.className;
       let font_size = this.fontSizes[this.baseFont];
       className += ' ' + this.baseFont;
-      const coockedmathExpr: CookedMathExpr = {
-        expr: expr,
-        attr: {
-          x: currX,
-          y: currY,
-          className: className,
-        },
-      };
 
-      this.cookedMathExprList.push(coockedmathExpr);
+      const output: ParserOutput<Ptext> = {
+        component: 'text',
+        mathExpr: expr,
+        attr: { x: currX, y: currY, className: className },
+      };
+      this.outputs.push(output);
 
       // console.log(coockedmathExpr.expr, this.baseFont);
       const exprWidth = getStringWidth(expr, font_size);
@@ -230,7 +262,7 @@ class Parser {
   _handleNonAtoms(pattern: SscriptPattern | MatrixPattern) {
     if (pattern instanceof MatrixPattern) this._handleMatrix(pattern);
     else {
-      const shouldCalList = this._shouldMeasureHeight(pattern);
+      // const shouldCalList = this._shouldMeasureHeight(pattern);
       let parallel = pattern.isParallel();
       let paralleX = [];
       let idx = 0;
@@ -244,33 +276,8 @@ class Parser {
           baseFont: mathExpr.attr.fontKey,
           parentParser: this,
         });
+        this._pushParserOutputs({ parser: parser, patternExpr: mathExpr });
 
-        if (shouldCalList[idx]) {
-          const heightChange = this._maxHeightChange(
-            parser.cookedMathExprList,
-            currY,
-            shouldCalList[idx] === 'DOWN' ? 'DOWN' : 'UP'
-          );
-
-          // console.log(parser.cookedMathExprList, heightChange, mathExpr.attr.dy);
-
-          const createGroup: CookedMathExpr = {
-            expr: 'CREATE_GROUP',
-            attr: {
-              transform: `translate(0 ${heightChange})`,
-              className: 'vshift',
-            },
-          };
-          this.cookedMathExprList.push(createGroup);
-        }
-        this._pushCookedMathExprList(parser.cookedMathExprList, mathExpr);
-        if (shouldCalList[idx]) {
-          const closeGroup: CookedMathExpr = {
-            expr: 'CLOSE_GROUP',
-            attr: {},
-          };
-          this.cookedMathExprList.push(closeGroup);
-        }
         if ((idx === 0 && parallel) || !parallel) {
           // if idx=0 it's base we have to update the currPos
           this.currPos.currX = parser.currPos.currX;
@@ -287,11 +294,40 @@ class Parser {
       }
     }
   }
+
+  _pushParserOutputs({
+    parser,
+    patternExpr,
+  }: {
+    parser: Parser;
+    patternExpr: MathExpr;
+  }) {
+    for (const output of parser.outputs) {
+      if (output.component === 'text') {
+        const parserClNames = output.attr.className;
+        const patternClName = patternExpr.attr.className;
+        // console.log(cookedMathExpr.expr);
+        // console.log('mathexpr :', mathexprClNames);
+        // console.log('pattern  :', patternClName);
+
+        const newClNames = this._updateClassName(parserClNames, patternClName);
+        // console.log('newclName:', newClNames);
+        // console.log('-------------------');
+        output.attr.className = newClNames;
+      }
+
+      this.outputs.push(output);
+    }
+  }
+
   _handleMatrix(pattern: MatrixPattern) {
     const matrixElements = pattern.matrixElements;
-    let currX = 0;
-    let currY = 0;
+    const mDim = [matrixElements.length, matrixElements[0].length];
+    const mtype = pattern.mtype;
+    const delimiter = pattern.delimiter;
 
+    // first we find the width and height of each element
+    // and also the maximum height and width
     let rawMatrixRow: RawMatrixRow = [];
     let rawMatrixElements: RawMatrixRow[] = [];
 
@@ -308,8 +344,8 @@ class Parser {
 
         const parser = parserFactory({
           str: expr,
-          x: currX,
-          y: currY,
+          x: 0,
+          y: 0,
           baseFont: this.baseFont,
         });
 
@@ -321,9 +357,9 @@ class Parser {
         // console.log('maxH', elMaxH);
 
         rawMatrixRow.push({
-          elementsCookedExprs: parser.cookedMathExprList,
-          width: elMaxW,
-          height: elMaxH,
+          elements: parser.outputs,
+          elwidth: elMaxW,
+          elheight: elMaxH,
         });
 
         if (j === 0) {
@@ -348,89 +384,129 @@ class Parser {
       rawMatrixRow = [];
       // console.log('-------------------------------');
     }
-    // console.log(rowMaxH, columnMaxW);
-    // console.log(rawMatrixElements);
-    const FONT_FACTOR = this.fontSizes[this.baseFont];
-    const TOP = 5 * FONT_FACTOR;
-    const BOTTOM = 5 * FONT_FACTOR;
-    const LEFT = 8 * FONT_FACTOR;
-    const RIGHT = 8 * FONT_FACTOR;
-    i = 0;
-    j = 0;
+    // center the matrix vertically based on the current baseline
     const currX0 = this.currPos.currX;
     const currY0 = this.currPos.currY;
+    const FONT_FACTOR = this.fontSizes[this.baseFont];
+    const V_MARGIN = 8 * FONT_FACTOR;
+    const H_MARGIN = 12 * FONT_FACTOR;
+    const D_MARGIN = 5 * FONT_FACTOR; // Delimiter's horizontal margin
+    const DV_MARGIN = 3 * FONT_FACTOR;
+    const ADJ_CONST = 5 * FONT_FACTOR; // vertical adjustment for changing the basline to the center of the text!
+    // calculate the height and width of the matrix:
+    let mHeight = 0;
+    for (const hieght of rowMaxH) {
+      mHeight += hieght;
+    }
+    // TODO: should we meausure row heights more accuretly?
+    mHeight += V_MARGIN * (mDim[0] - 3);
+    const delim_hieght = mHeight + 2 * V_MARGIN + 2 * DV_MARGIN;
+    let mWidth = 0;
+    let nColumn = 0;
+    for (const width of columnMaxW) {
+      if (width > mWidth) mWidth = width;
+      nColumn++;
+    }
+    mWidth = (V_MARGIN + mWidth) * nColumn;
+
+    const matrixX = currX0 + 2 * D_MARGIN;
+    const matrixY = currY0 - mHeight / 2 - ADJ_CONST / 2;
+    let matrixGroup: PGroup = {
+      component: 'group',
+      gelements: [],
+      gattr: {
+        transform: `translate(${matrixX} ${matrixY})`,
+        className: `${mtype}`,
+      },
+    };
+
+    // push opening delimeter
+    const delimiter_open: Pdelimiter = {
+      component: 'delimiter',
+      dtype: 'bracket_open',
+      dattr: {
+        transform: `translate(${0} ${-matrixY - ADJ_CONST})`,
+        height: delim_hieght,
+      },
+    };
+
+    matrixGroup.gelements.push(delimiter_open);
+    // this.outputs.push(delimiter_open);
+
+    //reset i,j
+    i = 0;
+    j = 0;
+    var currX = D_MARGIN;
+    var currY = 0;
     for (const rawMatrixRow of rawMatrixElements) {
-      for (const elem of rawMatrixRow) {
-        const elementsCookedExprs = elem.elementsCookedExprs;
-        const { currX, currY } = this.currPos;
-        const posX = (columnMaxW[j] - elem.width) / 2 + currX;
-        // const posY = (rowMaxH[i] - elem.height) / 2 + currY;
+      for (const matrixEl of rawMatrixRow) {
+        const elements = matrixEl.elements;
+        const posX = (columnMaxW[j] - matrixEl.elwidth) / 2 + currX;
         const posY = currY;
         // open a group and shift the group by (posX,poxY)
-        const createGroup: CookedMathExpr = {
-          expr: 'CREATE_GROUP',
-          attr: {
+        const elementGroup: PGroup = {
+          component: 'group',
+          gelements: elements,
+          gattr: {
             transform: `translate(${posX} ${posY})`,
             className: `mat_${i}_${j}`,
           },
         };
-        this.cookedMathExprList.push(createGroup);
-        this._pushCookedMatrixElements({ elementsCookedExprs });
-        const closeGroup: CookedMathExpr = {
-          expr: 'CLOSE_GROUP',
-          attr: {},
-        };
-        this.cookedMathExprList.push(closeGroup);
-        this.currPos.currX += LEFT + columnMaxW[j] + RIGHT;
+        // push elements to matrix group
+        matrixGroup.gelements.push(elementGroup);
+        // matrixGroup.gelements.push(this._checkline(posX, posY));
+        // update the postion for the next element
+        const dx =
+          j !== mDim[1] - 1
+            ? columnMaxW[j] + H_MARGIN
+            : columnMaxW[j] + D_MARGIN;
+
+        currX += dx;
+        // matrixGroup.gelements.push(this._checkline(this.currPos.currX, posY));
+
         j++;
       }
-      this.currPos.currX = currX0;
-      this.currPos.currY = currY0 + (rowMaxH[i] + TOP + BOTTOM);
+
+      // matrixGroup.gelements.push(this._checkline(currX, posY));
+      if (i !== mDim[0] - 1) {
+        currX = D_MARGIN;
+      }
+      currY += rowMaxH[i] + V_MARGIN;
+      // matrixGroup.gelements.push(this._checkline(0, currY));
 
       j = 0;
       i++;
     }
+
+    // push closing delimeter
+    const delimiter_close: Pdelimiter = {
+      component: 'delimiter',
+      dtype: 'bracket_close',
+      dattr: {
+        transform: `translate(${currX} ${-matrixY - ADJ_CONST})`,
+        height: delim_hieght,
+      },
+    };
+    matrixGroup.gelements.push(delimiter_close);
+    this.currPos.currX += D_MARGIN;
+    // push matrix group
+    this.outputs.push(matrixGroup);
+
+    // update positions:
+    this.currPos.currX += currX + 3 * D_MARGIN;
+    this.currPos.currY = currY0;
+  }
+  _checkline(x: number, y: number) {
+    const check_line: Pdelimiter = {
+      component: 'delimiter',
+      dtype: 'check_line',
+      dattr: { transform: `translate(${x} ${y})` },
+    };
+
+    return check_line;
   }
 
-  _pushCookedMatrixElements({
-    elementsCookedExprs,
-  }: {
-    elementsCookedExprs: CookedMathExpr[];
-  }) {
-    for (const mathExpr of elementsCookedExprs) {
-      this.cookedMathExprList.push(mathExpr);
-    }
-  }
-
-  // get the cookedMathExprList results from parser and the parent pattern of it
-  // merge pattern's classNames with parser's classNames and push the cookedMathExpr
-  _pushCookedMathExprList(
-    cookedMathExprList: CookedMathExpr[],
-    patternExpr: MathExpr
-  ) {
-    for (const cookedMathExpr of cookedMathExprList) {
-      if (
-        cookedMathExpr.expr !== 'CLOSE_GROUP' &&
-        cookedMathExpr.expr !== 'CREATE_GROUP'
-      ) {
-        const mathexprClNames = cookedMathExpr.attr.className;
-        const patternClName = patternExpr.attr.className;
-        // console.log(cookedMathExpr.expr);
-        // console.log('mathexpr :', mathexprClNames);
-        // console.log('pattern  :', patternClName);
-
-        const newClNames = this._updateClassName(
-          mathexprClNames,
-          patternClName
-        );
-        // console.log('newclName:', newClNames);
-        // console.log('-------------------');
-        cookedMathExpr.attr.className = newClNames;
-      }
-
-      this.cookedMathExprList.push(cookedMathExpr);
-    }
-  }
+  //TODO: should be changed
   _shouldMeasureHeight(pattern: SscriptPattern) {
     let shouldCal: [false | 'UP' | 'DOWN'] = [false];
     for (let idx = 1; idx < pattern.mathExpressions.length; idx++) {
@@ -446,7 +522,7 @@ class Parser {
     return shouldCal;
     // return [false, false, false];
   }
-
+  //TODO: should be changed
   _maxHeightChange(
     parserRes: CookedMathExpr[],
     currY: number,
@@ -476,6 +552,7 @@ class Parser {
       return maxVerChange - baseline / 2;
     }
   }
+  //TODO: don't need this anymore?
   _isGrowingUP(str: string) {
     const regexp = new RegExp('\\^', 'mg');
     return regexp.test(str);
@@ -553,7 +630,7 @@ class Parser {
   parse() {
     let str = this.str;
     this.strToMathExpressions(str);
-    return this.cookedMathExprList;
+    return this.outputs;
   }
 }
 

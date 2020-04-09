@@ -15,7 +15,11 @@ const Prob01: React.FC<{}> = () => {
   const prob01 = emoCss({
     backgroundColor: theme.palette.white.dark,
     width: '100vw',
-    height: '30vh',
+    height: '100vh',
+    svg: {
+      position: 'absolute',
+      top: 49,
+    },
   });
   const mathsvg = emoCss({
     background: 'transparent',
@@ -29,16 +33,25 @@ const Prob01: React.FC<{}> = () => {
         className='katexfont'
         xmlns='http://www.w3.org/2000/svg'
         xmlnsXlink='http://www.w3.org/1999/xlink'
-        width={'100%'}
-        height={'100%'}>
+        width={'800'}
+        height={'900'}>
         <Latex
-          x={100}
-          y={60}
-          // math={'fff_{ff_{ffc_{f^b}}}'}
-          math={`\\begin{matrix}
-                    1 & a & 2\\\\
-                    a_2 & c & k
-                    \\end{matrix}`}
+          x={40}
+          y={130}
+          // math={'abc_{df} kf'}
+          // math={`kdf\\begin{bmatrix}
+          //           a_1 & a_2 & a_3\\\\
+          //           b_1 & b_2 & b_3 \\\\
+          //           1 & 2 & 3 \\\\
+          //           4 & 5 &6 \\\\
+          //           8 & 9 & 10
+          //           \\end{bmatrix}
+          //           `}
+          math={`kdf\\begin{bmatrix}
+                    a_1 & a_2 & a_3\\\\
+                    b_1 & b_2 & b_3 \\\\
+                    \\end{bmatrix} jhh
+                    `}
         />
       </svg>
       {/* math={'ab_{c_{k}^{t}}^{d}'} */}

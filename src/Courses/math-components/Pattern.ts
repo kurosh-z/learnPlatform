@@ -339,10 +339,22 @@ export class AtomPattern extends Pattern {
   }
 }
 
+const DELIMITERS = {
+  matrix: { open: '', close: '' },
+  pmatrix: { open: '(', close: ')' },
+  bmatrix: { open: '[', close: ']' },
+  Bmatrix: { open: '{', close: '}' },
+  vmatrix: { open: '|', close: '|' },
+};
+type Delimiters = typeof DELIMITERS;
+type MatrixType = keyof Delimiters;
+type Delimiter = { open: string; close: string };
 export class MatrixPattern extends Pattern {
   matrixElements: MathExpr[][];
   stratingIndex: number;
   endingIndex: number;
+  mtype: MatrixType;
+  delimiter: Delimiter;
 
   constructor({ name, regString }: PatternArgs) {
     super({ name, regString });
@@ -354,11 +366,18 @@ export class MatrixPattern extends Pattern {
     const regexp = new RegExp(this.regString, 'mg');
     return regexp.test(str);
   }
+
   strToMathExpr(str: string, startIdx: number = 0) {
     // const closingStrs =  '(\\\\end)(({matrix})|({pmatrix})|({Bmatrix})|({vmatrix})|({Vmatrix}))';
     const regexp = new RegExp(this.regString, 'gm');
     const match = regexp.exec(str);
     const matrixType = match[2]; // second group should be one of  {matrix} or {pmatrix} ...
+    const mtype = matrixType.slice(1, matrixType.length - 1);
+    if (!DELIMITERS[mtype])
+      throw new Error(`matrix type: ${mtype} is not recognized!`);
+    this.mtype = mtype as MatrixType;
+    this.delimiter = DELIMITERS[mtype];
+
     const openregStr = '\\' + match[0]; // \begin{matrix}
     const closeregStr = '\\\\end{' + matrixType.slice(1, matrixType.length);
     let endingIndex = this.findmatchingPairs({
@@ -367,14 +386,15 @@ export class MatrixPattern extends Pattern {
       str,
     });
 
-    const startingIndex = regexp.lastIndex + 1;
-
+    const startingIndex = regexp.lastIndex;
     this.stratingIndex = startingIndex;
-    this.endingIndex = endingIndex;
+    // thre is one char more in closeregStr (because of scaping backslash);
+    this.endingIndex = endingIndex - 1;
     let matrixElements: MathExpr[][] = [];
 
     let matrixStr = str.slice(startingIndex, endingIndex - closeregStr.length);
-    matrixStr = this.consumeWhiteSpaces(matrixStr);
+    // matrixStr = this.consumeWhiteSpaces(matrixStr);
+
     let idx = 0;
     while (matrixStr.length !== 0) {
       const { rowExprs, reducedStr } = this.findNextRow(matrixStr);
@@ -385,13 +405,13 @@ export class MatrixPattern extends Pattern {
     }
     this.matrixElements = matrixElements;
   }
-  consumeWhiteSpaces(str: string): string {
-    const newStr = str.replace(/\s+|\t+/gm, '');
-    return newStr;
-  }
+  // consumeWhiteSpaces(str: string): string {
+  //   const newStr = str.replace(/\s+|\t+/gm, '');
+  //   return newStr;
+  // }
 
   findNextRow(str: string): { rowExprs: MathExpr[]; reducedStr: string } {
-    const regex = new RegExp('&', 'gm');
+    const regex = /&/gm;
     const endRowRegex = /\\/gm;
     const endRow = endRowRegex.exec(str);
     const endRowIdx = endRow ? endRow.index : str.length; // the last row can be without \\
@@ -444,7 +464,7 @@ const sscript_string = `([${allLetters}0-9])((_{)|(\\^{))|([${allLetters}0-9])((
 const atom_letter = `[${allLetters}]+`;
 const atom_number = '([-+]?)(\\d+.?\\d*)';
 const matrix_sring =
-  '(\\\\begin)(({matrix})|({pmatrix})|({Bmatrix})|({vmatrix})|({Vmatrix}))';
+  '(\\\\begin)(({matrix})|({pmatrix})|({bmatrix})|({Bmatrix})|({vmatrix})|({Vmatrix}))';
 export function patternFactory(
   patternName: 'atom' | 'sScript' | 'matrix',
   fontSizes?: FontSizesType

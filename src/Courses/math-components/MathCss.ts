@@ -101,6 +101,19 @@ export default class MathCss {
       '.Huge': {
         fontSize: `${this.HHUGE}rem`,
       },
+      '.size3': {
+        fontFamily: 'KaTeX_Size3',
+      },
+      path: {
+        fill: 'none',
+        stroke: 'black',
+        strokeWidth: 1.3,
+        strokeLinejoin: 'round',
+      },
+      '.check_line': {
+        stroke: 'red',
+        strokeWidth: 1.5,
+      },
     });
   }
   get sizeFactor() {
