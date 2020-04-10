@@ -20,9 +20,10 @@ const Calibrator: React.FC<{}> = () => {
       console.log(width);
     }
   }, []);
+  const n = 1000;
   const str = useMemo(() => {
     var str = '';
-    [...Array(2).fill(0)].forEach((el) => {
+    [...Array(n).fill(0)].forEach((el) => {
       str += 'f';
     });
     return str;
@@ -33,6 +34,7 @@ const Calibrator: React.FC<{}> = () => {
       xmlns='http://www.w3.org/2000/svg'
       xmlnsXlink='http://www.w3.org/1999/xlink'
       css={textCss}
+      style={{ position: 'absolute', top: '150px' }}
       width={1000}
       height={1000}>
       <text x={100} y={100} className='math_letter normalsize' ref={textRef}>
@@ -42,7 +44,7 @@ const Calibrator: React.FC<{}> = () => {
         a
       </text> */}
       <text x={100} y={140}>
-        charWidth: {charWidth.toPrecision(15)}
+        charWidth: {(charWidth / n).toPrecision(18)}
       </text>
     </svg>
   );

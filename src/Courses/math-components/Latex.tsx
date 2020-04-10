@@ -1,13 +1,6 @@
 import React, { useMemo } from 'react';
-
-import MathCss from './MathCss';
-import parserFactory, {
-  CookedMathExpr,
-  ParserOutputList,
-  PGroup,
-  Ptext,
-  Pdelimiter,
-} from './Parser';
+import { MathCss, parserFactory } from './parser';
+import { ParserOutputList, ParserOutput } from './parser/Parser';
 
 type LatexProps = {
   math?: string;
@@ -23,7 +16,7 @@ const Latex: React.FC<LatexProps> = ({ math, x, y, children }) => {
     throw new Error('one of the math propertie or child should be given!');
   const mathFormula = children ? children.toString() : math;
   const { parserOutput, mathcss } = useMemo(() => {
-    const mathcss = new MathCss(1.2);
+    const mathcss = new MathCss(1.1);
     const parser = parserFactory({
       str: mathFormula,
       pfontSizes: mathcss.fontSizes,
@@ -44,7 +37,7 @@ export default Latex;
 
 type ParserCompProps = {
   parserOut: ParserOutputList;
-  pgroupAttr?: PGroup['gattr'];
+  pgroupAttr?: ParserOutput<'PGroup'>['gattr'];
 };
 const ParserComp: React.FC<ParserCompProps> = ({ parserOut, pgroupAttr }) => {
   return (
@@ -52,19 +45,19 @@ const ParserComp: React.FC<ParserCompProps> = ({ parserOut, pgroupAttr }) => {
       {parserOut.map((output, idx: number) => {
         const { component } = output;
         if (component === 'text') {
-          const { attr, mathExpr } = output as Ptext;
+          const { attr, mathExpr } = output as ParserOutput<'Ptext'>;
           return (
             <text key={idx} {...attr}>
-              {mathExpr}{' '}
+              {mathExpr}
             </text>
           );
         } else if (component === 'group') {
-          const { gattr, gelements } = output as PGroup;
+          const { gattr, gelements } = output as ParserOutput<'PGroup'>;
           return (
             <ParserComp key={idx} pgroupAttr={gattr} parserOut={gelements} />
           );
         } else if (component === 'delimiter') {
-          const { dattr, dtype } = output as Pdelimiter;
+          const { dattr, dtype } = output as ParserOutput<'Pdelimiter'>;
           return <DelimiterComp key={idx} dattr={dattr} dtype={dtype} />;
         }
       })}
@@ -73,8 +66,8 @@ const ParserComp: React.FC<ParserCompProps> = ({ parserOut, pgroupAttr }) => {
 };
 
 type DelimiterProps = {
-  dattr: Pdelimiter['dattr'];
-  dtype: Pdelimiter['dtype'];
+  dattr: ParserOutput<'Pdelimiter'>['dattr'];
+  dtype: ParserOutput<'Pdelimiter'>['dtype'];
 };
 
 const DelimiterComp: React.FC<DelimiterProps> = ({ dattr, dtype }) => {

@@ -1,32 +1,25 @@
-import {
-  patternFactory,
-  MathExpr,
-  SscriptPattern,
-  AtomPattern,
-  MatrixPattern,
-} from './Pattern';
-import mathsymbols from './mathsymbols';
+import AtomPattern from './AtomPattern';
 import { FontSizesType } from './mathCss';
+import mathsymbols from './mathsymbols';
+import MatrixPattern from './MatrixPattern';
+import { MathExpr } from './Pattern';
+import ScriptPattern from './ScriptPattern';
+import PConfigs from './Pconfigs';
+import parserFactory from './parserFactory';
 // import './test.css';
-const getStringWidth = mathsymbols.getStringWidth;
-// TODO: right now I use just one instance of pattern object for everything pay attention to the confilicts it my couse!
-//       any default values there should be considred as potential risk!
 
-// export type CompProps = {
-//   component: React.RefForwardingComponent<any, any>;
-//   props: Object;
-// };
+const getStringWidth = mathsymbols.getStringWidth;
 export type CookedMathExpr = {
   expr: string;
   attr: { x?: number; y?: number; className?: string; transform?: string };
 };
 
-export type Ptext = {
+type Ptext = {
   component: 'text';
   attr: { x: number; y: number; className: string };
   mathExpr: string;
 };
-export type Pdelimiter = {
+type Pdelimiter = {
   component: 'delimiter';
   dtype:
     | 'bracket_open'
@@ -37,39 +30,44 @@ export type Pdelimiter = {
     | 'check_line';
   dattr: { transform: string; height?: number; width?: number };
 };
-export type PGroup = {
+type PGroup = {
   component: 'group';
   gattr: { className?: string; transform?: string };
   gelements: ParserOutputList;
 };
-type ParserOutput<T extends Ptext | Pdelimiter | PGroup> = {
-  [key in keyof T]: T[key];
+type ParserOut = {
+  Ptext: Ptext;
+  Pdelimiter: Pdelimiter;
+  PGroup: PGroup;
 };
 
+export type ParserOutput<T extends keyof ParserOut> = ParserOut[T];
+
 export type ParserOutputList = (
-  | ParserOutput<Ptext>
-  | ParserOutput<Pdelimiter>
-  | ParserOutput<PGroup>
+  | ParserOutput<'Ptext'>
+  | ParserOutput<'Pdelimiter'>
+  | ParserOutput<'PGroup'>
 )[];
 
-type RawMatrixRow = {
+export type RawMatrixRow = {
   elements: ParserOutputList;
   elwidth: number;
   elheight: number;
 }[];
 
-type ParserArgs = {
+export type ParserArgs = {
   str: string;
   x?: number;
   y?: number;
   fontKey?: keyof FontSizesType;
   configs: PConfigs;
 };
-class Parser {
+export default class Parser {
   outputs: ParserOutputList = [];
   str: string;
   currStr: string;
   fontKey: keyof FontSizesType;
+  classNames: string = '';
   configs: PConfigs;
   fontSizes: FontSizesType;
   patternList: PConfigs['allPatterns'];
@@ -166,11 +164,11 @@ class Parser {
     }
     if (!matchingPattern) throw new Error(`expr containts no latex code!`);
   }
-  consume(expr: string, startingIndex: number) {
-    // console.log('consume', startingIndex, expr);
-    const reducedExpr = expr.slice(startingIndex, expr.length);
-    return reducedExpr;
-  }
+  // consume(expr: string, startingIndex: number) {
+  //   // console.log('consume', startingIndex, expr);
+  //   const reducedExpr = expr.slice(startingIndex, expr.length);
+  //   return reducedExpr;
+  // }
   _consumeWhiteSpaces(str: string): string {
     const newStr = str.replace(/\s+|\t+/gm, '');
     return newStr;
@@ -183,6 +181,7 @@ class Parser {
     while (nstr.length !== 0) {
       const regexAll = new RegExp(this.allRegStrings, 'mg');
       const match = regexAll.exec(nstr);
+      console.log(match);
       if (!match || match.index !== 0) {
         nstr = this._handleAtoms(nstr);
         // console.log('parserStr', this.str);
@@ -193,14 +192,14 @@ class Parser {
         const pattern = this.whichPattern(match[0], this.patternList);
         pattern.fontKey = this.fontKey;
         pattern.strToMathExpr(nstr, match.index);
-        // nstr = nstr.slice(pattern.endingIndex, nstr.length);
-        nstr = this.consume(nstr, pattern.endingIndex);
+        // nstr = this.consume(nstr, pattern.endingIndex);
+        nstr = pattern.stringsRest;
+
         // console.log('parserStr', this.str);
         // console.log('str: ', str);
         // console.log('nstr', nstr);
         // console.log('------------------------');
-        this._handleNonAtoms(pattern);
-        // TODO: correct the types _handleNoneAtoms should recieve!
+        this._handleNonAtoms(pattern as MatrixPattern | ScriptPattern);
       }
       idx++;
 
@@ -212,37 +211,58 @@ class Parser {
     return regexAll.test(str);
   }
 
+  _handleAtoms2(str: string) {
+    const font_size = this.fontSizes[this.fontKey];
+    const { currX, currY } = this.currPos;
+    const output: ParserOutput<'Ptext'> = {
+      component: 'text',
+      mathExpr: str,
+      attr: { x: currX, y: currY, className: this.classNames },
+    };
+    this.outputs.push(output);
+
+    // console.log(coockedmathExpr.expr, this.fontKey);
+    const exprWidth = getStringWidth(str, font_size);
+    // TODO: take care of after character dxx, dyy in handleNonAtoms!
+
+    this._updateMaxWH();
+
+    return;
+  }
+
   _handleAtoms(str: string) {
     const regexAll = new RegExp(this.allAtomRegStrings, 'mg');
     const match = regexAll.exec(str);
     if (!match || match.index !== 0) {
       throw new Error(`expr: ${str} is not latex`);
     }
-    // const pattern = this.whichPattern(match[0], this.atomPatternsList);
-    //TODO: decide btw. having multiple atom patterns vs just one containing all!
-
-    const pattern = this.configs.atomPatterns[0] as AtomPattern;
+    const pattern = this.whichPattern(match[0], this.atomPatternsList);
+    // pattern's fontkey is defaulted to normalsize and is just required by SepecialCharPattern
+    // but we're set them anyway!
+    pattern.fontKey = this.fontKey;
     pattern.strToMathExpr(str, match.index);
     const mathexprList = pattern.mathExpressions;
     for (const mathexpr of mathexprList) {
       const { expr, attr } = mathexpr;
-      // const { dx, dy } = attr;
+      const { dx, dy, dxx, dyy } = attr;
       let { currX, currY } = this.currPos;
-      // currX += dx;
-      // currY += dy;
+
+      if (dx) {
+        currX += dx;
+      }
+      if (dy) {
+        currY += dy;
+      }
       let className = attr.className;
+      className += ' ' + this.fontKey;
 
-      let font_size: number;
+      let font_size = this.fontSizes[this.fontKey];
 
-      if (pattern.isNumber(expr)) {
-        className += ' ' + this.fontKey;
-        font_size = 0.9 * this.fontSizes[this.fontKey];
-      } else {
-        className += ' ' + this.fontKey;
-        font_size = this.fontSizes[this.fontKey];
+      if (pattern instanceof AtomPattern && pattern.isNumber(expr)) {
+        font_size = 0.9 * font_size;
       }
 
-      const output: ParserOutput<Ptext> = {
+      const output: ParserOutput<'Ptext'> = {
         component: 'text',
         mathExpr: expr,
         attr: { x: currX, y: currY, className: className },
@@ -250,14 +270,20 @@ class Parser {
       this.outputs.push(output);
 
       // console.log(coockedmathExpr.expr, this.fontKey);
-      const exprWidth = getStringWidth(expr, font_size);
-      currX += exprWidth + 0.0;
-      // console.log(currX);
 
-      // console.log('atom', expr);
-      // console.log('width', exprWidth);
-      // console.log('before widht', this.currPos.currX);
+      const exprWidth = getStringWidth(expr, font_size);
+
+      // after charachter positionings
+      currX += exprWidth;
+      if (dxx) {
+        currX += dxx;
+      }
+      if (dyy) {
+        currX += dyy;
+      }
+
       this.currPos = { currX, currY };
+
       // console.log('after width', this.currPos.currX);
       this._updateMaxWH();
 
@@ -266,11 +292,12 @@ class Parser {
       // console.log(expr, currX);
       // console.log('-----------------');
     }
-    str = this.consume(str, pattern.endingIndex);
+    // str = this.consume(str, pattern.endingIndex);
+    str = pattern.stringsRest;
     return str;
   }
 
-  _handleNonAtoms(pattern: SscriptPattern | MatrixPattern) {
+  _handleNonAtoms(pattern: ScriptPattern | MatrixPattern) {
     if (pattern instanceof MatrixPattern) this._handleMatrix(pattern);
     else {
       // const shouldCalList = this._shouldMeasureHeight(pattern);
@@ -335,7 +362,6 @@ class Parser {
     const matrixElements = pattern.matrixElements;
     const mDim = [matrixElements.length, matrixElements[0].length];
     const mtype = pattern.mtype;
-    const delimiter = pattern.delimiter;
 
     // first we find the width and height of each element
     // and also the maximum height and width
@@ -519,7 +545,7 @@ class Parser {
   }
 
   //TODO: should be changed
-  _shouldMeasureHeight(pattern: SscriptPattern) {
+  _shouldMeasureHeight(pattern: ScriptPattern) {
     let shouldCal: [false | 'UP' | 'DOWN'] = [false];
     for (let idx = 1; idx < pattern.mathExpressions.length; idx++) {
       const indexExpr = pattern.mathExpressions[idx];
@@ -584,6 +610,7 @@ class Parser {
     }
     return regexp.test(str);
   }
+
   _createReplacer(replaceStr: string) {
     return function () {
       return [replaceStr].join(' ');
@@ -643,60 +670,5 @@ class Parser {
     let str = this.str;
     this.strToMathExpressions(str);
     return this.outputs;
-  }
-}
-
-export default function parserFactory({
-  str,
-  x,
-  y,
-  fontKey,
-  pfontSizes,
-  parentParser,
-}: Omit<ParserArgs, 'configs'> & {
-  pfontSizes?: FontSizesType;
-  parentParser?: Parser;
-}) {
-  const configs = pfontSizes
-    ? PConfigs.getInstance(pfontSizes)
-    : PConfigs.getInstance();
-  // const configs = new PConfigs(pfontSizes);
-  const parser = new Parser({ str, x, y, fontKey, configs });
-  parser.parse();
-  // if parentParse update maxWH of the parent!
-  if (parentParser) {
-    parentParser._updateMaxWHFromParser(parser);
-  }
-  return parser;
-}
-
-class PConfigs {
-  fontSizes: FontSizesType;
-  cssName: any;
-  allPatterns: [SscriptPattern, MatrixPattern];
-  atomPatterns: AtomPattern[];
-  public static instance: PConfigs;
-
-  private constructor(fontSizes: FontSizesType) {
-    this.fontSizes = fontSizes;
-    this.allPatterns = [
-      // @ts-ignore
-      patternFactory('supsub', fontSizes),
-      // @ts-ignore
-      patternFactory('matrix'),
-    ];
-    this.atomPatterns = [
-      // @ts-ignore
-      patternFactory('atom', fontSizes),
-    ];
-  }
-  public static getInstance(fontSizes?: FontSizesType) {
-    if (!PConfigs.instance) {
-      PConfigs.instance = new PConfigs(fontSizes);
-    }
-    return PConfigs.instance;
-  }
-  public getFontSizes() {
-    return this.fontSizes;
   }
 }

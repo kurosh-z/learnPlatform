@@ -119,6 +119,9 @@ export default class MathCss {
         fontFamily: 'KaTeX_Size2',
         // fontSize: '1em'
       },
+      '.normal': {
+        fontStyle: 'normal',
+      },
 
       path: {
         fill: 'none',

@@ -14,8 +14,9 @@ const Prob01: React.FC<{}> = () => {
 
   const prob01 = emoCss({
     backgroundColor: theme.palette.white.dark,
-    width: '100vw',
+    width: '600vw',
     height: '100vh',
+    overflow: 'visible',
     svg: {
       position: 'absolute',
       top: 49,
@@ -33,18 +34,21 @@ const Prob01: React.FC<{}> = () => {
         className='katexfont'
         xmlns='http://www.w3.org/2000/svg'
         xmlnsXlink='http://www.w3.org/1999/xlink'
-        width={'800'}
+        width={'1000'}
         height={'900'}>
         <Latex
-          x={40}
+          x={240}
           y={130}
           math={String.raw`
-          \begin{bmatrix}
-          a_0 & a_2 & a_3\\
-          a_{1n} & b_2 & b_3 \\
-          1n & 2 & 3 
-          \end{bmatrix}`}></Latex>
+           c^{\gamma}`}
+        />
       </svg>
+
+      {/* \begin{bmatrix}
+          a_0 & a_2 & a_3\\
+          a_n & a_2 & a_3\\
+          b_0 & b_2 & b_3
+          \end{bmatrix} */}
 
       {/* <MathJaxNode
         formula={tex}

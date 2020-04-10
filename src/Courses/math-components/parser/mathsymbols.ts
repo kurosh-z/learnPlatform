@@ -1,5 +1,5 @@
 class MSymbols {
-  latexSymbs = {
+  GreekChars = {
     '\\alpha': 'α',
     '\\Beta': 'Β',
     '\\beta': 'β',
@@ -27,7 +27,7 @@ class MSymbols {
     '\\Siqma': 'Σ',
     '\\tau': 'τ',
     '\\upsilon': 'υ',
-    // '\\Upsilon': 'Υ',
+    '\\Upsilon': 'Υ',
     '\\phi': 'ϕ',
     '\\Phi': 'Φ',
     '\\chi': 'χ',
@@ -38,31 +38,26 @@ class MSymbols {
     '\\omega': 'ω',
   };
   lettersWidth = {
-    a: 9.9999999618530273,
-    b: 8.0933333587646484,
-    c: 8.1816666603088379,
-    d: 9.819933587646484,
-    // e: 5.949999809265137,
-    e: 8.0049999809265137,
-    // f: 9.399999618530273,
-    // f: 5.399999618530273,
-    f: 9.15981,
-    g: 8.82898666984558105,
+    a: 9.549999618530273,
+    b: 8.433333587646484,
+    c: 8.316666603088379,
+    d: 9.183333587646484,
+    e: 5.949999809265137,
+    f: 9.399999618530273,
+    // f: 9.2721669921875,
+    g: 9.166666984558105,
     h: 11.066666603088379,
     i: 5.616666793823242,
     j: 7.116666507720947,
     k: 10,
     l: 5.7166666984558105,
-    // m: 16.850000381469727,
-    m: 14.550000381469727,
-    // n: 11.516666412353516,
-    n: 10.816666412353516,
+    m: 16.850000381469727,
+    n: 11.516666412353516,
     o: 9.316666603088379,
     p: 9.649999618530273,
     q: 9.566666603088379,
     r: 6.666666984558105,
-    // s: 9,
-    s: 8,
+    s: 9,
     t: 6.933333396911621,
     u: 10.983333587646484,
     v: 8.816666603088379,
@@ -151,7 +146,7 @@ class MSymbols {
     9: 9.600000381469727,
   };
 
-  signsWidth = {
+  specialCharsWidth = {
     '!': 5.333333492279053,
     '~': 9.600000381469727,
     '@': 14.933333396911621,
@@ -178,6 +173,8 @@ class MSymbols {
     '≤': 14.933333396911621,
     '.': 5.333333492279053,
     '∫': 5.266666889190674, // char: "∫", height: 43.5,
+    '×': 9.6,
+    ',': 6.5566022211358933,
     ' ': 10, // empty char
   };
   widthBank: { [key: string]: number };
@@ -188,7 +185,7 @@ class MSymbols {
       ...this.capLettersWidth,
       ...this.numbersWidth,
       ...this.greekLettersWidth,
-      ...this.signsWidth,
+      ...this.specialCharsWidth,
     };
   }
 
@@ -200,7 +197,7 @@ class MSymbols {
   }
 
   getlatexSymbol: (latexString: string) => string = (latexString) => {
-    if (latexString in this.latexSymbs) return this.latexSymbs[latexString];
+    if (latexString in this.GreekChars) return this.GreekChars[latexString];
     else if (latexString.charAt(0) !== '\\') return latexString;
     else {
       throw new Error(`latex symbol ${latexString} is not recognized!`);
@@ -209,16 +206,16 @@ class MSymbols {
   getGreekKeys: () => string = () => {
     let greekKeys = '';
 
-    for (const gKey in this.latexSymbs) {
+    for (const gKey in this.GreekChars) {
       greekKeys += gKey;
     }
     return greekKeys;
   };
   getCharWidth: (
     char: string,
-    fontSize?: number,
+    fontSize: number,
     fontStyle?: 'bold' | 'normal'
-  ) => number = (char, fontSize = 1.2, fontStyle = 'normal') => {
+  ) => number = (char, fontSize, fontStyle = 'normal') => {
     const boldFactor = fontStyle === 'bold' ? 0 : 0.3;
     if (char in this.widthBank)
       return boldFactor + (fontSize / 1.2) * this.widthBank[char];
@@ -227,7 +224,7 @@ class MSymbols {
   };
   getStringWidth: (
     str: string,
-    fontSize?: number,
+    fontSize: number,
     fontStyle?: 'bold' | 'normal'
   ) => number = (str, fontSize, fontStyle) => {
     const chars = str.split('');
