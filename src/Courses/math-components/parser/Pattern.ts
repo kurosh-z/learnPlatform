@@ -1,4 +1,5 @@
 import { FontSizesType } from './MathCss';
+import { FONT_FAMILIES, FONT_STYLES } from './fontMetrics';
 export const LETTERS = 'a-zA-Z@αβγΓδΔϵζηθΘιIκλΛμνοπΠρσΣτυϕΦχΞξψΨω';
 
 export type MathExpr = {
@@ -10,6 +11,8 @@ export type MathExpr = {
     dyy?: number;
     className: string;
     fontKey: keyof FontSizesType;
+    fontStyle?: FONT_STYLES;
+    fontFamily?: FONT_FAMILIES;
   };
 };
 

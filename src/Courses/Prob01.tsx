@@ -13,7 +13,8 @@ const Prob01: React.FC<{}> = () => {
   const theme = useTheme<Theme>();
 
   const prob01 = emoCss({
-    backgroundColor: theme.palette.white.dark,
+    backgroundColor: theme.palette.gray.base,
+    fill: theme.palette.white.dark,
     width: '600vw',
     height: '100vh',
     overflow: 'visible',
@@ -35,17 +36,22 @@ const Prob01: React.FC<{}> = () => {
         xmlns='http://www.w3.org/2000/svg'
         xmlnsXlink='http://www.w3.org/1999/xlink'
         width={'1000'}
-        height={'900'}>
+        height={'1000'}>
         <Latex
-          x={240}
-          y={130}
+          x={300}
+          y={300}
           math={String.raw`
-           c^{\gamma}`}
+          abc \begin{bmatrix}
+          k_0 & k_1 & k_2\\
+          a_0 & \int_{f(t)}^{g(t)} p(t) & a_3\\
+          b_0 & b_2 & b_3 \\
+          c_0 & c_1 & c_2
+          \end{bmatrix}c_1c `}
         />
       </svg>
 
-      {/* \begin{bmatrix}
-          a_0 & a_2 & a_3\\
+      {/*  \begin{bmatrix}
+          a_0 & \int_{f(t)}^{g(t)}  & a_3\\
           a_n & a_2 & a_3\\
           b_0 & b_2 & b_3
           \end{bmatrix} */}

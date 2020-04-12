@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { MathCss, parserFactory } from './parser';
 import { ParserOutputList, ParserOutput } from './parser/Parser';
+import { text } from 'd3';
 
 type LatexProps = {
   math?: string;
@@ -16,13 +17,26 @@ const Latex: React.FC<LatexProps> = ({ math, x, y, children }) => {
     throw new Error('one of the math propertie or child should be given!');
   const mathFormula = children ? children.toString() : math;
   const { parserOutput, mathcss } = useMemo(() => {
-    const mathcss = new MathCss(1.1);
+    const mathcss = new MathCss(1.5);
     const parser = parserFactory({
       str: mathFormula,
       pfontSizes: mathcss.fontSizes,
     });
 
     const parserOutput = parser.outputs;
+    // const negPoint = parser._checkline(
+    //   parser.BBox.left,
+    //   parser.BBox.bottom,
+    //   'bottom'
+    // );
+    // const posPoint = parser._checkline(
+    //   parser.BBox.right,
+    //   parser.BBox.top,
+    //   'top'
+    // );
+
+    // parserOutput.push(negPoint);
+    // parserOutput.push(posPoint);
     return { parserOutput, mathcss };
   }, [math]);
 
@@ -71,13 +85,24 @@ type DelimiterProps = {
 };
 
 const DelimiterComp: React.FC<DelimiterProps> = ({ dattr, dtype }) => {
-  const { transform, height } = dattr;
+  const { transform, height, text } = dattr;
   return (
-    <path
-      className={dtype}
-      d={DELIMITER_PATH[dtype](height)}
-      transform={transform}
-    />
+    <>
+      <path
+        className={dtype}
+        d={DELIMITER_PATH[dtype](height)}
+        transform={transform}
+      />
+      {text && (
+        <text
+          x={-30}
+          y={-5}
+          style={{ fontSize: '.8rem', fill: '#87D37C' }}
+          transform={transform}>
+          {text}
+        </text>
+      )}
+    </>
   );
 };
 

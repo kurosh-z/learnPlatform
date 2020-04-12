@@ -117,7 +117,34 @@ export default class MathCss {
       },
       '.math_op': {
         fontFamily: 'KaTeX_Size2',
-        // fontSize: '1em'
+        fontStyle: 'normal',
+        '&.tiny': {
+          fontSize: `${this.TINY}rem`,
+        },
+        '&.scriptsize': {
+          fontSize: `${this.SCRIPTSIZE}rem`,
+        },
+        '&.footnotesize': {
+          fontSize: `${this.FOOTNOTESIZE}rem`,
+        },
+        '&.small': {
+          fontSize: `${this.SMALL}rem`,
+        },
+        '&.normalsize': {
+          fontSize: `${this.NORMALSIZE}rem`,
+        },
+        '&.large': {
+          fontSize: `${this.LARGE}rem`,
+        },
+        '&.Large': {
+          fontSize: `${this.LLARGE}rem`,
+        },
+        '&.huge': {
+          fontSize: `${this.HUGE}rem`,
+        },
+        '&.Huge': {
+          fontSize: `${this.HHUGE}rem`,
+        },
       },
       '.normal': {
         fontStyle: 'normal',
@@ -125,7 +152,7 @@ export default class MathCss {
 
       path: {
         fill: 'none',
-        stroke: 'black',
+        stroke: 'white',
         strokeWidth: 1.7,
         strokeLinejoin: 'round',
       },

@@ -1,6 +1,7 @@
 import AtomPattern from './AtomPattern';
+import AtomSpecPattern from './AtomSpecPattern';
 import { FontSizesType } from './mathCss';
-import mathsymbols from './mathsymbols';
+import { getStringMetrics, FONT_FAMILIES, FONT_STYLES } from './fontMetrics';
 import MatrixPattern from './MatrixPattern';
 import { MathExpr } from './Pattern';
 import ScriptPattern from './ScriptPattern';
@@ -8,7 +9,6 @@ import PConfigs from './Pconfigs';
 import parserFactory from './parserFactory';
 // import './test.css';
 
-const getStringWidth = mathsymbols.getStringWidth;
 export type CookedMathExpr = {
   expr: string;
   attr: { x?: number; y?: number; className?: string; transform?: string };
@@ -28,7 +28,12 @@ type Pdelimiter = {
     | 'parentheses_close'
     | 'vertical_bar'
     | 'check_line';
-  dattr: { transform: string; height?: number; width?: number };
+  dattr: {
+    transform: string;
+    height?: number;
+    width?: number;
+    text?: string;
+  };
 };
 type PGroup = {
   component: 'group';
@@ -48,12 +53,6 @@ export type ParserOutputList = (
   | ParserOutput<'Pdelimiter'>
   | ParserOutput<'PGroup'>
 )[];
-
-export type RawMatrixRow = {
-  elements: ParserOutputList;
-  elwidth: number;
-  elheight: number;
-}[];
 
 export type ParserArgs = {
   str: string;
@@ -75,9 +74,13 @@ export default class Parser {
   allRegStrings: string;
   allAtomRegStrings: string;
   currPos: { currX: number; currY: number };
-  _maxPosi: { x: number; y: number };
-  _maxNega: { x: number; y: number };
-  _maxWH: { w: number; h: number };
+  BBox: { top: number; bottom: number; left: number; right: number } = {
+    top: 0,
+    bottom: 0,
+    right: 0,
+    left: 0,
+  };
+  maxWH: { w: number; h: number };
 
   constructor({
     str,
@@ -95,49 +98,55 @@ export default class Parser {
     this.currPos = { currX: x, currY: y };
     this.allRegStrings = this._makeAllregStrings(this.patternList);
     this.allAtomRegStrings = this._makeAllregStrings(this.atomPatternsList);
-    this._maxPosi = { x: 0, y: 0 };
-    this._maxNega = { x: 0, y: 0 };
-    this._maxWH = { w: 0, h: 0 };
+    this.maxWH = { w: 0, h: 0 };
+    this.BBox = { left: x, right: x, top: y, bottom: y };
   }
-  _updateMaxWH() {
-    const { currX, currY } = this.currPos;
 
-    if (currY > 0) {
-      if (currY > this._maxPosi.y) this._maxPosi.y = currY;
-    } else if (currY < 0) {
-      if (currY < this._maxNega.y) this._maxNega.y = currY;
+  _updateBBox(strAscent: number, strDescent: number) {
+    const { currX, currY } = this.currPos;
+    const { top, bottom, left, right } = this.BBox;
+    const currAsc = currY - strAscent;
+    const currDsc = currY + strDescent;
+
+    if (currAsc < top) {
+      this.BBox.top = currAsc;
     }
-    if (currX > 0) {
-      if (currX > this._maxPosi.x) this._maxPosi.x = currX;
-    } else if (currX < 0) {
-      if (currX < this._maxNega.x) this._maxNega.x = currX;
+    if (currDsc > bottom) {
+      this.BBox.bottom = currDsc;
     }
-    this._maxWH.w = this._maxPosi.x - this._maxNega.x;
-    this._maxWH.h = this._maxPosi.y - this._maxNega.y;
+    if (currX < left) {
+      this.BBox.left = currX;
+    }
+    if (currX > right) {
+      this.BBox.right = currX;
+    }
+    this.maxWH.w = this.BBox.right - this.BBox.left;
+    this.maxWH.h = this.BBox.bottom - this.BBox.top;
   }
+
   _updateMaxWHFromParser(parser: Parser) {
-    const parserMaxPosi = parser._maxPosi;
-    const parserMaxNega = parser._maxNega;
-    if (parserMaxPosi.x > this._maxPosi.x) {
-      this._maxPosi.x = parserMaxPosi.x;
+    const { left, right, top, bottom } = this.BBox;
+
+    const parserLeft = parser.BBox.left;
+    const parserRight = parser.BBox.right;
+    const parserTop = parser.BBox.top;
+    const parserBottom = parser.BBox.bottom;
+
+    if (parserLeft < left) {
+      this.BBox.left = parserLeft;
     }
-    if (parserMaxPosi.y > this._maxPosi.y) {
-      this._maxPosi.y = parserMaxPosi.y;
+    if (parserRight > right) {
+      this.BBox.right = parserRight;
     }
-    if (parserMaxNega.x < this._maxNega.x) {
-      this._maxNega.x = parserMaxNega.x;
+    if (parserTop < top) {
+      this.BBox.top = parserTop;
     }
-    if (parserMaxNega.y < this._maxNega.y) {
-      this._maxNega.y = parserMaxNega.y;
+    if (parserBottom > bottom) {
+      this.BBox.bottom = parserBottom;
     }
-    this._maxWH.w = this._maxPosi.x - this._maxNega.x;
-    this._maxWH.h = this._maxPosi.y - this._maxNega.y;
-  }
-  get maxWH() {
-    const _maxWH = this._maxWH;
-    return { w: _maxWH.w, h: _maxWH.h + 10 * this.fontSizes[this.fontKey] };
-    // 10 is the avarage height of the charachter! it should be
-    // accurate enought for now!
+
+    this.maxWH.w = this.BBox.right - this.BBox.left;
+    this.maxWH.h = this.BBox.bottom - this.BBox.top;
   }
 
   _makeAllregStrings(
@@ -176,12 +185,13 @@ export default class Parser {
 
   strToMathExpressions(str: string) {
     let nstr = this._consumeWhiteSpaces(str);
+    nstr = nstr.replace(/(\\int)/gm, '∫');
     let idx = 0;
 
     while (nstr.length !== 0) {
       const regexAll = new RegExp(this.allRegStrings, 'mg');
       const match = regexAll.exec(nstr);
-      console.log(match);
+      // console.log(match);
       if (!match || match.index !== 0) {
         nstr = this._handleAtoms(nstr);
         // console.log('parserStr', this.str);
@@ -211,25 +221,6 @@ export default class Parser {
     return regexAll.test(str);
   }
 
-  _handleAtoms2(str: string) {
-    const font_size = this.fontSizes[this.fontKey];
-    const { currX, currY } = this.currPos;
-    const output: ParserOutput<'Ptext'> = {
-      component: 'text',
-      mathExpr: str,
-      attr: { x: currX, y: currY, className: this.classNames },
-    };
-    this.outputs.push(output);
-
-    // console.log(coockedmathExpr.expr, this.fontKey);
-    const exprWidth = getStringWidth(str, font_size);
-    // TODO: take care of after character dxx, dyy in handleNonAtoms!
-
-    this._updateMaxWH();
-
-    return;
-  }
-
   _handleAtoms(str: string) {
     const regexAll = new RegExp(this.allAtomRegStrings, 'mg');
     const match = regexAll.exec(str);
@@ -257,9 +248,16 @@ export default class Parser {
       className += ' ' + this.fontKey;
 
       let font_size = this.fontSizes[this.fontKey];
-
+      let fontFamily: FONT_FAMILIES = 'KaTeX_Math';
+      let fontStyle: FONT_STYLES = 'italic';
       if (pattern instanceof AtomPattern && pattern.isNumber(expr)) {
         font_size = 0.9 * font_size;
+        fontFamily = 'KaTex_Main';
+        fontStyle = 'normal';
+      }
+      if (pattern instanceof AtomSpecPattern) {
+        fontFamily = mathexpr.attr.fontFamily;
+        fontStyle = mathexpr.attr.fontStyle;
       }
 
       const output: ParserOutput<'Ptext'> = {
@@ -267,14 +265,32 @@ export default class Parser {
         mathExpr: expr,
         attr: { x: currX, y: currY, className: className },
       };
-      this.outputs.push(output);
 
       // console.log(coockedmathExpr.expr, this.fontKey);
 
-      const exprWidth = getStringWidth(expr, font_size);
+      // font font_size font_style
+      // console.log(this.fontKey, this.fontSizes[this.fontKey], font_size);
+      const { width, maxAscent, maxDescent } = getStringMetrics({
+        str: expr,
+        fontFamily,
+        fontSize: font_size,
+        fontStyle,
+      });
 
+      this.outputs.push(output);
+
+      // console.log(
+      //   expr,
+      //   'width',
+      //   width,
+      //   'maxAscent',
+      //   maxAscent,
+      //   'maxDescent',
+      //   maxDescent
+      // );
+      // console.log('------------');
+      currX += width;
       // after charachter positionings
-      currX += exprWidth;
       if (dxx) {
         currX += dxx;
       }
@@ -283,15 +299,16 @@ export default class Parser {
       }
 
       this.currPos = { currX, currY };
+      this._updateBBox(maxAscent, maxDescent);
 
       // console.log('after width', this.currPos.currX);
-      this._updateMaxWH();
 
-      // console.log('maxW', this._maxWH.w);
-      // console.log('maxH', this._maxWH.h);
       // console.log(expr, currX);
+      // console.log('maxW', this._maxWH.w);
+      // console.log('maxH', this._maxWH.h, this.maxWH);
       // console.log('-----------------');
     }
+
     // str = this.consume(str, pattern.endingIndex);
     str = pattern.stringsRest;
     return str;
@@ -365,11 +382,20 @@ export default class Parser {
 
     // first we find the width and height of each element
     // and also the maximum height and width
+    type RawMatrixRow = {
+      elements: ParserOutputList;
+      elWidth: number;
+      elHeight: number;
+      elTop: number;
+      elBottom: number;
+    }[];
     let rawMatrixRow: RawMatrixRow = [];
     let rawMatrixElements: RawMatrixRow[] = [];
 
     let rowMaxH: number[] = [];
     let columnMaxW: number[] = [];
+    let rowMaxTop: number[] = [];
+    let rowMaxBottom: number[] = [];
 
     let i = 0; //row index
     let j = 0; // column index
@@ -387,22 +413,31 @@ export default class Parser {
         });
 
         const elMaxWH = parser.maxWH;
+        const elBBox = parser.BBox;
         const elMaxW = elMaxWH.w;
         const elMaxH = elMaxWH.h;
+        const elTop = elBBox.top;
+        const elBottom = elBBox.bottom;
         // console.log('ij:   ', i, j, expr);
         // console.log('maxW', elMaxW);
         // console.log('maxH', elMaxH);
 
         rawMatrixRow.push({
           elements: parser.outputs,
-          elwidth: elMaxW,
-          elheight: elMaxH,
+          elWidth: elMaxW,
+          elHeight: elMaxH,
+          elTop: elTop,
+          elBottom: elBottom,
         });
 
         if (j === 0) {
           rowMaxH.push(elMaxH);
+          rowMaxTop.push(elTop);
+          rowMaxBottom.push(elBottom);
         } else {
           if (rowMaxH[i] < elMaxH) rowMaxH[i] = elMaxH;
+          if (rowMaxTop[i] > elTop) rowMaxTop[i] = elTop; // elTop is negative
+          if (rowMaxBottom[i] < elBottom) rowMaxBottom[i] = elBottom;
         }
 
         if (i === 0) {
@@ -425,29 +460,27 @@ export default class Parser {
     const currX0 = this.currPos.currX;
     const currY0 = this.currPos.currY;
     const FONT_FACTOR = this.fontSizes[this.fontKey];
-    const V_MARGIN = 8 * FONT_FACTOR;
-    const H_MARGIN = 12 * FONT_FACTOR;
-    const D_MARGIN = 5 * FONT_FACTOR; // Delimiter's horizontal margin
-    const DV_MARGIN = 3 * FONT_FACTOR;
-    const ADJ_CONST = 5 * FONT_FACTOR; // vertical adjustment for changing the basline to the center of the text!
+    const V_MARGIN = 18 * FONT_FACTOR;
+    const H_MARGIN = 8 * FONT_FACTOR;
+    const DH_MARGIN = 2 * FONT_FACTOR; // Delimiter's horizontal margin(top and bottom of matrix)
+    const DV_MARGIN = 5 * FONT_FACTOR;
+    const BL_ADJ = 5 * FONT_FACTOR; // basline adjustment
     // calculate the height and width of the matrix:
     let mHeight = 0;
     for (const hieght of rowMaxH) {
       mHeight += hieght;
     }
-    // TODO: should we meausure row heights more accuretly?
-    mHeight += V_MARGIN * (mDim[0] - 3);
-    const delim_hieght = mHeight + 2 * V_MARGIN + 2 * DV_MARGIN;
+    mHeight += H_MARGIN * (mDim[0] - 1) + 2 * DH_MARGIN;
+
+    const delim_hieght = mHeight;
     let mWidth = 0;
-    let nColumn = 0;
     for (const width of columnMaxW) {
       if (width > mWidth) mWidth = width;
-      nColumn++;
     }
-    mWidth = (V_MARGIN + mWidth) * nColumn;
+    mWidth += V_MARGIN * (mDim[1] - 1);
 
-    const matrixX = currX0 + D_MARGIN;
-    const matrixY = currY0 - mHeight / 2 - ADJ_CONST / 2;
+    const matrixX = currX0 + 2 * DV_MARGIN;
+    const matrixY = currY0 - mHeight / 2 - BL_ADJ;
     let matrixGroup: PGroup = {
       component: 'group',
       gelements: [],
@@ -462,7 +495,7 @@ export default class Parser {
       component: 'delimiter',
       dtype: 'bracket_open',
       dattr: {
-        transform: `translate(${0} ${-matrixY - ADJ_CONST})`,
+        transform: `translate(${0} ${-matrixY})`,
         height: delim_hieght,
       },
     };
@@ -473,13 +506,16 @@ export default class Parser {
     //reset i,j
     i = 0;
     j = 0;
-    var currX = D_MARGIN;
-    var currY = 0;
+
+    var currX = DV_MARGIN;
+    var currY = DH_MARGIN + BL_ADJ; // on top of the matrix!
+    var posY: number;
+    var posX: number;
     for (const rawMatrixRow of rawMatrixElements) {
       for (const matrixEl of rawMatrixRow) {
         const elements = matrixEl.elements;
-        const posX = (columnMaxW[j] - matrixEl.elwidth) / 2 + currX;
-        const posY = currY;
+        posX = currX + (columnMaxW[j] - matrixEl.elWidth) / 2;
+        posY = currY - rowMaxTop[i];
         // open a group and shift the group by (posX,poxY)
         const elementGroup: PGroup = {
           component: 'group',
@@ -495,8 +531,8 @@ export default class Parser {
         // update the postion for the next element
         const dx =
           j !== mDim[1] - 1
-            ? columnMaxW[j] + H_MARGIN
-            : columnMaxW[j] + D_MARGIN;
+            ? columnMaxW[j] + V_MARGIN
+            : columnMaxW[j] + DV_MARGIN;
 
         currX += dx;
         // matrixGroup.gelements.push(this._checkline(this.currPos.currX, posY));
@@ -506,9 +542,9 @@ export default class Parser {
 
       // matrixGroup.gelements.push(this._checkline(currX, posY));
       if (i !== mDim[0] - 1) {
-        currX = D_MARGIN;
+        currX = DV_MARGIN;
       }
-      currY += rowMaxH[i] + V_MARGIN;
+      currY = posY + rowMaxBottom[i] + H_MARGIN;
       // matrixGroup.gelements.push(this._checkline(0, currY));
 
       j = 0;
@@ -520,25 +556,25 @@ export default class Parser {
       component: 'delimiter',
       dtype: 'bracket_close',
       dattr: {
-        transform: `translate(${currX} ${-matrixY - ADJ_CONST})`,
+        transform: `translate(${currX} ${-matrixY})`,
         height: delim_hieght,
       },
     };
     matrixGroup.gelements.push(delimiter_close);
-    this.currPos.currX += D_MARGIN;
+    this.currPos.currX += DH_MARGIN;
     // push matrix group
     this.outputs.push(matrixGroup);
 
     // update positions:
-    this.currPos.currX += currX + D_MARGIN;
+    this.currPos.currX += currX + 3 * DV_MARGIN;
     this.currPos.currY = currY0;
     // this.outputs.push(this._checkline(this.currPos.currX, this.currPos.currY));
   }
-  _checkline(x: number, y: number) {
+  _checkline(x: number, y: number, text?: string) {
     const check_line: Pdelimiter = {
       component: 'delimiter',
       dtype: 'check_line',
-      dattr: { transform: `translate(${x} ${y})` },
+      dattr: { transform: `translate(${x} ${y})`, text },
     };
 
     return check_line;
@@ -651,17 +687,6 @@ export default class Parser {
     } else {
       updatedClassNames = currClassNames + ' ' + newClassName;
     }
-    // then switch the fontsize or add it if it's not exist!
-    // const fontsizeKeys = Object.keys(this.fontSizes);
-
-    // for (const fontsize of fontsizeKeys) {
-    //   if (this._isExprInStr(fontsize, currClassNames)) {
-    //     updatedClassNames = this._replaceStr(currClassNames, fontsize, fontkey);
-    //     break;
-    //   }
-    // }
-    // if (!this._isExprInStr(fontkey, currClassNames))
-    //   updatedClassNames = currClassNames + ' ' + fontkey;
 
     return updatedClassNames;
   }

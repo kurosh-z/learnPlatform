@@ -4,9 +4,12 @@ import Pattern, { LETTERS, MathExpr, PatternArgs } from './Pattern';
 type IndexType = 'subscript' | 'supscript';
 const SUP_DY = -8;
 const SUB_DY = 5;
+const INT_SUP_DY = -25;
+const INT_SUB_DY = 22;
 
 export default class ScriptPattern extends Pattern {
-  regString = `([${LETTERS}0-9])((_{)|(\\^{))|([${LETTERS}0-9])((_)|(\\^))([${LETTERS}0-9])`;
+  regString = `([${LETTERS}0-9∫])((_{)|(\\^{))|([${LETTERS}0-9∫])((_)|(\\^))([${LETTERS}0-9∫])`;
+  // regString = `((_{)|(\\^{))|((_)|(\\^))`;
   mathExpressions: Required<MathExpr>[];
   stratingIndex: number;
   endingIndex: number;
@@ -108,11 +111,26 @@ export default class ScriptPattern extends Pattern {
     else this.isType2 = false;
 
     let indexFontKey: keyof FontSizesType;
+
     if (this.fontKey === 'scriptsize') indexFontKey = 'tiny';
     else if (this.fontKey === 'tiny') indexFontKey = 'tiny';
     else indexFontKey = 'scriptsize';
-    let sub_dy = this.fontSizes[indexFontKey] * SUB_DY;
-    let sup_dy = this.fontSizes[indexFontKey] * SUP_DY;
+
+    const font_factor = this.fontSizes[indexFontKey];
+
+    let sub_dy: number, sup_dy: number;
+    let sub_dx = 0,
+      sup_dx = 0;
+    // console.log(base, font_factor);
+    if (base === '∫') {
+      sub_dy = font_factor * INT_SUB_DY;
+      sup_dy = font_factor * INT_SUP_DY;
+      sub_dx = font_factor * -16;
+      sup_dx = font_factor * -5;
+    } else {
+      sub_dy = font_factor * SUB_DY;
+      sup_dy = font_factor * SUP_DY;
+    }
 
     const mathExpressions: Required<MathExpr>[] = type2
       ? [
@@ -129,7 +147,7 @@ export default class ScriptPattern extends Pattern {
           {
             expr: indexStr1,
             attr: {
-              dx: 0,
+              dx: type1 === 'subscript' ? sub_dx : sup_dx,
               dy: type1 === 'subscript' ? sub_dy : sup_dy,
               className: type1 === 'subscript' ? 'sub' : 'sup',
               fontKey: indexFontKey,
@@ -138,7 +156,7 @@ export default class ScriptPattern extends Pattern {
           {
             expr: indexStr2,
             attr: {
-              dx: 0,
+              dx: type2 === 'subscript' ? sub_dx : sup_dx,
               dy: type2 === 'subscript' ? sub_dy : sup_dy,
               className: type2 === 'subscript' ? 'sub' : 'sup',
               fontKey: indexFontKey,
@@ -158,7 +176,7 @@ export default class ScriptPattern extends Pattern {
           {
             expr: indexStr1,
             attr: {
-              dx: 0,
+              dx: type1 === 'subscript' ? sub_dx : sup_dx,
               dy: type1 === 'subscript' ? sub_dy : sup_dy,
               className: type1 === 'subscript' ? 'sub' : 'sup',
               fontKey: indexFontKey,

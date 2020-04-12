@@ -1,10 +1,9 @@
 import Pattern, { MathExpr, PatternArgs } from './Pattern';
-import mathssymbols from './mathsymbols';
 
 export default class IntegralPattern extends Pattern {
   endingIndex: number;
   stratingIndex: number;
-  regString: string;
+  regString = '(\\int)|()';
   mathExpressions: MathExpr[];
   stringsRest: string;
   constructor({ name }: PatternArgs) {
