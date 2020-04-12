@@ -4,8 +4,8 @@ import { FontSizesType } from './MathCss';
 import MatrixPattern from './MatrixPattern';
 import patternFactory from './patternFactory';
 import ScriptPattern from './ScriptPattern';
-// import SpecLetterPattern from './SpecLetterPattern';
-import IntegralPattern from './IntegralPattern';
+import SymbolPattern from './SymbolPattern';
+
 export default class PConfigs {
   fontSizes: FontSizesType;
   cssName: any;
@@ -21,7 +21,7 @@ export default class PConfigs {
       // @ts-ignore
       patternFactory('matrix'),
       // @ts-ignore
-      // patternFactory('special_letters'),
+      patternFactory('symbols'),
     ];
     this.atomPatterns = [
       // @ts-ignore

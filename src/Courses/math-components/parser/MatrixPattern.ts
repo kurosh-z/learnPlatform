@@ -1,4 +1,4 @@
-import Pattern, { PatternArgs, MathExpr, LETTERS } from './Pattern';
+import Pattern, { PatternArgs, MathExpr, CurrBase } from './Pattern';
 
 const DELIMITERS = {
   matrix: { open: '', close: '' },
@@ -29,6 +29,9 @@ export default class MatrixPattern extends Pattern {
   isPattern(str: string) {
     const regexp = new RegExp(this.regString, 'mg');
     return regexp.test(str);
+  }
+  changeCurrBaseTo(): CurrBase {
+    return 'mat';
   }
 
   strToMathExpr(str: string, startIdx: number = 0) {
@@ -78,7 +81,7 @@ export default class MatrixPattern extends Pattern {
 
   findNextRow(str: string): { rowExprs: MathExpr[]; reducedStr: string } {
     const regex = /&/gm;
-    const endRowRegex = /\\/gm;
+    const endRowRegex = /\\\\/gm;
     const endRow = endRowRegex.exec(str);
     const endRowIdx = endRow ? endRow.index : str.length; // the last row can be without \\
     let rowExprs: MathExpr[] = [];

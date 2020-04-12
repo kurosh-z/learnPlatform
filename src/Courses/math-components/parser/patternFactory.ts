@@ -3,15 +3,10 @@ import AtomSpecPattern from './AtomSpecPattern';
 import { FontSizesType } from './MathCss';
 import MatrixPattern from './MatrixPattern';
 import ScriptPattern from './ScriptPattern';
-import SpecLetterPattern from './SpecLetterPattern';
+import SymbolPattern from './SymbolPattern';
 
 export default function patternFactory(
-  patternName:
-    | 'atom'
-    | 'special_chars'
-    | 'supsub'
-    | 'matrix'
-    | 'special_letters',
+  patternName: 'atom' | 'special_chars' | 'supsub' | 'matrix' | 'symbols',
   fontSizes?: FontSizesType
 ) {
   if (patternName === 'atom')
@@ -34,8 +29,8 @@ export default function patternFactory(
       name: 'special_chars',
       fontSizes: fontSizes,
     });
-  if (patternName === 'special_letters')
-    return new SpecLetterPattern({
+  if (patternName === 'symbols')
+    return new SymbolPattern({
       name: patternName,
     });
   else throw new Error(`pattern name ${patternName} is not recognized!`);

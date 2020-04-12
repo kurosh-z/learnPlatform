@@ -1,9 +1,10 @@
 import AtomPattern from './AtomPattern';
 import AtomSpecPattern from './AtomSpecPattern';
+import SymbolPattern from './SymbolPattern';
 import { FontSizesType } from './mathCss';
 import { getStringMetrics, FONT_FAMILIES, FONT_STYLES } from './fontMetrics';
 import MatrixPattern from './MatrixPattern';
-import { MathExpr } from './Pattern';
+import { MathExpr, CurrBase } from './Pattern';
 import ScriptPattern from './ScriptPattern';
 import PConfigs from './Pconfigs';
 import parserFactory from './parserFactory';
@@ -81,6 +82,7 @@ export default class Parser {
     left: 0,
   };
   maxWH: { w: number; h: number };
+  currBase: CurrBase = 'atom';
 
   constructor({
     str,
@@ -185,7 +187,7 @@ export default class Parser {
 
   strToMathExpressions(str: string) {
     let nstr = this._consumeWhiteSpaces(str);
-    nstr = nstr.replace(/(\\int)/gm, '∫');
+    // nstr = nstr.replace(/(\\int)/gm, '∫');
     let idx = 0;
 
     while (nstr.length !== 0) {
@@ -201,7 +203,10 @@ export default class Parser {
       } else {
         const pattern = this.whichPattern(match[0], this.patternList);
         pattern.fontKey = this.fontKey;
+        pattern.currBase = this.currBase;
+        pattern.currBBox = this.BBox;
         pattern.strToMathExpr(nstr, match.index);
+        this.currBase = 'atom';
         // nstr = this.consume(nstr, pattern.endingIndex);
         nstr = pattern.stringsRest;
 
@@ -209,7 +214,9 @@ export default class Parser {
         // console.log('str: ', str);
         // console.log('nstr', nstr);
         // console.log('------------------------');
-        this._handleNonAtoms(pattern as MatrixPattern | ScriptPattern);
+        this._handleNonAtoms(
+          pattern as MatrixPattern | ScriptPattern | SymbolPattern
+        );
       }
       idx++;
 
@@ -314,13 +321,16 @@ export default class Parser {
     return str;
   }
 
-  _handleNonAtoms(pattern: ScriptPattern | MatrixPattern) {
-    if (pattern instanceof MatrixPattern) this._handleMatrix(pattern);
-    else {
+  _handleNonAtoms(pattern: ScriptPattern | MatrixPattern | SymbolPattern) {
+    this.currBase = pattern.changeCurrBaseTo();
+    if (pattern instanceof MatrixPattern) {
+      this.currBase = 'mat';
+      this._handleMatrix(pattern);
+    } else {
       // const shouldCalList = this._shouldMeasureHeight(pattern);
       let parallel = pattern.isParallel();
       let paralleX = [];
-      let idx = 0;
+
       for (const mathExpr of pattern.mathExpressions) {
         const { currX, currY } = this.currPos;
         // const parserFontFactor = this.fontFactor ===
@@ -333,14 +343,13 @@ export default class Parser {
         });
         this._pushParserOutputs({ parser: parser, patternExpr: mathExpr });
 
-        if ((idx === 0 && parallel) || !parallel) {
+        if (!parallel) {
           // if idx=0 it's base we have to update the currPos
           this.currPos.currX = parser.currPos.currX;
         } else {
           paralleX.push(parser.currPos.currX);
         }
         // this.currPos.currX = parser.currPos.currX;
-        idx++;
       }
       if (parallel) {
         // compare 2nd and last mathexprs and update currPos accordingly
@@ -479,7 +488,9 @@ export default class Parser {
     }
     mWidth += V_MARGIN * (mDim[1] - 1);
 
-    const matrixX = currX0 + 2 * DV_MARGIN;
+    // if matrix is the first comp we need no margin left!
+    // const outLen = this.outputs.length;
+    const matrixX = currX0 + DV_MARGIN;
     const matrixY = currY0 - mHeight / 2 - BL_ADJ;
     let matrixGroup: PGroup = {
       component: 'group',
@@ -561,14 +572,19 @@ export default class Parser {
       },
     };
     matrixGroup.gelements.push(delimiter_close);
-    this.currPos.currX += DH_MARGIN;
+    // this.currPos.currX += DH_MARGIN;
     // push matrix group
     this.outputs.push(matrixGroup);
 
     // update positions:
-    this.currPos.currX += currX + 3 * DV_MARGIN;
+    this.currPos.currX = matrixX + currX + 1 * DV_MARGIN;
     this.currPos.currY = currY0;
     // this.outputs.push(this._checkline(this.currPos.currX, this.currPos.currY));
+
+    // set BBox
+    this.BBox.right = this.currPos.currX;
+    this.BBox.top = -mHeight / 2;
+    this.BBox.bottom = mHeight / 2;
   }
   _checkline(x: number, y: number, text?: string) {
     const check_line: Pdelimiter = {

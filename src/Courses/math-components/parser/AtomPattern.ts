@@ -32,7 +32,7 @@ export default class AtomPattern extends Pattern {
     return regex.test(str);
   }
   isForbidenChar(char: string) {
-    if (char === '_' || char === '^') return true;
+    if (char === '_' || char === '^') return false;
     return false;
   }
   findRangeGroup(expr: string) {

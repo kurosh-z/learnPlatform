@@ -10,16 +10,6 @@ type GetFontMetricsArgs = {
 };
 type GetStringMetricsArgs = Omit<GetFontMetricsArgs, 'char'> & { str: string };
 
-export const getlatexSymbol: (latexString: string) => string = (
-  latexString
-) => {
-  if (latexString in this.GreekChars) return this.GreekChars[latexString];
-  else if (latexString.charAt(0) !== '\\') return latexString;
-  else {
-    throw new Error(`latex symbol ${latexString} is not recognized!`);
-  }
-};
-
 export const getFontMetrics: (
   args: GetFontMetricsArgs
 ) => { width: number; ascent: number; descent: number } = ({

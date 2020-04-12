@@ -8,7 +8,7 @@ const INT_SUP_DY = -25;
 const INT_SUB_DY = 22;
 
 export default class ScriptPattern extends Pattern {
-  regString = `([${LETTERS}0-9∫])((_{)|(\\^{))|([${LETTERS}0-9∫])((_)|(\\^))([${LETTERS}0-9∫])`;
+  regString = `(_{)|(\\^{)|(_)|(\\^)`;
   // regString = `((_{)|(\\^{))|((_)|(\\^))`;
   mathExpressions: Required<MathExpr>[];
   stratingIndex: number;
@@ -30,31 +30,31 @@ export default class ScriptPattern extends Pattern {
     return this.isType2;
   }
 
-  _findFirstIndex(str: string) {
-    const regexp = new RegExp(this.regString, 'mg');
-    const match = regexp.exec(str);
+  // _findFirstIndex(str: string) {
+  //   const regexp = new RegExp(this.regString, 'mg');
+  //   const match = regexp.exec(str);
 
-    // check if its []_[] or []_{[]} ?
-    var type: IndexType;
-    var endIdx: number;
-    var indexStr: string;
+  //   // check if its []_[] or []_{[]} ?
+  //   var type: IndexType;
+  //   var endIdx: number;
+  //   var indexStr: string;
 
-    if (str[2] !== '{') {
-      indexStr = str[2];
-      endIdx = 3;
-    } else {
-      endIdx = this.findmatchingPairs({
-        openregStr: '{',
-        closeregStr: '}',
-        str: str,
-        startIdx: 0,
-      });
-      indexStr = str.slice(3, endIdx - 1);
-    }
-    type = str[1] === '_' ? (type = 'subscript') : 'supscript';
+  //   if (str[2] !== '{') {
+  //     indexStr = str[2];
+  //     endIdx = 3;
+  //   } else {
+  //     endIdx = this.findmatchingPairs({
+  //       openregStr: '{',
+  //       closeregStr: '}',
+  //       str: str,
+  //       startIdx: 0,
+  //     });
+  //     indexStr = str.slice(3, endIdx - 1);
+  //   }
+  //   type = str[1] === '_' ? (type = 'subscript') : 'supscript';
 
-    return { indexStr, type, endIdx };
-  }
+  //   return { indexStr, type, endIdx };
+  // }
   _findSecondIndex(str: string, startIdx: number) {
     const regexp = /(_{)|(\^{)|(_)|(\^)/gm;
     regexp.lastIndex = startIdx;
@@ -66,8 +66,8 @@ export default class ScriptPattern extends Pattern {
     var indexStr: string;
 
     if (match[0] === '_' || match[0] === '^') {
-      indexStr = str[startIdx + 2];
-      endIdx = startIdx + 3;
+      indexStr = str[startIdx + 1];
+      endIdx = startIdx + 2;
     } else if (match[0] === '_{' || match[0] === '^{') {
       endIdx = this.findmatchingPairs({
         openregStr: '{',
@@ -75,7 +75,7 @@ export default class ScriptPattern extends Pattern {
         str: str,
         startIdx: match.index + 1,
       });
-      indexStr = str.slice(startIdx + 3, endIdx - 1);
+      indexStr = str.slice(startIdx + 2, endIdx - 1);
     }
     if (match[0] === '_' || match[0] === '_{') type = 'subscript';
     else if (match[0] === '^' || match[0] === '^{') type = 'supscript';
@@ -83,19 +83,19 @@ export default class ScriptPattern extends Pattern {
     return { indexStr, type, endIdx };
   }
   strToMathExpr(str: string, startIdx: number = 0) {
-    const base = str.slice(startIdx, startIdx + 1);
+    // const base = str.slice(startIdx, startIdx + 1);
 
     let type1: IndexType, type2: IndexType;
     let endIdx1: number, endIdx2: number;
     let indexStr1: string, indexStr2: string;
-    let nextIndex = this._findFirstIndex(str);
+    let nextIndex = this._findSecondIndex(str, 0);
     type1 = nextIndex.type;
     endIdx1 = nextIndex.endIdx;
     indexStr1 = nextIndex.indexStr;
 
     //check if thre is another index
     if (str[endIdx1] === '_' || str[endIdx1] === '^') {
-      let nextIndex = this._findSecondIndex(str, endIdx1 - 1);
+      let nextIndex = this._findSecondIndex(str, endIdx1);
       type2 = nextIndex.type;
       endIdx2 = nextIndex.endIdx;
       indexStr2 = nextIndex.indexStr;
@@ -122,11 +122,14 @@ export default class ScriptPattern extends Pattern {
     let sub_dx = 0,
       sup_dx = 0;
     // console.log(base, font_factor);
-    if (base === '∫') {
+    if (this.currBase === 'int') {
       sub_dy = font_factor * INT_SUB_DY;
       sup_dy = font_factor * INT_SUP_DY;
       sub_dx = font_factor * -16;
       sup_dx = font_factor * -5;
+    } else if (this.currBase === 'mat') {
+      sub_dy = this.currBBox.bottom;
+      sup_dy = this.currBBox.top + 3 * font_factor;
     } else {
       sub_dy = font_factor * SUB_DY;
       sup_dy = font_factor * SUP_DY;
@@ -134,16 +137,6 @@ export default class ScriptPattern extends Pattern {
 
     const mathExpressions: Required<MathExpr>[] = type2
       ? [
-          {
-            expr: base,
-            attr: {
-              dx: 0,
-              dy: 0,
-              className: 'base',
-              fontKey: this.fontKey,
-            },
-          },
-
           {
             expr: indexStr1,
             attr: {
@@ -164,15 +157,6 @@ export default class ScriptPattern extends Pattern {
           },
         ]
       : [
-          {
-            expr: base,
-            attr: {
-              dx: 0,
-              dy: 0,
-              className: 'base',
-              fontKey: this.fontKey,
-            },
-          },
           {
             expr: indexStr1,
             attr: {

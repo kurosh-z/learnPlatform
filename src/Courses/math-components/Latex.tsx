@@ -24,19 +24,19 @@ const Latex: React.FC<LatexProps> = ({ math, x, y, children }) => {
     });
 
     const parserOutput = parser.outputs;
-    // const negPoint = parser._checkline(
-    //   parser.BBox.left,
-    //   parser.BBox.bottom,
-    //   'bottom'
-    // );
-    // const posPoint = parser._checkline(
-    //   parser.BBox.right,
-    //   parser.BBox.top,
-    //   'top'
-    // );
+    const negPoint = parser._checkline(
+      parser.BBox.left,
+      parser.BBox.bottom,
+      'bottom'
+    );
+    const posPoint = parser._checkline(
+      parser.BBox.right,
+      parser.BBox.top,
+      'top'
+    );
 
-    // parserOutput.push(negPoint);
-    // parserOutput.push(posPoint);
+    parserOutput.push(negPoint);
+    parserOutput.push(posPoint);
     return { parserOutput, mathcss };
   }, [math]);
 

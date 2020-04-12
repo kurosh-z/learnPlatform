@@ -41,12 +41,8 @@ const Prob01: React.FC<{}> = () => {
           x={300}
           y={300}
           math={String.raw`
-          abc \begin{bmatrix}
-          k_0 & k_1 & k_2\\
-          a_0 & \int_{f(t)}^{g(t)} p(t) & a_3\\
-          b_0 & b_2 & b_3 \\
-          c_0 & c_1 & c_2
-          \end{bmatrix}c_1c `}
+         e^{\intf(x)}  
+           `}
         />
       </svg>
 
