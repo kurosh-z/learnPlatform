@@ -1,5 +1,5 @@
 import { css as emoCss, SerializedStyles } from '@emotion/core';
-export type FontSizesType = {
+export type FONTSIZES = {
   tiny: number;
   scriptsize: number;
   footnotesize: number;
@@ -22,7 +22,7 @@ export default class MathCss {
   private LLARGE: number;
   private HUGE: number;
   private HHUGE: number;
-  private _fontSizes: FontSizesType;
+  private _fontSizes: FONTSIZES;
 
   private _math_css: SerializedStyles;
   constructor(sizeFactor: number) {
@@ -119,13 +119,16 @@ export default class MathCss {
         fontFamily: 'KaTeX_Size2',
         fontStyle: 'normal',
         '&.tiny': {
-          fontSize: `${this.TINY}rem`,
+          fontSize: `${0.7 * this.TINY}rem`,
+          fontFamily: 'KaTeX_Size1',
         },
         '&.scriptsize': {
           fontSize: `${this.SCRIPTSIZE}rem`,
+          fontFamily: 'KaTeX_Size1',
         },
         '&.footnotesize': {
           fontSize: `${this.FOOTNOTESIZE}rem`,
+          fontFamily: 'KaTeX_Size1',
         },
         '&.small': {
           fontSize: `${this.SMALL}rem`,
@@ -171,7 +174,36 @@ export default class MathCss {
   get css() {
     return this._math_css;
   }
-  get fontSizes() {
-    return this._fontSizes;
+  getfontSizeFunc(): FontSizeFunc {
+    const thisFontSizes = this._fontSizes;
+
+    function getFontSize({
+      type = 'math_letter',
+      sizeKey = 'normalsize',
+    }: {
+      type?: 'math_number' | 'math_letter' | 'math_op';
+      sizeKey?: keyof FONTSIZES;
+    }) {
+      if (type === 'math_letter') {
+        return thisFontSizes[sizeKey];
+      }
+      if (type === 'math_number') {
+        return 0.9 * thisFontSizes[sizeKey];
+      } else if (type === 'math_op') {
+        if (sizeKey === 'normalsize') {
+          return thisFontSizes['normalsize'];
+        } else return thisFontSizes[sizeKey];
+      }
+    }
+
+    return getFontSize;
   }
 }
+
+export type FontSizeFunc = ({
+  type,
+  sizeKey,
+}: {
+  type?: 'math_number' | 'math_letter' | 'math_op';
+  sizeKey?: keyof FONTSIZES;
+}) => number;

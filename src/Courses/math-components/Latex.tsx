@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
+import { SerializedStyles } from '@emotion/core';
 import { MathCss, parserFactory } from './parser';
-import { ParserOutputList, ParserOutput } from './parser/Parser';
+import Parser, { ParserOutputList, ParserOutput } from './parser/Parser';
 
 type LatexProps = {
   math?: string;
@@ -11,36 +12,42 @@ type LatexProps = {
   className?: string;
 };
 
+const useParser = (
+  mathFormula: string,
+  fontFactor: number
+): { parser: Parser; css: SerializedStyles } => {
+  const { parser, mathcss } = useMemo(() => {
+    const mathcss = new MathCss(fontFactor);
+    const parser = parserFactory({
+      str: mathFormula,
+      fontSizegetter: mathcss.getfontSizeFunc(),
+    });
+
+    return { parser, mathcss };
+  }, [mathFormula]);
+
+  return { parser: parser, css: mathcss.css };
+};
+
 const Latex: React.FC<LatexProps> = ({ math, x, y, children }) => {
   if (!children && !math)
     throw new Error('one of the math propertie or child should be given!');
   const mathFormula = children ? children.toString() : math;
-  const { parserOutput, mathcss } = useMemo(() => {
-    const mathcss = new MathCss(2.1);
-    const parser = parserFactory({
-      str: mathFormula,
-      pfontSizes: mathcss.fontSizes,
-    });
 
-    const parserOutput = parser.outputs;
-    const negPoint = parser._checkline(
-      parser.BBox.left,
-      parser.BBox.bottom,
-      'bottom'
-    );
-    const posPoint = parser._checkline(
-      parser.BBox.right,
-      parser.BBox.top,
-      'top'
-    );
+  const { parser, css } = useParser(mathFormula, 1.5);
+  const parserOutput = parser.outputs;
+  // const negPoint = parser._checkline(
+  //   parser.BBox.left,
+  //   parser.BBox.bottom,
+  //   'bottom'
+  // );
+  // const posPoint = parser._checkline(parser.BBox.right, parser.BBox.top, 'top');
 
-    // parserOutput.push(negPoint);
-    // parserOutput.push(posPoint);
-    return { parserOutput, mathcss };
-  }, [math]);
+  // parserOutput.push(negPoint);
+  // parserOutput.push(posPoint);
 
   return (
-    <g className={'latex'} css={mathcss.css} transform={`translate(${x} ${y})`}>
+    <g className={'latex'} css={css} transform={`translate(${x} ${y})`}>
       <ParserComp parserOut={parserOutput} />
     </g>
   );

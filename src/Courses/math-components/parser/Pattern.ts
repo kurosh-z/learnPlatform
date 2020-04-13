@@ -1,4 +1,4 @@
-import { FontSizesType } from './MathCss';
+import { FontSizeFunc, FONTSIZES } from './MathCss';
 import { FONT_FAMILIES, FONT_STYLES } from './fontMetrics';
 export const LETTERS = 'a-zA-Z@αβγΓδΔϵζηθΘιIκλΛμνοπΠρσΣτυϕΦχΞξψΨω';
 
@@ -10,7 +10,7 @@ export type MathExpr = {
     dy: number;
     dyy?: number;
     className: string;
-    fontKey: keyof FontSizesType;
+    fontKey: keyof FONTSIZES;
     fontStyle?: FONT_STYLES;
     fontFamily?: FONT_FAMILIES;
   };
@@ -18,35 +18,28 @@ export type MathExpr = {
 
 export type PatternArgs = {
   name: string;
-  fontSizes?: FontSizesType;
+  getFontSize?: FontSizeFunc;
 };
 export default abstract class Pattern {
   abstract regString: string;
   abstract stringsRest: string;
   name: PatternArgs['name'];
-  fontSizes?: PatternArgs['fontSizes'];
-  private _fontKey?: keyof FontSizesType = 'normalsize';
+  getFontSize?: PatternArgs['getFontSize'];
+  fontKey?: keyof FONTSIZES = 'normalsize';
   mathExpressions?: MathExpr[];
 
   // abstract props: Object;
   abstract stratingIndex: number;
   abstract endingIndex: number;
-  constructor({ name, fontSizes }: PatternArgs) {
+  constructor({ name, getFontSize }: PatternArgs) {
     this.name = name;
-    if (fontSizes) {
-      this.fontSizes = fontSizes;
+    if (getFontSize) {
+      this.getFontSize = getFontSize;
     }
   }
   abstract isPattern(expr: string): boolean;
   abstract strToMathExpr(str: string, startIdx?: number): void;
   abstract isParallel(): boolean;
-
-  set fontKey(fontKey: keyof FontSizesType) {
-    this._fontKey = fontKey;
-  }
-  get fontKey() {
-    return this._fontKey;
-  }
 
   consume(expr: string, startingIndex: number) {
     const reducedExpr = expr.slice(startingIndex, expr.length);

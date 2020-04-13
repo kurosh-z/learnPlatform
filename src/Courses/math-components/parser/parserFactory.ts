@@ -1,5 +1,5 @@
 import Parser, { ParserArgs } from './Parser';
-import { FontSizesType } from './MathCss';
+import { FontSizeFunc } from './MathCss';
 import PConfigs from './PConfigs';
 
 export default function parserFactory({
@@ -7,14 +7,14 @@ export default function parserFactory({
   x,
   y,
   fontKey,
-  pfontSizes,
+  fontSizegetter,
   parentParser,
 }: Omit<ParserArgs, 'configs'> & {
-  pfontSizes?: FontSizesType;
+  fontSizegetter?: FontSizeFunc;
   parentParser?: Parser;
 }) {
-  const configs = pfontSizes
-    ? PConfigs.getInstance(pfontSizes)
+  const configs = fontSizegetter
+    ? PConfigs.getInstance(fontSizegetter)
     : PConfigs.getInstance();
   // const configs = new PConfigs(pfontSizes);
   const parser = new Parser({ str, x, y, fontKey, configs });

@@ -40,14 +40,15 @@ const Prob01: React.FC<{}> = () => {
         <Latex
           x={100}
           y={300}
-          math={String.raw`
-          \begin{bmatrix}
-          1 & 2 & 3\\
-          a & e^{\int^c_h f(x)}  & c\\
-          1 & 2 & 3\\
-          b_0 & b_2 & b_3
-          \end{bmatrix}
-           `}
+          math={String.raw`e^A_T e^2e^ce^{\int f(x)}fe \int f(x) `}
+          // math={String.raw`
+          // \begin{bmatrix}
+          // 1 & 2 & 3\\
+          // a & e^{\int^c_h f(x)}\intf(x)  & c\\
+          // 1 & 2 & 3\\
+          // b_0 & b_2 & b_3
+          // \end{bmatrix}
+          //  `}
         />
       </svg>
 

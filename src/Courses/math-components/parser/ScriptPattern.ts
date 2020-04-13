@@ -1,4 +1,4 @@
-import { FontSizesType } from './MathCss';
+import { FONTSIZES } from './MathCss';
 import Pattern, { MathExpr, PatternArgs } from './Pattern';
 
 type IndexType = 'subscript' | 'supscript';
@@ -10,7 +10,7 @@ const INT_SUB_DY = 22;
 type ScriptExprs = {
   expr: string;
   type: 'sub' | 'sup';
-  fontKey: keyof FontSizesType;
+  fontKey: keyof FONTSIZES;
 };
 export default class ScriptPattern extends Pattern {
   regString = `(_{)|(\\^{)|(_)|(\\^)`;
@@ -22,8 +22,8 @@ export default class ScriptPattern extends Pattern {
   isType2: boolean = false;
   scriptExprs: ScriptExprs[];
 
-  constructor({ name, fontSizes }: PatternArgs) {
-    super({ name, fontSizes });
+  constructor({ name }: PatternArgs) {
+    super({ name });
   }
   /* 
     test the given str for pattern
@@ -36,31 +36,6 @@ export default class ScriptPattern extends Pattern {
     return this.isType2;
   }
 
-  // _findFirstIndex(str: string) {
-  //   const regexp = new RegExp(this.regString, 'mg');
-  //   const match = regexp.exec(str);
-
-  //   // check if its []_[] or []_{[]} ?
-  //   var type: IndexType;
-  //   var endIdx: number;
-  //   var indexStr: string;
-
-  //   if (str[2] !== '{') {
-  //     indexStr = str[2];
-  //     endIdx = 3;
-  //   } else {
-  //     endIdx = this.findmatchingPairs({
-  //       openregStr: '{',
-  //       closeregStr: '}',
-  //       str: str,
-  //       startIdx: 0,
-  //     });
-  //     indexStr = str.slice(3, endIdx - 1);
-  //   }
-  //   type = str[1] === '_' ? (type = 'subscript') : 'supscript';
-
-  //   return { indexStr, type, endIdx };
-  // }
   _findSecondIndex(str: string, startIdx: number) {
     const regexp = /(_{)|(\^{)|(_)|(\^)/gm;
     regexp.lastIndex = startIdx;
@@ -116,7 +91,7 @@ export default class ScriptPattern extends Pattern {
     if (type2) this.isType2 = true;
     else this.isType2 = false;
 
-    let indexFontKey: keyof FontSizesType;
+    let indexFontKey: keyof FONTSIZES;
 
     if (this.fontKey === 'scriptsize') indexFontKey = 'tiny';
     else if (this.fontKey === 'tiny') indexFontKey = 'tiny';

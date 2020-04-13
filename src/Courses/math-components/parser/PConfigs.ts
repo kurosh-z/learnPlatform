@@ -1,23 +1,23 @@
 import AtomPattern from './AtomPattern';
 import AtomSpecPattern from './AtomSpecPattern';
-import { FontSizesType } from './MathCss';
+import { FONTSIZES, FontSizeFunc } from './MathCss';
 import MatrixPattern from './MatrixPattern';
 import patternFactory from './patternFactory';
 import ScriptPattern from './ScriptPattern';
 import SymbolPattern from './SymbolPattern';
 
 export default class PConfigs {
-  fontSizes: FontSizesType;
+  getFontSize: FontSizeFunc;
   cssName: any;
-  allPatterns: (ScriptPattern | MatrixPattern)[];
+  allPatterns: (ScriptPattern | MatrixPattern | SymbolPattern)[];
   atomPatterns: (AtomPattern | AtomSpecPattern)[];
   public static instance: PConfigs;
 
-  private constructor(fontSizes: FontSizesType) {
-    this.fontSizes = fontSizes;
+  private constructor(getFontSize: FontSizeFunc) {
+    this.getFontSize = getFontSize;
     this.allPatterns = [
       // @ts-ignore
-      patternFactory('supsub', fontSizes),
+      patternFactory('supsub', getFontSize),
       // @ts-ignore
       patternFactory('matrix'),
       // @ts-ignore
@@ -25,18 +25,15 @@ export default class PConfigs {
     ];
     this.atomPatterns = [
       // @ts-ignore
-      patternFactory('atom', fontSizes),
+      patternFactory('atom', getFontSize),
       // @ts-ignore
-      patternFactory('special_chars', fontSizes),
+      patternFactory('special_chars', getFontSize),
     ];
   }
-  public static getInstance(fontSizes?: FontSizesType) {
+  public static getInstance(getfontSize?: FontSizeFunc) {
     if (!PConfigs.instance) {
-      PConfigs.instance = new PConfigs(fontSizes);
+      PConfigs.instance = new PConfigs(getfontSize);
     }
     return PConfigs.instance;
-  }
-  public getFontSizes() {
-    return this.fontSizes;
   }
 }

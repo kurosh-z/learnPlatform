@@ -1,7 +1,7 @@
 import AtomPattern from './AtomPattern';
 import AtomSpecPattern from './AtomSpecPattern';
 import SymbolPattern from './SymbolPattern';
-import { FontSizesType } from './mathCss';
+import { FONTSIZES, FontSizeFunc } from './MathCss';
 import { getStringMetrics, FONT_FAMILIES, FONT_STYLES } from './fontMetrics';
 import MatrixPattern from './MatrixPattern';
 import { MathExpr } from './Pattern';
@@ -68,17 +68,17 @@ export type ParserArgs = {
   str: string;
   x?: number;
   y?: number;
-  fontKey?: keyof FontSizesType;
+  fontKey?: keyof FONTSIZES;
   configs: PConfigs;
 };
 export default class Parser {
   outputs: ParserOutputList = [];
   str: string;
   currStr: string;
-  fontKey: keyof FontSizesType;
+  fontKey: keyof FONTSIZES;
   classNames: string = '';
   configs: PConfigs;
-  fontSizes: FontSizesType;
+  getFontSize: FontSizeFunc;
   patternList: PConfigs['allPatterns'];
   atomPatternsList: PConfigs['atomPatterns'];
   allRegStrings: string;
@@ -104,7 +104,7 @@ export default class Parser {
   }: ParserArgs) {
     this.str = str;
     this.configs = configs;
-    this.fontSizes = this.configs.fontSizes;
+    this.getFontSize = this.configs.getFontSize;
     this.patternList = this.configs.allPatterns;
     this.atomPatternsList = this.configs.atomPatterns;
     this.fontKey = fontKey;
@@ -256,6 +256,7 @@ export default class Parser {
     for (const mathexpr of mathexprList) {
       const { expr, attr } = mathexpr;
       const { dx, dy, dxx, dyy } = attr;
+
       let { currX, currY } = this.currPos;
 
       if (dx) {
@@ -267,11 +268,17 @@ export default class Parser {
       let className = attr.className;
       className += ' ' + this.fontKey;
 
-      let font_size = this.fontSizes[this.fontKey];
+      let font_size = this.getFontSize({
+        type: 'math_number',
+        sizeKey: this.fontKey,
+      });
       let fontFamily: FONT_FAMILIES = 'KaTeX_Math';
       let fontStyle: FONT_STYLES = 'italic';
       if (pattern instanceof AtomPattern && pattern.isNumber(expr)) {
-        font_size = 0.9 * font_size;
+        font_size = this.getFontSize({
+          type: 'math_number',
+          sizeKey: this.fontKey,
+        });
         fontFamily = 'KaTex_Main';
         fontStyle = 'normal';
       }
@@ -356,7 +363,6 @@ export default class Parser {
     } else if (pattern instanceof ScriptPattern) {
       this._handleScripts(pattern);
     } else if (pattern instanceof SymbolPattern) {
-      const font_factor = this.fontSizes[this.fontKey];
       for (const mathExpr of pattern.mathExpressions) {
         const { currX, currY } = this.currPos;
         // const parserFontFactor = this.fontFactor ===
@@ -370,7 +376,10 @@ export default class Parser {
         if (pattern.isInt) {
           const { maxAscent, maxDescent, width } = getStringMetrics({
             str: '∫',
-            fontSize: font_factor,
+            fontSize: this.getFontSize({
+              type: 'math_op',
+              sizeKey: this.fontKey,
+            }),
             fontFamily: 'KaTeX_Size2',
             fontStyle: 'normal',
           });
@@ -400,7 +409,7 @@ export default class Parser {
       elRight: number;
     };
     const scriptElements: RawScriptElement[] = [];
-    const SUP_DY = -6.5;
+    const SUP_DY = -4.5;
     const SUB_DY = 3;
     const INT_SUP_DY = -18;
     const INT_SUB_DY = 15;
@@ -408,9 +417,16 @@ export default class Parser {
     const MID_MARGIN = 1;
     const baseType = this.lastElement.type;
     const baseHeight = this.lastElement.BBox.height;
-    const font_factor = this.fontSizes[this.fontKey];
-
+    const font_factor = this.getFontSize({
+      type: 'math_letter',
+      sizeKey: this.fontKey,
+    });
+    const int_font_factor = this.getFontSize({
+      type: 'math_op',
+      sizeKey: this.fontKey,
+    });
     const { currX, currY } = this.currPos;
+    // this.outputs.push(this._checkline(currX, currY, '0'));
     var indexMaxX = 0;
     // loop through the scripts and set the positions
     for (const mathExpr of pattern.scriptExprs) {
@@ -442,13 +458,22 @@ export default class Parser {
       if (baseType === 'atom') {
         dy = scriptType === 'sub' ? font_factor * SUB_DY : font_factor * SUP_DY;
       }
-      if (baseType === 'int') {
+      if (baseType === 'int' && this.fontKey === 'normalsize') {
         dy =
           scriptType === 'sub'
-            ? font_factor * INT_SUB_DY
-            : font_factor * INT_SUP_DY;
+            ? int_font_factor * INT_SUB_DY
+            : int_font_factor * INT_SUP_DY;
 
-        dx = scriptType === 'sub' ? font_factor * -5 : font_factor * 2;
+        dx = scriptType === 'sub' ? int_font_factor * -5 : int_font_factor * 3;
+      }
+      if (baseType === 'int' && this.fontKey !== 'normalsize') {
+        dy =
+          scriptType === 'sub'
+            ? 0.5 * int_font_factor * INT_SUB_DY
+            : 0.5 * int_font_factor * INT_SUP_DY;
+
+        dx =
+          scriptType === 'sub' ? int_font_factor * -5 : int_font_factor * -1.5;
       }
       if (baseType === 'mat') {
         dy =
@@ -460,7 +485,7 @@ export default class Parser {
       }
       const elBottomPos = dy + scriptEl.elBottom;
       const elTopPos = dy + scriptEl.elTop;
-      const baseMiddleH = 4 * font_factor;
+      const baseMiddleH = 3.5 * font_factor;
       // adjustmetns if scripts are bigger than expected:
       if (currY - baseMiddleH < elBottomPos && scriptType === 'sup') {
         dy += -Math.abs(
@@ -499,28 +524,9 @@ export default class Parser {
         indexMaxX = scriptEl.elRight;
       }
     }
-    // set currX:
-
+    // set currPos
     this.currPos.currX = indexMaxX + SMARGIN * font_factor;
-    // const font_factor = this.fontSizes[this.fontKey];
-
-    // let sub_dx = 0,
-    //   sup_dx = 0;
-    // let sub_dy: number, sup_dy: number;
-    // // console.log(base, font_factor);
-    // if (this.currBase === 'int') {
-    //   sub_dy = font_factor * INT_SUB_DY;
-    //   sup_dy = font_factor * INT_SUP_DY;
-    //   sub_dx = font_factor * -16;
-    //   sup_dx = font_factor * -5;
-    //   // }
-    //   //  else if (this.currBase === 'mat') {
-    //   //   sub_dy = this.currBBox.bottom;
-    //   //   sup_dy = this.currBBox.top + 3 * font_factor;
-    // } else {
-    //   sub_dy = font_factor * SUB_DY;
-    //   sup_dy = font_factor * SUP_DY;
-    // }
+    this.currPos.currY = currY;
   }
 
   _pushParserOutputs({
@@ -631,7 +637,10 @@ export default class Parser {
     // center the matrix vertically based on the current baseline
     const currX0 = this.currPos.currX;
     const currY0 = this.currPos.currY;
-    const FONT_FACTOR = this.fontSizes[this.fontKey];
+    const FONT_FACTOR = this.getFontSize({
+      type: 'math_letter',
+      sizeKey: this.fontKey,
+    });
     const V_MARGIN = 18 * FONT_FACTOR;
     const H_MARGIN = 8 * FONT_FACTOR;
     const DH_MARGIN = 2 * FONT_FACTOR; // Delimiter's horizontal margin(top and bottom of matrix)

@@ -7,8 +7,8 @@ import { MathCss } from './parser';
 // const LETTERS = 'αβγΓδΔϵζηθΘιIκλΛμνοπΠρσΣτυϕΦχΞξψΨω';
 // const LETTERS = '0123456789';
 // const LETTERS = '()[]{}`~!?<>,.@#$%^&*_-=+÷×\\|';
-const LETTERS = '∫';
-const STYLES = ['normal'];
+const LETTERS = '∫∏';
+const STYLES = ['normal', 'bold', 'italic'];
 
 type FontMetrics = {
   [key: string]: { normal: number[]; italic: number[]; bold: number[] };
@@ -34,7 +34,7 @@ const Calibrator: React.FC<{}> = () => {
         for (const style of STYLES) {
           const { width, ascent, descent } = calFontMetrics({
             char: char,
-            fontFamily: 'KaTeX_Size2',
+            fontFamily: 'KaTeX_Size1',
             fontStyle: style,
             canvas: canvRef.current,
             i,
@@ -112,7 +112,7 @@ function calFontMetrics({
   j: number;
 }) {
   const ctx = canvas.getContext('2d');
-  ctx.font = `${fontStyle} 19.2px ${fontFamily}`;
+  ctx.font = `${fontStyle} 16px ${fontFamily}`;
   const textMetrics = ctx.measureText(char);
   const ret = {
     width: textMetrics.width,
@@ -121,15 +121,6 @@ function calFontMetrics({
   };
   const pos = { x: 100 + i * 56, y: 100 + j * 40 };
   ctx.fillText(char, pos.x, pos.y);
-  ctx.beginPath();
-  ctx.moveTo(100 + i * 56, 100 + j * 40);
-  ctx.lineTo(140, 100);
-  ctx.stroke();
-  ctx.moveTo(100 + i * 56, 100 + j * 40 + textMetrics.actualBoundingBoxDescent);
-  ctx.lineTo(140, 100 + textMetrics.actualBoundingBoxDescent);
-  ctx.moveTo(100 + i * 56, 100 + j * 40 - textMetrics.actualBoundingBoxAscent);
-  ctx.lineTo(140, 100 - textMetrics.actualBoundingBoxAscent);
-  ctx.stroke();
 
   return ret;
 }
