@@ -1,5 +1,5 @@
 import { FontSizesType } from './MathCss';
-import Pattern, { LETTERS, MathExpr, PatternArgs } from './Pattern';
+import Pattern, { MathExpr, PatternArgs } from './Pattern';
 
 type IndexType = 'subscript' | 'supscript';
 const SUP_DY = -8;
@@ -7,6 +7,11 @@ const SUB_DY = 5;
 const INT_SUP_DY = -25;
 const INT_SUB_DY = 22;
 
+type ScriptExprs = {
+  expr: string;
+  type: 'sub' | 'sup';
+  fontKey: keyof FontSizesType;
+};
 export default class ScriptPattern extends Pattern {
   regString = `(_{)|(\\^{)|(_)|(\\^)`;
   // regString = `((_{)|(\\^{))|((_)|(\\^))`;
@@ -15,6 +20,7 @@ export default class ScriptPattern extends Pattern {
   endingIndex: number;
   stringsRest: string;
   isType2: boolean = false;
+  scriptExprs: ScriptExprs[];
 
   constructor({ name, fontSizes }: PatternArgs) {
     super({ name, fontSizes });
@@ -116,58 +122,26 @@ export default class ScriptPattern extends Pattern {
     else if (this.fontKey === 'tiny') indexFontKey = 'tiny';
     else indexFontKey = 'scriptsize';
 
-    const font_factor = this.fontSizes[indexFontKey];
-
-    let sub_dy: number, sup_dy: number;
-    let sub_dx = 0,
-      sup_dx = 0;
-    // console.log(base, font_factor);
-    if (this.currBase === 'int') {
-      sub_dy = font_factor * INT_SUB_DY;
-      sup_dy = font_factor * INT_SUP_DY;
-      sub_dx = font_factor * -16;
-      sup_dx = font_factor * -5;
-    } else if (this.currBase === 'mat') {
-      sub_dy = this.currBBox.bottom;
-      sup_dy = this.currBBox.top + 3 * font_factor;
-    } else {
-      sub_dy = font_factor * SUB_DY;
-      sup_dy = font_factor * SUP_DY;
-    }
-
-    const mathExpressions: Required<MathExpr>[] = type2
+    this.scriptExprs = type2
       ? [
           {
             expr: indexStr1,
-            attr: {
-              dx: type1 === 'subscript' ? sub_dx : sup_dx,
-              dy: type1 === 'subscript' ? sub_dy : sup_dy,
-              className: type1 === 'subscript' ? 'sub' : 'sup',
-              fontKey: indexFontKey,
-            },
+            type: type1 === 'subscript' ? 'sub' : 'sup',
+            fontKey: indexFontKey,
           },
           {
             expr: indexStr2,
-            attr: {
-              dx: type2 === 'subscript' ? sub_dx : sup_dx,
-              dy: type2 === 'subscript' ? sub_dy : sup_dy,
-              className: type2 === 'subscript' ? 'sub' : 'sup',
-              fontKey: indexFontKey,
-            },
+            type: type2 === 'subscript' ? 'sub' : 'sup',
+            fontKey: indexFontKey,
           },
         ]
       : [
           {
             expr: indexStr1,
-            attr: {
-              dx: type1 === 'subscript' ? sub_dx : sup_dx,
-              dy: type1 === 'subscript' ? sub_dy : sup_dy,
-              className: type1 === 'subscript' ? 'sub' : 'sup',
-              fontKey: indexFontKey,
-            },
+            type: type1 === 'subscript' ? 'sub' : 'sup',
+            fontKey: indexFontKey,
           },
         ];
-    this.mathExpressions = mathExpressions;
     this.stratingIndex = startIdx;
     this.endingIndex = type2 ? endIdx2 : endIdx1;
     this.stringsRest = this.consume(str, this.endingIndex);

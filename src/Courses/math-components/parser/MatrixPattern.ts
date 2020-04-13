@@ -1,4 +1,4 @@
-import Pattern, { PatternArgs, MathExpr, CurrBase } from './Pattern';
+import Pattern, { PatternArgs, MathExpr } from './Pattern';
 
 const DELIMITERS = {
   matrix: { open: '', close: '' },
@@ -29,9 +29,6 @@ export default class MatrixPattern extends Pattern {
   isPattern(str: string) {
     const regexp = new RegExp(this.regString, 'mg');
     return regexp.test(str);
-  }
-  changeCurrBaseTo(): CurrBase {
-    return 'mat';
   }
 
   strToMathExpr(str: string, startIdx: number = 0) {

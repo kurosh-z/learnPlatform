@@ -1,4 +1,4 @@
-import Pattern, { MathExpr, PatternArgs, CurrBase } from './Pattern';
+import Pattern, { MathExpr, PatternArgs } from './Pattern';
 
 export default class SymbolPattern extends Pattern {
   endingIndex: number;
@@ -6,7 +6,7 @@ export default class SymbolPattern extends Pattern {
   regString: string;
   mathExpressions: MathExpr[];
   stringsRest: string;
-  private _isInt: boolean;
+  isInt: boolean;
   constructor({ name }: PatternArgs) {
     super({ name });
     const regStrs = this._createRegStrings();
@@ -41,17 +41,14 @@ export default class SymbolPattern extends Pattern {
     const regexp = new RegExp(this.regString, 'mg');
     return regexp.test(str);
   }
-  changeCurrBaseTo(): CurrBase {
-    if (this._isInt) return 'int';
-    return 'atom';
-  }
+
   strToMathExpr(str: string) {
     const regexp = new RegExp(this.regString, 'gm');
     const match = regexp.exec(str);
     this.stratingIndex = match.index;
     const expr = MATH_SYMBOLS[match[0]];
-    if (expr === '∫') this._isInt = true;
-    else this._isInt = false;
+    if (expr === '∫') this.isInt = true;
+    else this.isInt = false;
     this.endingIndex = regexp.lastIndex;
     this.stringsRest = this.consume(str, this.endingIndex);
 

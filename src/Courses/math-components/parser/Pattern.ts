@@ -15,7 +15,7 @@ export type MathExpr = {
     fontFamily?: FONT_FAMILIES;
   };
 };
-export type CurrBase = 'atom' | 'int' | 'mat';
+
 export type PatternArgs = {
   name: string;
   fontSizes?: FontSizesType;
@@ -27,8 +27,6 @@ export default abstract class Pattern {
   fontSizes?: PatternArgs['fontSizes'];
   private _fontKey?: keyof FontSizesType = 'normalsize';
   mathExpressions?: MathExpr[];
-  currBase?: CurrBase;
-  currBBox?: { top: number; bottom: number; left: number; right: number };
 
   // abstract props: Object;
   abstract stratingIndex: number;
@@ -42,10 +40,6 @@ export default abstract class Pattern {
   abstract isPattern(expr: string): boolean;
   abstract strToMathExpr(str: string, startIdx?: number): void;
   abstract isParallel(): boolean;
-  changeCurrBaseTo(): CurrBase {
-    // by defaults returns 'atom' you can change this in drived patterns!
-    return 'atom';
-  }
 
   set fontKey(fontKey: keyof FontSizesType) {
     this._fontKey = fontKey;

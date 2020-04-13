@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react';
 import { MathCss, parserFactory } from './parser';
 import { ParserOutputList, ParserOutput } from './parser/Parser';
-import { text } from 'd3';
 
 type LatexProps = {
   math?: string;
@@ -17,7 +16,7 @@ const Latex: React.FC<LatexProps> = ({ math, x, y, children }) => {
     throw new Error('one of the math propertie or child should be given!');
   const mathFormula = children ? children.toString() : math;
   const { parserOutput, mathcss } = useMemo(() => {
-    const mathcss = new MathCss(1.5);
+    const mathcss = new MathCss(2.1);
     const parser = parserFactory({
       str: mathFormula,
       pfontSizes: mathcss.fontSizes,
@@ -35,8 +34,8 @@ const Latex: React.FC<LatexProps> = ({ math, x, y, children }) => {
       'top'
     );
 
-    parserOutput.push(negPoint);
-    parserOutput.push(posPoint);
+    // parserOutput.push(negPoint);
+    // parserOutput.push(posPoint);
     return { parserOutput, mathcss };
   }, [math]);
 

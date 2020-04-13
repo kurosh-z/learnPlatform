@@ -7,7 +7,7 @@ const SPECIAL_CHARS = {
   '=':(fontFactor:number)=>( { dx:fontFactor* 3, dy: 0, dxx: fontFactor*3, dyy: 0, className: 'math_letter normal' }),
   '[':(fontFactor:number)=>( { dx: 0, dy: 0, dxx: fontFactor*3, dyy: 0, className: 'math_letter normal' }),
   ']':(fontFactor:number)=>( { dx: 0, dy: 0, dxx:fontFactor* 3, dyy: 0, className: 'math_letter normal' }),
-  '∫':(fontFactor: number)=>( { dx: 0, dy: 0, dxx:fontFactor*12.5, dyy: 0, className: 'math_op' }),
+  '∫':(fontFactor: number)=>( { dx: 0, dy: 0, dxx:fontFactor*5, dyy: 0, className: 'math_op' }),
   ',':()=>( { dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'math_letter normal' }),
 };
 export default class AtomSpecPattern extends Pattern {

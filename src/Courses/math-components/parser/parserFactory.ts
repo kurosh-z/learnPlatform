@@ -19,9 +19,9 @@ export default function parserFactory({
   // const configs = new PConfigs(pfontSizes);
   const parser = new Parser({ str, x, y, fontKey, configs });
   parser.parse();
-  // if parentParse update maxWH of the parent!
+  // if parentParse update BBox of the parent!
   if (parentParser) {
-    parentParser._updateMaxWHFromParser(parser);
+    parentParser._updateBBoxFromBBox(parser);
   }
   return parser;
 }

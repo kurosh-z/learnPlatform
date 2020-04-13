@@ -4,7 +4,7 @@ import SymbolPattern from './SymbolPattern';
 import { FontSizesType } from './mathCss';
 import { getStringMetrics, FONT_FAMILIES, FONT_STYLES } from './fontMetrics';
 import MatrixPattern from './MatrixPattern';
-import { MathExpr, CurrBase } from './Pattern';
+import { MathExpr } from './Pattern';
 import ScriptPattern from './ScriptPattern';
 import PConfigs from './Pconfigs';
 import parserFactory from './parserFactory';
@@ -14,6 +14,15 @@ export type CookedMathExpr = {
   expr: string;
   attr: { x?: number; y?: number; className?: string; transform?: string };
 };
+type PBBox = {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+  width: number;
+  height: number;
+};
+type LastElement = { type: 'atom' | 'int' | 'mat'; BBox?: Partial<PBBox> };
 
 type Ptext = {
   component: 'text';
@@ -75,14 +84,16 @@ export default class Parser {
   allRegStrings: string;
   allAtomRegStrings: string;
   currPos: { currX: number; currY: number };
-  BBox: { top: number; bottom: number; left: number; right: number } = {
+  BBox: PBBox = {
     top: 0,
     bottom: 0,
     right: 0,
     left: 0,
+    width: 0,
+    height: 0,
   };
   maxWH: { w: number; h: number };
-  currBase: CurrBase = 'atom';
+  lastElement: LastElement;
 
   constructor({
     str,
@@ -101,7 +112,7 @@ export default class Parser {
     this.allRegStrings = this._makeAllregStrings(this.patternList);
     this.allAtomRegStrings = this._makeAllregStrings(this.atomPatternsList);
     this.maxWH = { w: 0, h: 0 };
-    this.BBox = { left: x, right: x, top: y, bottom: y };
+    this.BBox = { left: x, right: x, top: y, bottom: y, width: 0, height: 0 };
   }
 
   _updateBBox(strAscent: number, strDescent: number) {
@@ -122,33 +133,38 @@ export default class Parser {
     if (currX > right) {
       this.BBox.right = currX;
     }
-    this.maxWH.w = this.BBox.right - this.BBox.left;
-    this.maxWH.h = this.BBox.bottom - this.BBox.top;
+    this.BBox.width = this.BBox.right - this.BBox.left;
+    this.BBox.height = this.BBox.bottom - this.BBox.top;
   }
 
-  _updateMaxWHFromParser(parser: Parser) {
+  _updateBBoxFromBBox({
+    parser,
+    BBox,
+  }: {
+    parser?: Parser;
+    BBox?: Omit<PBBox, 'width' | 'height'>;
+  }) {
     const { left, right, top, bottom } = this.BBox;
 
-    const parserLeft = parser.BBox.left;
-    const parserRight = parser.BBox.right;
-    const parserTop = parser.BBox.top;
-    const parserBottom = parser.BBox.bottom;
+    const otherBBox = parser ? parser.BBox : BBox;
+    if (!otherBBox)
+      throw new Error(`one of the parser or BBox should be given!`);
 
-    if (parserLeft < left) {
-      this.BBox.left = parserLeft;
+    if (otherBBox.left < left) {
+      this.BBox.left = otherBBox.left;
     }
-    if (parserRight > right) {
-      this.BBox.right = parserRight;
+    if (otherBBox.right > right) {
+      this.BBox.right = otherBBox.right;
     }
-    if (parserTop < top) {
-      this.BBox.top = parserTop;
+    if (otherBBox.top < top) {
+      this.BBox.top = otherBBox.top;
     }
-    if (parserBottom > bottom) {
-      this.BBox.bottom = parserBottom;
+    if (otherBBox.bottom > bottom) {
+      this.BBox.bottom = otherBBox.bottom;
     }
 
-    this.maxWH.w = this.BBox.right - this.BBox.left;
-    this.maxWH.h = this.BBox.bottom - this.BBox.top;
+    this.BBox.width = this.BBox.right - this.BBox.left;
+    this.BBox.height = this.BBox.bottom - this.BBox.top;
   }
 
   _makeAllregStrings(
@@ -203,10 +219,7 @@ export default class Parser {
       } else {
         const pattern = this.whichPattern(match[0], this.patternList);
         pattern.fontKey = this.fontKey;
-        pattern.currBase = this.currBase;
-        pattern.currBBox = this.BBox;
         pattern.strToMathExpr(nstr, match.index);
-        this.currBase = 'atom';
         // nstr = this.consume(nstr, pattern.endingIndex);
         nstr = pattern.stringsRest;
 
@@ -286,6 +299,22 @@ export default class Parser {
 
       this.outputs.push(output);
 
+      // get last character's metrics for last element.
+      const lastCharMet = getStringMetrics({
+        str: expr.charAt(expr.length - 1),
+        fontFamily,
+        fontSize: font_size,
+        fontStyle,
+      });
+      const ltop = lastCharMet.maxAscent;
+      const lbottom = lastCharMet.maxDescent;
+      const lheight = lbottom - ltop;
+      const lwidth = lastCharMet.width;
+
+      this.lastElement = {
+        type: 'atom',
+        BBox: { top: ltop, bottom: lbottom, height: lheight, width: lwidth },
+      };
       // console.log(
       //   expr,
       //   'width',
@@ -322,15 +351,12 @@ export default class Parser {
   }
 
   _handleNonAtoms(pattern: ScriptPattern | MatrixPattern | SymbolPattern) {
-    this.currBase = pattern.changeCurrBaseTo();
     if (pattern instanceof MatrixPattern) {
-      this.currBase = 'mat';
       this._handleMatrix(pattern);
-    } else {
-      // const shouldCalList = this._shouldMeasureHeight(pattern);
-      let parallel = pattern.isParallel();
-      let paralleX = [];
-
+    } else if (pattern instanceof ScriptPattern) {
+      this._handleScripts(pattern);
+    } else if (pattern instanceof SymbolPattern) {
+      const font_factor = this.fontSizes[this.fontKey];
       for (const mathExpr of pattern.mathExpressions) {
         const { currX, currY } = this.currPos;
         // const parserFontFactor = this.fontFactor ===
@@ -341,22 +367,160 @@ export default class Parser {
           fontKey: mathExpr.attr.fontKey,
           parentParser: this,
         });
-        this._pushParserOutputs({ parser: parser, patternExpr: mathExpr });
-
-        if (!parallel) {
-          // if idx=0 it's base we have to update the currPos
-          this.currPos.currX = parser.currPos.currX;
-        } else {
-          paralleX.push(parser.currPos.currX);
+        if (pattern.isInt) {
+          const { maxAscent, maxDescent, width } = getStringMetrics({
+            str: '∫',
+            fontSize: font_factor,
+            fontFamily: 'KaTeX_Size2',
+            fontStyle: 'normal',
+          });
+          this.lastElement = {
+            type: 'int',
+            BBox: {
+              left: currX,
+              right: currX + width + mathExpr.attr.dxx,
+              top: currY - maxAscent,
+              bottom: currY + maxDescent,
+            },
+          };
         }
-        // this.currPos.currX = parser.currPos.currX;
-      }
-      if (parallel) {
-        // compare 2nd and last mathexprs and update currPos accordingly
-        this.currPos.currX =
-          paralleX[0] >= paralleX[1] ? paralleX[0] : paralleX[1];
+        this._pushParserOutputs({ parser: parser, patternExpr: mathExpr });
+        this.currPos.currX = parser.currPos.currX;
       }
     }
+  }
+  _handleScripts(pattern: ScriptPattern) {
+    type RawScriptElement = {
+      elements: ParserOutputList;
+      type: 'sub' | 'sup';
+      elWidth: number;
+      elHeight: number;
+      elTop: number;
+      elBottom: number;
+      elRight: number;
+    };
+    const scriptElements: RawScriptElement[] = [];
+    const SUP_DY = -6.5;
+    const SUB_DY = 3;
+    const INT_SUP_DY = -18;
+    const INT_SUB_DY = 15;
+    const SMARGIN = 2;
+    const MID_MARGIN = 1;
+    const baseType = this.lastElement.type;
+    const baseHeight = this.lastElement.BBox.height;
+    const font_factor = this.fontSizes[this.fontKey];
+
+    const { currX, currY } = this.currPos;
+    var indexMaxX = 0;
+    // loop through the scripts and set the positions
+    for (const mathExpr of pattern.scriptExprs) {
+      const { expr, type, fontKey } = mathExpr;
+      const parser = parserFactory({
+        str: expr,
+        x: currX,
+        y: currY,
+        fontKey: fontKey,
+      });
+
+      const { bottom, top, width, right, height } = parser.BBox;
+      const scriptEl: RawScriptElement = {
+        elements: parser.outputs,
+        elHeight: height,
+        elWidth: width,
+        elBottom: bottom,
+        elTop: top,
+        elRight: right,
+        type: type,
+      };
+      scriptElements.push(scriptEl);
+    }
+
+    for (const scriptEl of scriptElements) {
+      const scriptType = scriptEl.type;
+      let dy: number,
+        dx: number = 0;
+      if (baseType === 'atom') {
+        dy = scriptType === 'sub' ? font_factor * SUB_DY : font_factor * SUP_DY;
+      }
+      if (baseType === 'int') {
+        dy =
+          scriptType === 'sub'
+            ? font_factor * INT_SUB_DY
+            : font_factor * INT_SUP_DY;
+
+        dx = scriptType === 'sub' ? font_factor * -5 : font_factor * 2;
+      }
+      if (baseType === 'mat') {
+        dy =
+          scriptType === 'sub'
+            ? baseHeight / 2 + 2 * font_factor
+            : -baseHeight / 2 + 3 * font_factor;
+
+        dx = -3 * font_factor;
+      }
+      const elBottomPos = dy + scriptEl.elBottom;
+      const elTopPos = dy + scriptEl.elTop;
+      const baseMiddleH = 4 * font_factor;
+      // adjustmetns if scripts are bigger than expected:
+      if (currY - baseMiddleH < elBottomPos && scriptType === 'sup') {
+        dy += -Math.abs(
+          elBottomPos - currY + baseMiddleH + font_factor * MID_MARGIN
+        );
+      }
+      if (currY - baseMiddleH > elTopPos && scriptType === 'sub') {
+        dy += Math.abs(
+          elTopPos - currY + baseMiddleH - font_factor * MID_MARGIN
+        );
+      }
+      // console.log(scriptEl.elements, currY - baseTop, dy + scriptEl.elBottom);
+      const output: ParserOutput<'PGroup'> = {
+        component: 'group',
+        gattr: {
+          className: `${scriptType}`,
+          transform: `translate(${dx} ${dy})`,
+        },
+        gelements: scriptEl.elements,
+      };
+      this.outputs.push(output);
+
+      // update the Bounding Box
+      const newLeft = this.BBox.left;
+      const newRight = scriptEl.elRight + dx;
+      const newBottom = scriptEl.elBottom + dy;
+      const newTop = scriptEl.elTop + dy;
+      const newBBOx = {
+        left: newLeft,
+        right: newRight,
+        top: newTop,
+        bottom: newBottom,
+      };
+      this._updateBBoxFromBBox({ BBox: newBBOx });
+      if (indexMaxX < scriptEl.elRight) {
+        indexMaxX = scriptEl.elRight;
+      }
+    }
+    // set currX:
+
+    this.currPos.currX = indexMaxX + SMARGIN * font_factor;
+    // const font_factor = this.fontSizes[this.fontKey];
+
+    // let sub_dx = 0,
+    //   sup_dx = 0;
+    // let sub_dy: number, sup_dy: number;
+    // // console.log(base, font_factor);
+    // if (this.currBase === 'int') {
+    //   sub_dy = font_factor * INT_SUB_DY;
+    //   sup_dy = font_factor * INT_SUP_DY;
+    //   sub_dx = font_factor * -16;
+    //   sup_dx = font_factor * -5;
+    //   // }
+    //   //  else if (this.currBase === 'mat') {
+    //   //   sub_dy = this.currBBox.bottom;
+    //   //   sup_dy = this.currBBox.top + 3 * font_factor;
+    // } else {
+    //   sub_dy = font_factor * SUB_DY;
+    //   sup_dy = font_factor * SUP_DY;
+    // }
   }
 
   _pushParserOutputs({
@@ -421,10 +585,9 @@ export default class Parser {
           fontKey: this.fontKey,
         });
 
-        const elMaxWH = parser.maxWH;
         const elBBox = parser.BBox;
-        const elMaxW = elMaxWH.w;
-        const elMaxH = elMaxWH.h;
+        const elMaxW = elBBox.width;
+        const elMaxH = elBBox.height;
         const elTop = elBBox.top;
         const elBottom = elBBox.bottom;
         // console.log('ij:   ', i, j, expr);
@@ -580,11 +743,26 @@ export default class Parser {
     this.currPos.currX = matrixX + currX + 1 * DV_MARGIN;
     this.currPos.currY = currY0;
     // this.outputs.push(this._checkline(this.currPos.currX, this.currPos.currY));
-
+    const matrixBBox = {
+      top: currY0 - mHeight / 2,
+      bottom: currY0 + mHeight / 2,
+      right: this.currPos.currX,
+      left: currX0,
+    };
+    this._updateBBoxFromBBox({ BBox: matrixBBox });
+    this.lastElement = { type: 'mat', BBox: { ...this.BBox } };
     // set BBox
-    this.BBox.right = this.currPos.currX;
-    this.BBox.top = -mHeight / 2;
-    this.BBox.bottom = mHeight / 2;
+    // if (this.BBox.right < this.currPos.currX) {
+    //   this.BBox.right = this.currPos.currX;
+    // }
+    // if (this.BBox.top < -mHeight / 2) {
+    //   this.BBox.top = -mHeight / 2;
+    // }
+    // if (this.BBox.bottom > mHeight / 2) {
+    //   this.BBox.bottom = mHeight / 2;
+    // }
+    // this.BBox.width = this.BBox.right - this.BBox.left;
+    // this.BBox.height = this.BBox.bottom - this.BBox.top;
   }
   _checkline(x: number, y: number, text?: string) {
     const check_line: Pdelimiter = {
@@ -596,61 +774,6 @@ export default class Parser {
     return check_line;
   }
 
-  //TODO: should be changed
-  _shouldMeasureHeight(pattern: ScriptPattern) {
-    let shouldCal: [false | 'UP' | 'DOWN'] = [false];
-    for (let idx = 1; idx < pattern.mathExpressions.length; idx++) {
-      const indexExpr = pattern.mathExpressions[idx];
-      const indexClName = indexExpr.attr.className;
-      const indexType = this._isExprInStr('sub', indexClName) ? 'sub' : 'sup';
-      if (indexType === 'sub' && this._isGrowingUP(indexExpr.expr)) {
-        shouldCal.push('UP');
-      } else if (indexType === 'sup' && this._isGrowingDOWN(indexExpr.expr))
-        shouldCal.push('DOWN');
-      else shouldCal.push(false);
-    }
-    return shouldCal;
-    // return [false, false, false];
-  }
-  //TODO: should be changed
-  _maxHeightChange(
-    parserRes: CookedMathExpr[],
-    currY: number,
-    type: 'UP' | 'DOWN'
-  ) {
-    let maxVerChange = 0;
-    let baseline = parserRes[0].attr.y;
-    if (type === 'DOWN') {
-      for (const mathExpr of parserRes) {
-        if (mathExpr.attr.y - baseline > maxVerChange) {
-          maxVerChange = mathExpr.attr.y - baseline;
-        }
-      }
-
-      return (-2 * maxVerChange) / 3;
-    } else if (type === 'UP') {
-      for (const mathExpr of parserRes) {
-        if (baseline - mathExpr.attr.y > maxVerChange) {
-          maxVerChange = baseline - mathExpr.attr.y;
-        }
-      }
-      // console.log('UP', maxVerChange);
-      // console.log('base', baseline);
-      // console.log('currY', currY);
-      // return 0;
-      // TODO: pron to bug!
-      return maxVerChange - baseline / 2;
-    }
-  }
-  //TODO: don't need this anymore?
-  _isGrowingUP(str: string) {
-    const regexp = new RegExp('\\^', 'mg');
-    return regexp.test(str);
-  }
-  _isGrowingDOWN(str: string) {
-    const regexp = new RegExp('_', 'mg');
-    return regexp.test(str);
-  }
   _isExprInStr(expr: string, str: string, range?: boolean) {
     const regexp = RegExp(expr, 'mg');
     if (range) {

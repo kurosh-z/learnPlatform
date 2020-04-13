@@ -38,19 +38,24 @@ const Prob01: React.FC<{}> = () => {
         width={'1000'}
         height={'1000'}>
         <Latex
-          x={300}
+          x={100}
           y={300}
           math={String.raw`
-         e^{\intf(x)}  
+          \begin{bmatrix}
+          1 & 2 & 3\\
+          a & e^{\int^c_h f(x)}  & c\\
+          1 & 2 & 3\\
+          b_0 & b_2 & b_3
+          \end{bmatrix}
            `}
         />
       </svg>
 
-      {/*  \begin{bmatrix}
-          a_0 & \int_{f(t)}^{g(t)}  & a_3\\
-          a_n & a_2 & a_3\\
+      {/*  c^{\begin{bmatrix}
+          a & b  & c\\
+          1 & 2 & 3\\
           b_0 & b_2 & b_3
-          \end{bmatrix} */}
+          \end{bmatrix}}*/}
 
       {/* <MathJaxNode
         formula={tex}
