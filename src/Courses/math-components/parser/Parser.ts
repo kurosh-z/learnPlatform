@@ -8,13 +8,19 @@ import { MathExpr } from './Pattern';
 import ScriptPattern from './ScriptPattern';
 import PConfigs from './Pconfigs';
 import parserFactory from './parserFactory';
+import AnimCompPattern from './AnimCompPattern';
 // import './test.css';
 
+type NoneAtomPatterns =
+  | ScriptPattern
+  | AnimCompPattern
+  | SymbolPattern
+  | MatrixPattern;
 export type CookedMathExpr = {
   expr: string;
   attr: { x?: number; y?: number; className?: string; transform?: string };
 };
-type PBBox = {
+export type PBBox = {
   top: number;
   bottom: number;
   left: number;
@@ -24,6 +30,12 @@ type PBBox = {
 };
 type LastElement = { type: 'atom' | 'int' | 'mat'; BBox?: Partial<PBBox> };
 
+type PAnim = {
+  component: 'animcomp';
+  id: string;
+  aAttr: { x?: number; y?: number; className: string; transform?: string };
+  animElements: ParserOutputList;
+};
 type Ptext = {
   component: 'text';
   attr: { x: number; y: number; className: string };
@@ -54,6 +66,7 @@ type ParserOut = {
   Ptext: Ptext;
   Pdelimiter: Pdelimiter;
   PGroup: PGroup;
+  Panim: PAnim;
 };
 
 export type ParserOutput<T extends keyof ParserOut> = ParserOut[T];
@@ -62,6 +75,7 @@ export type ParserOutputList = (
   | ParserOutput<'Ptext'>
   | ParserOutput<'Pdelimiter'>
   | ParserOutput<'PGroup'>
+  | ParserOutput<'Panim'>
 )[];
 
 export type ParserArgs = {
@@ -227,9 +241,8 @@ export default class Parser {
         // console.log('str: ', str);
         // console.log('nstr', nstr);
         // console.log('------------------------');
-        this._handleNonAtoms(
-          pattern as MatrixPattern | ScriptPattern | SymbolPattern
-        );
+
+        this._handleNonAtoms(pattern as NoneAtomPatterns);
       }
       idx++;
 
@@ -357,12 +370,15 @@ export default class Parser {
     return str;
   }
 
-  _handleNonAtoms(pattern: ScriptPattern | MatrixPattern | SymbolPattern) {
+  _handleNonAtoms(pattern: NoneAtomPatterns) {
     if (pattern instanceof MatrixPattern) {
       this._handleMatrix(pattern);
     } else if (pattern instanceof ScriptPattern) {
       this._handleScripts(pattern);
-    } else if (pattern instanceof SymbolPattern) {
+    } else if (pattern instanceof AnimCompPattern) {
+      this._handleAnimComp(pattern);
+    }
+    if (pattern instanceof SymbolPattern) {
       for (const mathExpr of pattern.mathExpressions) {
         const { currX, currY } = this.currPos;
         // const parserFontFactor = this.fontFactor ===
@@ -397,6 +413,28 @@ export default class Parser {
         this.currPos.currX = parser.currPos.currX;
       }
     }
+  }
+  _handleAnimComp(pattern: AnimCompPattern) {
+    const { id, expr } = pattern.animExpr;
+    const { currX, currY } = this.currPos;
+    const parser = parserFactory({
+      str: expr,
+      x: currX,
+      y: currY,
+      fontKey: this.fontKey,
+      parentParser: this,
+    });
+    this.currPos.currX = parser.currPos.currX;
+    const animComp: PAnim = {
+      component: 'animcomp',
+      id: id,
+      aAttr: {
+        className: 'test',
+      },
+      animElements: parser.outputs,
+    };
+
+    this.outputs.push(animComp);
   }
   _handleScripts(pattern: ScriptPattern) {
     type RawScriptElement = {

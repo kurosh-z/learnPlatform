@@ -39,7 +39,6 @@ export default abstract class Pattern {
   }
   abstract isPattern(expr: string): boolean;
   abstract strToMathExpr(str: string, startIdx?: number): void;
-  abstract isParallel(): boolean;
 
   consume(expr: string, startingIndex: number) {
     const reducedExpr = expr.slice(startingIndex, expr.length);

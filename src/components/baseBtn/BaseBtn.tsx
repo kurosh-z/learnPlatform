@@ -34,12 +34,12 @@ const baseStyles = emoCSS({
     // So we take precedent over the style of a native <a /> element.
     color: 'inherit',
     '&::-moz-focus-inner': {
-      borderStyle: 'none' // Remove Firefox dotted outline.
-    }
+      borderStyle: 'none', // Remove Firefox dotted outline.
+    },
   },
   outlineStyle: 'none',
   boxShadow: 'none',
-  borderColor: 'transparent'
+  borderColor: 'transparent',
 });
 
 export interface BaseBtnProps {
@@ -49,7 +49,7 @@ export interface BaseBtnProps {
   children?: React.ReactNode;
   className?: string;
   href?: string;
-  rest?: any;
+  onClick?: (ev: MouseEvent) => void;
   ref?: React.Ref<any>;
 }
 
@@ -64,7 +64,7 @@ const BaseBtn: React.RefForwardingComponent<
     children,
     className,
     href,
-    rest
+    onClick,
   } = props;
 
   // const buttonRef = React.userRef(null);
@@ -93,8 +93,7 @@ const BaseBtn: React.RefForwardingComponent<
       ref={ref}
       css={baseStyles}
       {...compProps}
-      {...rest}
-    >
+      onClick={onClick}>
       {children}
     </BtnComponent>
   );

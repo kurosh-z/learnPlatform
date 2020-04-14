@@ -2,10 +2,6 @@ import { FONTSIZES } from './MathCss';
 import Pattern, { MathExpr, PatternArgs } from './Pattern';
 
 type IndexType = 'subscript' | 'supscript';
-const SUP_DY = -8;
-const SUB_DY = 5;
-const INT_SUP_DY = -25;
-const INT_SUB_DY = 22;
 
 type ScriptExprs = {
   expr: string;
@@ -31,9 +27,6 @@ export default class ScriptPattern extends Pattern {
   public isPattern(str: string) {
     const regexp = new RegExp(this.regString, 'mg');
     return regexp.test(str);
-  }
-  isParallel() {
-    return this.isType2;
   }
 
   _findSecondIndex(str: string, startIdx: number) {

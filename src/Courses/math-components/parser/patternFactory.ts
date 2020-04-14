@@ -4,9 +4,26 @@ import { FontSizeFunc } from './MathCss';
 import MatrixPattern from './MatrixPattern';
 import ScriptPattern from './ScriptPattern';
 import SymbolPattern from './SymbolPattern';
+import AnimCompPattern from './AnimCompPattern';
 
 export default function patternFactory(
-  patternName: 'atom' | 'special_chars' | 'supsub' | 'matrix' | 'symbols',
+  patternName: 'atom' | 'special_chars',
+  getFontSize?: FontSizeFunc
+): AtomPattern | AtomSpecPattern;
+
+export default function patternFactory(
+  patternName: 'supsub' | 'matrix' | 'symbols' | 'animcomp',
+  getFontSize?: FontSizeFunc
+): ScriptPattern | MatrixPattern | SymbolPattern | AnimCompPattern;
+
+export default function patternFactory(
+  patternName:
+    | 'atom'
+    | 'special_chars'
+    | 'supsub'
+    | 'matrix'
+    | 'symbols'
+    | 'animcomp',
   getFontSize?: FontSizeFunc
 ) {
   if (patternName === 'atom')
@@ -32,6 +49,10 @@ export default function patternFactory(
     return new SymbolPattern({
       name: patternName,
       getFontSize: getFontSize,
+    });
+  if (patternName === 'animcomp')
+    return new AnimCompPattern({
+      name: patternName,
     });
   else throw new Error(`pattern name ${patternName} is not recognized!`);
 }

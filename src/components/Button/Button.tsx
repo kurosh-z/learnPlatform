@@ -12,7 +12,7 @@ const ButtonHeights = {
   sm: '2.3rem',
   md: '3rem',
   lg: '3.5rem',
-  xl: '3.9rem'
+  xl: '3.9rem',
 };
 // const ButtonWidths = {
 //   xs: '4rem',
@@ -27,7 +27,7 @@ const ButtonPaddings = {
   sm: '0 0.9rem',
   md: '0 1.7rem',
   lg: '0 2.2rem',
-  xl: '0 2.3rem'
+  xl: '0 2.3rem',
 };
 
 const getFontSize = (size: ButtonSize, theme: Theme) => {
@@ -165,17 +165,17 @@ const hoverRotateIn: (
       transition: '.15s transform ease-out',
       willChange: 'transform opacity',
       opacity: 0.8,
-      zIndex: -2
+      zIndex: -2,
     },
     '&:hover::after': {
       transform: 'translate(0,0)',
-      opacity: 1
+      opacity: 1,
     },
     '&:hover': {
       color: theme.palette.white.lightest,
       transform: 'scale(1.05)',
-      willChange: 'transform'
-    }
+      willChange: 'transform',
+    },
   });
 
   return hover;
@@ -195,6 +195,7 @@ interface ButtonProps extends BaseBtnProps {
   hoverColor?: BtnColors;
   size?: ButtonSize;
   borderRad?: keyof Raddi;
+  onClick?: (ev: MouseEvent) => void;
 }
 
 type StyleProps = {
@@ -218,7 +219,7 @@ const computeStyles = ({
   borderRad,
   hover,
   hoverColor,
-  textColor
+  textColor,
 }: StyleProps) => {
   const backColor = getDefaultColor(color, theme, disabled);
 
@@ -250,7 +251,7 @@ const computeStyles = ({
     transition: '.2s transfrom ease-in',
     willChange: 'transform',
     cursor: 'pointer',
-    zIndex: 0
+    zIndex: 0,
   });
   let hoverStyle;
   if (hover === 'rotateIn') {
@@ -284,7 +285,8 @@ const Button: React.RefForwardingComponent<
     size = 'md',
     hover = 'rotateIn',
     hoverColor,
-    borderRad = 'md'
+    borderRad = 'md',
+    onClick,
   } = props;
 
   const theme = useTheme<Theme>();
@@ -298,7 +300,7 @@ const Button: React.RefForwardingComponent<
     hover: hover,
     disabled: disabled,
     borderRad: borderRad,
-    hoverColor: hoverColor
+    hoverColor: hoverColor,
   };
   const styles = useMemo(() => computeStyles(styleProps), [styleProps]);
 
@@ -310,8 +312,8 @@ const Button: React.RefForwardingComponent<
       ref={ref}
       href={href}
       disabled={disabled}
-      className={className}
-    >
+      onClick={onClick}
+      className={className}>
       {typeof children !== 'string' ? <span>{children}</span> : children}
     </BaseBtn>
   );

@@ -14,8 +14,8 @@ export default function parserFactory({
   parentParser?: Parser;
 }) {
   const configs = fontSizegetter
-    ? PConfigs.getInstance(fontSizegetter)
-    : PConfigs.getInstance();
+    ? PConfigs.getInstance({ getFontSize: fontSizegetter })
+    : PConfigs.getInstance({});
   // const configs = new PConfigs(pfontSizes);
   const parser = new Parser({ str, x, y, fontKey, configs });
   parser.parse();
