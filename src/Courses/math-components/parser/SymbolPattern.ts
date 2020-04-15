@@ -100,4 +100,6 @@ const MATH_SYMBOLS = {
   '\\omega': 'ω',
   //math-op
   '\\int': '∫',
+  '\\times': '×',
+  '\\infty': '∞',
 };

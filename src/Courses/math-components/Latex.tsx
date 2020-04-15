@@ -38,46 +38,29 @@ const Latex: React.FC<LatexProps> & LatexAnim = ({
   x,
   y,
   children,
-  fontFactor = 1.8,
+  fontFactor = 2,
   style,
 }) => {
   const { parser, mathcss } = useParser({ mathFormula, fontFactor });
   const parserOutput = parser.outputs;
-  // const negPoint = parser._checkline(
-  //   parser.BBox.left,
-  //   parser.BBox.bottom,
-  //   'bottom'
-  // );
-  // const posPoint = parser._checkline(parser.BBox.right, parser.BBox.top, 'top');
 
-  // parserOutput.push(negPoint);
-  // parserOutput.push(posPoint);
-  // const childrenProps = useMemo(() => {
-  //   const childrenProps: LatexChildrenProps = {};
-  //   if (children) {
-  //     React.Children.map(children, (child: React.ReactElement) => {
-  //       const props = child.props;
-  //       const id = props.id;
-  //       Object.defineProperty(childrenProps, id, {
-  //         value: props,
-  //         enumerable: true,
-  //       });
-  //     });
-  //   }
-  //   return childrenProps;
-  // }, [children]);
+  const childrenProps = useMemo(() => {
+    const childrenProps: LatexChildrenProps = {};
 
-  const childrenProps: LatexChildrenProps = {};
-  if (children) {
-    React.Children.map(children, (child: React.ReactElement) => {
-      const props = child.props;
-      const id = props.id;
-      Object.defineProperty(childrenProps, id, {
-        value: { props: props, child: child },
-        enumerable: true,
+    if (children) {
+      React.Children.map(children, (child: React.ReactElement) => {
+        const props = child.props;
+        const id = props.id;
+
+        Object.defineProperty(childrenProps, id, {
+          value: child,
+          enumerable: true,
+        });
       });
-    });
-  }
+    }
+    return childrenProps;
+  }, [children]);
+
   return (
     <g
       className={'latex'}
@@ -90,23 +73,25 @@ const Latex: React.FC<LatexProps> & LatexAnim = ({
 };
 
 type LatexChildrenProps = {
-  [id: string]: {
-    props: React.SVGAttributes<SVGGElement>;
-    child: ReactElement;
-  };
+  [id: string]: ReactElement;
 };
 type ParserCompProps = {
   parserOut: ParserOutputList;
   pgroupAttr?: ParserOutput<'PGroup'>['gattr'];
   childrenProps: LatexChildrenProps;
 };
-const ParserComp: React.FC<ParserCompProps> = ({
-  parserOut,
-  pgroupAttr,
-  childrenProps,
-}) => {
+
+// const ParserComp: React.RefForwardingComponent<SVGGElement, ParserCompProps> = (
+//   { parserOut, pgroupAttr, childrenProps },
+//   ref
+// ) => {
+// }
+const ParserComp2: React.FC<ParserCompProps> = (
+  { parserOut, pgroupAttr, childrenProps },
+  ref
+) => {
   return (
-    <g {...pgroupAttr}>
+    <animated.g {...pgroupAttr} ref={ref}>
       {parserOut.map((output, idx: number) => {
         const { component } = output;
         if (component === 'text') {
@@ -131,7 +116,7 @@ const ParserComp: React.FC<ParserCompProps> = ({
           return <DelimiterComp key={idx} dattr={dattr} dtype={dtype} />;
         } else if (component === 'animcomp') {
           const { aAttr, id, animElements } = output as ParserOutput<'Panim'>;
-          const animChild = childrenProps[id]['child'];
+          const animChild = childrenProps[id];
           return (
             <PanimComp
               key={idx}
@@ -140,13 +125,15 @@ const ParserComp: React.FC<ParserCompProps> = ({
               aAttr={aAttr}
               childrenProps={childrenProps}
               animProps={animChild.props}
+              ref={animChild.ref}
             />
           );
         }
       })}
-    </g>
+    </animated.g>
   );
 };
+const ParserComp = React.forwardRef(ParserComp2);
 
 type DelimiterProps = {
   dattr: ParserOutput<'Pdelimiter'>['dattr'];
@@ -188,24 +175,36 @@ type PAnimCompProps = {
   id: string;
   animProps?: React.SVGAttributes<SVGGElement>;
 };
-const PanimComp: React.FC<
-  PAnimCompProps & React.SVGAttributes<SVGGElement>
-> = ({ parserOut, childrenProps, aAttr, id, animProps }) => {
-  return (
-    <animated.g id={id} {...animProps}>
-      <ParserComp
-        parserOut={parserOut}
-        childrenProps={childrenProps}
-        pgroupAttr={aAttr}
-      />
-    </animated.g>
-  );
-};
 
-// export const Anim: React.FC<React.SVGAttributes<SVGGElement>> = (props) => {
-//   return <g {...props}></g>;
+// const PanimComp: React.RefForwardingComponent<
+//   SVGGElement,
+//   PAnimCompProps & React.SVGAttributes<SVGGElement>
+// > = ({ parserOut, childrenProps, aAttr, animProps }, ref: React.Ref<any>) => {
+//   console.log('panim', ref);
+//   return (
+//     <ParserComp
+//       parserOut={parserOut}
+//       childrenProps={childrenProps}
+//       pgroupAttr={{ ...aAttr, ...animProps }}
+//     />
+//   );
 // };
 
+const PanimComp2: React.FC<
+  PAnimCompProps & React.SVGAttributes<SVGGElement>
+> = ({ parserOut, childrenProps, aAttr, animProps }, ref) => {
+  // <animated.g id={id} {...animProps}>    </animated.g>
+
+  return (
+    <ParserComp
+      parserOut={parserOut}
+      childrenProps={childrenProps}
+      pgroupAttr={{ ...aAttr, ...animProps }}
+      ref={ref}
+    />
+  );
+};
+const PanimComp = React.forwardRef(PanimComp2);
 interface LatexAnim {
   Anim: typeof PanimComp;
 }

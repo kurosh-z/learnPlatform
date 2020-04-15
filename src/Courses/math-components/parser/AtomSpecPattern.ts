@@ -2,13 +2,19 @@ import Pattern, { MathExpr, PatternArgs } from './Pattern';
 import { FONT_FAMILIES } from './fontMetrics';
 // prettier-ignore
 const SPECIAL_CHARS = {
-  ')':()=>( { dx:0, dy: 0, dxx: 0, dyy: 0, className: 'math_letter normal' }),
-  '(':()=>( { dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'math_letter normal' }),
-  '=':(fontFactor:number)=>( { dx:fontFactor* 3, dy: 0, dxx: fontFactor*3, dyy: 0, className: 'math_letter normal' }),
-  '[':(fontFactor:number)=>( { dx: 0, dy: 0, dxx: fontFactor*3, dyy: 0, className: 'math_letter normal' }),
-  ']':(fontFactor:number)=>( { dx: 0, dy: 0, dxx:fontFactor* 3, dyy: 0, className: 'math_letter normal' }),
+  ')':()=>( { dx:0, dy: 0, dxx: 0, dyy: 0, className: ' normal math_letter' }),
+  '(':()=>( { dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'normal math_letter' }),
+  '=':(fontFactor:number)=>( { dx:fontFactor* 3, dy: 0, dxx: fontFactor*3, dyy: 0, className: ' normal math_letter' }),
+  '[':(fontFactor:number)=>( { dx: 0, dy: 0, dxx: fontFactor*3, dyy: 0, className: ' normal math_letter' }),
+  ']':(fontFactor:number)=>( { dx: 0, dy: 0, dxx:fontFactor* 3, dyy: 0, className: ' normal math_letter' }),
+  // '{':(fontFactor:number)=>( { dx: 0, dy: 0, dxx: fontFactor*3, dyy: 0, className: 'normal' }),
+  // '}':(fontFactor:number)=>( { dx: 0, dy: 0, dxx:fontFactor* 3, dyy: 0, className: 'normal' }),
   '∫':(fontFactor: number)=>( { dx: 0, dy: 0, dxx:fontFactor*5, dyy: 0, className: 'math_op' }),
-  ',':()=>( { dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'math_letter normal' }),
+  ',':()=>( { dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'normal math_letter' }),
+  '∞':()=>({ dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'normal math_letter' }),
+  '-':(font_factor)=>({ dx: 0, dy: -3, dxx: 1*font_factor, dyy: 0, className: 'math_letter normal' }),
+  '×':()=>({ dx: 0, dy: 0, dxx: 0, dyy: 0, className: ' normal math_letter' }),
+  
 };
 export default class AtomSpecPattern extends Pattern {
   mathExpressions: MathExpr[];
@@ -16,7 +22,7 @@ export default class AtomSpecPattern extends Pattern {
   endingIndex: number;
   stringsRest: string;
   private _isMathOp: boolean;
-  regString = `[\\(\\)\\[\\],=∫]`;
+  regString = `[\\(\\)\\[\\]∞,=∫×-]`;
 
   constructor({ name, getFontSize }: PatternArgs) {
     super({ name, getFontSize });

@@ -6,8 +6,8 @@ import { MathCss } from './parser';
 // const LETTERS = 'ABCDEFGHIJKLMOPQRSTUVWXZ';
 // const LETTERS = 'αβγΓδΔϵζηθΘιIκλΛμνοπΠρσΣτυϕΦχΞξψΨω';
 // const LETTERS = '0123456789';
-// const LETTERS = '()[]{}`~!?<>,.@#$%^&*_-=+÷×\\|';
-const LETTERS = '∫∏';
+// const LETTERS = '()[]{}`~!?<>,.@#$%^&*_-=+÷×\\|∞';
+const LETTERS = '∞';
 const STYLES = ['normal', 'bold', 'italic'];
 
 type FontMetrics = {
@@ -34,7 +34,7 @@ const Calibrator: React.FC<{}> = () => {
         for (const style of STYLES) {
           const { width, ascent, descent } = calFontMetrics({
             char: char,
-            fontFamily: 'KaTeX_Size1',
+            fontFamily: 'KaTeX_Main',
             fontStyle: style,
             canvas: canvRef.current,
             i,
