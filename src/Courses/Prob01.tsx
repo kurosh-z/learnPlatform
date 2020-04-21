@@ -8,16 +8,20 @@ import { useSpring } from 'react-spring';
 import Button from '../components/Button/Button';
 // import MathJaxNode from '../mathjax/MathJaxNode';
 
-// const tex =
-//   'f(x) = \\int_{-\\infty}^\\infty\\hat{f}(\\xi)\\,e^{2 \\pi i \\xi x}\\,d\\xi';
-
+const tex= String.raw`A\times
+\begin{bmatrix}
+a & 2 \pi & c\\
+1 & 2\times \anim<Aintegral>{\int_{\infty}^{+\infty}  \anim<anim2>{d\xi} } & 3\\
+b_0 &   \frac{\partial \vec f}{ \partial \tilde x} & 23.a
+\end{bmatrix}`
+        
 
 const Prob01: React.FC<{}> = () => {
   const theme = useTheme<Theme>();
 
   const prob01 = emoCss({
-    backgroundColor: theme.palette.gray.base,
-    fill: theme.palette.white.dark,
+    backgroundColor: theme.palette.white.base,
+    fill: theme.palette.gray.dark,
     width: '600vw',
     height: '100vh',
     overflow: 'visible',
@@ -36,17 +40,17 @@ const Prob01: React.FC<{}> = () => {
   useEffect(()=>{
     if(ref1.current){
       const gEl: SVGGElement= ref1.current
-      console.log(gEl.getBBox())
+      // console.log(gEl.getBBox())
       
     }
   },[])
   const [animProps, set] = useSpring(() => ({
     transform: 'translate(0px,0px) scale(1)',
-    opacity: 1,
+    opacity: 0.7,
     fill: 'white',
   }));
   set({
-    transform: toggle1 ? 'translate(0px,-0px) scale(1.1)' : 'translate(0px,0px) scale(1)',
+    transform: toggle1 ? 'translate(0px,-0px) scale(1.6)' : 'translate(0px,0px) scale(1)',
     opacity: toggle1 ? 1 : 1,
     fill: '#87D37C',
   });
@@ -78,29 +82,34 @@ const Prob01: React.FC<{}> = () => {
         className='katexfont'
         xmlns='http://www.w3.org/2000/svg'
         xmlnsXlink='http://www.w3.org/1999/xlink'
-        width={'1000'}
+        width={'2000'}
         height={'1000'}>
         <Latex
-          x={100}
-          y={300}
-          mathFormula=
-        
-          {String.raw`A\times\begin{bmatrix}
-          a & 2 \pi & c\\
-          1 & 2\times \anim<Aintegral>{\int_{-\infty}^{c_2}f(\xi) \anim<anim2>{d\xi} } & 3\\
-          b_0 & b_2 & b_3
-          \end{bmatrix}
-         `}>
-          <Latex.Anim id={'Aintegral'} style={animProps} ref={ref1}  />
-          <Latex.Anim id={'anim2'} style={animProps2} ref={ref2}  />
+          x={10}
+          y={200}
+          fontFactor={1.8}
+          mathFormula={String.raw`
+           k^2 \vdots
+           `}
+         
+          // mathFormula={tex}
+           >
+          {/* <Latex.Anim id={'Aintegral'} style={animProps} ref={ref1}  />
+          <Latex.Anim id={'anim2'} style={animProps2} ref={ref2}  /> */}
         </Latex>
       </svg>
-
-      {/*  c^{\begin{bmatrix}
-          a & b  & c\\
-          1 & 2 & 3\\
-          b_0 & b_2 & b_3
-          \end{bmatrix}}*/}
+      
+      {/* \tilde{\alpha}   \tilde{\beta}    \tilde{\gamma}
+          \tilde{\delta}   \tilde{\epsilon} \tilde{\zeta}
+          \tilde{\nu}      \tilde{\omicron} \tilde{\pi}
+          \tilde{\rho}     \tilde{\sigma}   \tilde{\tau}
+          \tilde{\upsilon} \tilde{\phi}     \tilde{\chi}
+          \tilde{\xi}      \tilde{\psi}     \tilde{\omega}
+          \tilde{a}        \tilde{v}        \tilde{w}
+          \tilde{f}        \tilde{h} 
+          \tilde{a} \vec{b} \vec{c} \vec{e} \vec{g} \vec{h}
+          \tilde{i} \vec{j} \vec{k} \vec{l} \vec{m} \vec{n} 
+          f^{(k)}(x) */}
 
       {/* <MathJaxNode
         formula={tex}

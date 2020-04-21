@@ -52,6 +52,35 @@ export default class MathCss {
       fontFamily: 'KaTeX_Main',
       fontSize: `${this.NORMALSIZE}rem`,
       lineHeight: '1.2rem',
+      '.main': {
+        '&.tiny': {
+          fontSize: `${this.TINY}rem`,
+        },
+        '&.scriptsize': {
+          fontSize: `${this.SCRIPTSIZE}rem`,
+        },
+        '&.footnotesize': {
+          fontSize: `${this.FOOTNOTESIZE}rem`,
+        },
+        '&.small': {
+          fontSize: `${this.SMALL}rem`,
+        },
+        '&.normalsize': {
+          fontSize: `${this.NORMALSIZE}rem`,
+        },
+        '&.large': {
+          fontSize: `${this.LARGE}rem`,
+        },
+        '&.Large': {
+          fontSize: `${this.LLARGE}rem`,
+        },
+        '&.huge': {
+          fontSize: `${this.HUGE}rem`,
+        },
+        '&.Huge': {
+          fontSize: `${this.HHUGE}rem`,
+        },
+      },
 
       '.math_letter': {
         fontFamily: 'KaTeX_Math',
@@ -83,7 +112,6 @@ export default class MathCss {
         '&.Huge': {
           fontSize: `${this.HHUGE}rem`,
         },
-        // fontWeight: 'bold'
       },
       '.math_number': {
         fontFamily: 'KaTex_Main',
@@ -152,15 +180,22 @@ export default class MathCss {
       '.normal': {
         fontStyle: 'normal',
       },
+      '.ddot_spacing': {
+        letterSpacing: '-.4rem',
+      },
 
       path: {
         fill: 'none',
-        stroke: 'white',
-        strokeWidth: 1.7,
+        stroke: 'black',
         strokeLinejoin: 'round',
       },
       '.check_line': {
         stroke: 'red',
+        strokeWidth: 1.5,
+      },
+
+      '.bbox': {
+        stroke: '#eb7434',
         strokeWidth: 1.5,
       },
     });
@@ -181,10 +216,10 @@ export default class MathCss {
       type = 'math_letter',
       sizeKey = 'normalsize',
     }: {
-      type?: 'math_number' | 'math_letter' | 'math_op';
+      type?: 'math_number' | 'math_letter' | 'math_op' | 'main';
       sizeKey?: keyof FONTSIZES;
     }) {
-      if (type === 'math_letter') {
+      if (type === 'math_letter' || type === 'main') {
         return thisFontSizes[sizeKey];
       }
       if (type === 'math_number') {
@@ -204,6 +239,6 @@ export type FontSizeFunc = ({
   type,
   sizeKey,
 }: {
-  type?: 'math_number' | 'math_letter' | 'math_op';
+  type?: 'math_number' | 'math_letter' | 'math_op' | 'main';
   sizeKey?: keyof FONTSIZES;
 }) => number;

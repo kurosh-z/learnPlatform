@@ -3,17 +3,23 @@ import { FONT_FAMILIES } from './fontMetrics';
 // prettier-ignore
 const SPECIAL_CHARS = {
   ')':()=>( { dx:0, dy: 0, dxx: 0, dyy: 0, className: ' normal math_letter' }),
-  '(':()=>( { dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'normal math_letter' }),
+  '(':(font_factor)=>( { dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'normal math_letter' }),
   '=':(fontFactor:number)=>( { dx:fontFactor* 3, dy: 0, dxx: fontFactor*3, dyy: 0, className: ' normal math_letter' }),
   '[':(fontFactor:number)=>( { dx: 0, dy: 0, dxx: fontFactor*3, dyy: 0, className: ' normal math_letter' }),
   ']':(fontFactor:number)=>( { dx: 0, dy: 0, dxx:fontFactor* 3, dyy: 0, className: ' normal math_letter' }),
   // '{':(fontFactor:number)=>( { dx: 0, dy: 0, dxx: fontFactor*3, dyy: 0, className: 'normal' }),
   // '}':(fontFactor:number)=>( { dx: 0, dy: 0, dxx:fontFactor* 3, dyy: 0, className: 'normal' }),
   '∫':(fontFactor: number)=>( { dx: 0, dy: 0, dxx:fontFactor*5, dyy: 0, className: 'math_op' }),
+  '∞':(font_factor)=>({ dx: 0, dy:1.5*font_factor , dxx: 0, dyy: -1.2*font_factor, className: 'normal math_letter' }),
+  '∂':(font_factor)=>({ dx: 0, dy:0 , dxx: (-.2)*font_factor, dyy: 0, className: 'normal main' }),
+  '-':(font_factor)=>({ dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'math_letter normal' }),
+  '+':(font_factor)=>({ dx: 1.3*font_factor, dy: 0, dxx:-1.3*font_factor, dyy: 0, className: 'math_letter normal' }),
+  '×':(font_factor)=>({ dx: 2.5*font_factor, dy: 0, dxx: 2.5*font_factor, dyy: 0, className: ' normal math_letter' }),
   ',':()=>( { dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'normal math_letter' }),
-  '∞':()=>({ dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'normal math_letter' }),
-  '-':(font_factor)=>({ dx: 0, dy: -3, dxx: 1*font_factor, dyy: 0, className: 'math_letter normal' }),
-  '×':()=>({ dx: 0, dy: 0, dxx: 0, dyy: 0, className: ' normal math_letter' }),
+  '.':()=>( { dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'normal math_letter' }),
+  '′':(font_factor)=>( { dx: 1*font_factor, dy: -1.5*font_factor, dxx: -1.8*font_factor, dyy: 1.5*font_factor, className: 'normal math_letter' }),
+  '′′':(font_factor)=>( { dx: 1*font_factor, dy: -1.5*font_factor, dxx: -1.8*font_factor, dyy: 1.5*font_factor, className: 'normal math_letter' }),
+
   
 };
 export default class AtomSpecPattern extends Pattern {
@@ -21,8 +27,8 @@ export default class AtomSpecPattern extends Pattern {
   stratingIndex: number;
   endingIndex: number;
   stringsRest: string;
-  private _isMathOp: boolean;
-  regString = `[\\(\\)\\[\\]∞,=∫×-]`;
+  // private _isMathOp: boolean;
+  regString = `['.\\(\\)\\[\\]∞,=∂∫+×-]`;
 
   constructor({ name, getFontSize }: PatternArgs) {
     super({ name, getFontSize });
@@ -42,6 +48,13 @@ export default class AtomSpecPattern extends Pattern {
     var fontFamily: FONT_FAMILIES = 'KaTex_Main';
     var font_factor: number;
 
+    if (expr === "'") {
+      expr = '′';
+    }
+    if (str.slice(0, 2) === "''") {
+      expr = '′′';
+      this.endingIndex += 1;
+    }
     if (expr === '∫') {
       font_factor = this.getFontSize({
         type: 'math_op',
@@ -55,7 +68,7 @@ export default class AtomSpecPattern extends Pattern {
       }
     } else {
       font_factor = this.getFontSize({
-        type: 'math_letter',
+        type: 'main',
         sizeKey: this.fontKey,
       });
     }

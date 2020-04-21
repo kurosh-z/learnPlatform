@@ -1,11 +1,15 @@
-import AtomPattern from './AtomPattern';
-import AtomSpecPattern from './AtomSpecPattern';
 import { FontSizeFunc } from './MathCss';
-import MatrixPattern from './MatrixPattern';
-import patternFactory from './patternFactory';
-import ScriptPattern from './ScriptPattern';
-import SymbolPattern from './SymbolPattern';
-import AnimCompPattern from './AnimCompPattern';
+import {
+  AtomPattern,
+  AtomSpecPattern,
+  MatrixPattern,
+  patternFactory,
+  ScriptPattern,
+  SymbolPattern,
+  AnimCompPattern,
+  AccentPattern,
+  FracPattern,
+} from './index';
 
 export type PConfigsConstArgs = {
   getFontSize: FontSizeFunc;
@@ -18,6 +22,8 @@ export default class PConfigs {
     | MatrixPattern
     | SymbolPattern
     | AnimCompPattern
+    | AccentPattern
+    | FracPattern
   )[];
   atomPatterns: (AtomPattern | AtomSpecPattern)[];
   public static instance: PConfigs;
@@ -29,6 +35,8 @@ export default class PConfigs {
       patternFactory('matrix'),
       patternFactory('symbols'),
       patternFactory('animcomp'),
+      patternFactory('accent'),
+      patternFactory('fraction'),
     ];
     this.atomPatterns = [
       patternFactory('atom', getFontSize),

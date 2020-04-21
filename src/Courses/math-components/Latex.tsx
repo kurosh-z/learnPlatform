@@ -42,8 +42,30 @@ const Latex: React.FC<LatexProps> & LatexAnim = ({
   style,
 }) => {
   const { parser, mathcss } = useParser({ mathFormula, fontFactor });
-  const parserOutput = parser.outputs;
 
+  const parserOutput = parser.outputs;
+  const { top, bottom, right, left, height, width } = parser.BBox;
+  const topsign: ParserOutput<'Pdelimiter'> = {
+    component: 'delimiter',
+    dtype: 'check_line',
+    dattr: { transform: `translate(${right} ${top})` },
+  };
+  // const bottomsign: ParserOutput<'Pdelimiter'> = {
+  //   component: 'delimiter',
+  //   dtype: 'check_line',
+  //   dattr: { transform: `translate(${left} ${bottom})` },
+  // };
+  // const widthsign: ParserOutput<'Pdelimiter'> = {
+  //   component: 'delimiter',
+  //   dtype: 'hline',
+  //   dattr: { transform: `translate(${0} ${90})`, width: width },
+  // };
+  const bbox: ParserOutput<'Pdelimiter'> = {
+    component: 'delimiter',
+    dtype: 'bbox',
+    dattr: { bbox: { top, bottom, left, right } },
+  };
+  // parserOutput.push(bbox, topsign);
   const childrenProps = useMemo(() => {
     const childrenProps: LatexChildrenProps = {};
 
@@ -141,13 +163,18 @@ type DelimiterProps = {
 };
 
 const DelimiterComp: React.FC<DelimiterProps> = ({ dattr, dtype }) => {
-  const { transform, height, text } = dattr;
+  const { transform, text, className, thickness } = dattr;
+  const path = DELIMITER_PATH[dtype](dattr);
+
+  const classNames = className ? dtype + ' ' + className : dtype;
+
   return (
     <>
       <path
-        className={dtype}
-        d={DELIMITER_PATH[dtype](height)}
+        className={classNames}
+        d={path}
         transform={transform}
+        strokeWidth={thickness ? thickness : 0.7}
       />
       {text && (
         <text
@@ -163,9 +190,26 @@ const DelimiterComp: React.FC<DelimiterProps> = ({ dattr, dtype }) => {
 };
 
 const DELIMITER_PATH = {
-  bracket_open: (height: number) => `M8 -${height / 2} h-8 v${height} h8 `,
-  bracket_close: (height: number) => `M-8 -${height / 2} h8 v${height} h-8 `,
-  check_line: (height: number) => `M-10 0 h20 m-10 -10 v20 `,
+  bracket_open: (dattr) => {
+    const { height, thickness } = dattr;
+    return `M8 -${height / 2} h-${7 * thickness} v${height} h${7 * thickness} `;
+  },
+  bracket_close: (dattr) => {
+    const { height, thickness } = dattr;
+    return `M-8 -${height / 2} h${7 * thickness} v${height} h-${7 * thickness}`;
+  },
+  arrow: () => `M 0 0 h 6 l -2.3 -1.5 m 2.3 1.5 l -2.3 1.5`,
+  check_line: () => `M-10 0 h20 m-10 -10 v20 `,
+  bbox: (dattr) => {
+    const { left, right, top, bottom } = dattr.bbox;
+    return `M${left} ${bottom} h${right - left} v${-bottom + top} h${
+      left - right
+    } v${bottom - top}`;
+  },
+  hline: (dattr) => {
+    const { width } = dattr;
+    return `m0 0 h${width}`;
+  },
 };
 
 type PAnimCompProps = {
@@ -175,20 +219,6 @@ type PAnimCompProps = {
   id: string;
   animProps?: React.SVGAttributes<SVGGElement>;
 };
-
-// const PanimComp: React.RefForwardingComponent<
-//   SVGGElement,
-//   PAnimCompProps & React.SVGAttributes<SVGGElement>
-// > = ({ parserOut, childrenProps, aAttr, animProps }, ref: React.Ref<any>) => {
-//   console.log('panim', ref);
-//   return (
-//     <ParserComp
-//       parserOut={parserOut}
-//       childrenProps={childrenProps}
-//       pgroupAttr={{ ...aAttr, ...animProps }}
-//     />
-//   );
-// };
 
 const PanimComp2: React.FC<
   PAnimCompProps & React.SVGAttributes<SVGGElement>

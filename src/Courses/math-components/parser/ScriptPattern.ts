@@ -29,7 +29,7 @@ export default class ScriptPattern extends Pattern {
     return regexp.test(str);
   }
 
-  _findSecondIndex(str: string, startIdx: number) {
+  _findIndex(str: string, startIdx: number) {
     const regexp = /(_{)|(\^{)|(_)|(\^)/gm;
     regexp.lastIndex = startIdx;
     const match = regexp.exec(str);
@@ -62,14 +62,14 @@ export default class ScriptPattern extends Pattern {
     let type1: IndexType, type2: IndexType;
     let endIdx1: number, endIdx2: number;
     let indexStr1: string, indexStr2: string;
-    let nextIndex = this._findSecondIndex(str, 0);
+    let nextIndex = this._findIndex(str, 0);
     type1 = nextIndex.type;
     endIdx1 = nextIndex.endIdx;
     indexStr1 = nextIndex.indexStr;
 
     //check if thre is another index
     if (str[endIdx1] === '_' || str[endIdx1] === '^') {
-      let nextIndex = this._findSecondIndex(str, endIdx1);
+      let nextIndex = this._findIndex(str, endIdx1);
       type2 = nextIndex.type;
       endIdx2 = nextIndex.endIdx;
       indexStr2 = nextIndex.indexStr;

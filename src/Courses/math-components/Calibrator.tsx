@@ -6,8 +6,8 @@ import { MathCss } from './parser';
 // const LETTERS = 'ABCDEFGHIJKLMOPQRSTUVWXZ';
 // const LETTERS = 'αβγΓδΔϵζηθΘιIκλΛμνοπΠρσΣτυϕΦχΞξψΨω';
 // const LETTERS = '0123456789';
-// const LETTERS = '()[]{}`~!?<>,.@#$%^&*_-=+÷×\\|∞';
-const LETTERS = '∞';
+// const LETTERS = '()[]{}`ˊ′˘ˉ~!?<>,.@#$%^&*_-=+÷×\\|∞';
+const LETTERS = '∂';
 const STYLES = ['normal', 'bold', 'italic'];
 
 type FontMetrics = {

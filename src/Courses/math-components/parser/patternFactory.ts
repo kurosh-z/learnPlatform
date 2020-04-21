@@ -5,6 +5,8 @@ import MatrixPattern from './MatrixPattern';
 import ScriptPattern from './ScriptPattern';
 import SymbolPattern from './SymbolPattern';
 import AnimCompPattern from './AnimCompPattern';
+import AccentPattern from './AccentPattern';
+import FracPattern from './FracPattern';
 
 export default function patternFactory(
   patternName: 'atom' | 'special_chars',
@@ -12,9 +14,21 @@ export default function patternFactory(
 ): AtomPattern | AtomSpecPattern;
 
 export default function patternFactory(
-  patternName: 'supsub' | 'matrix' | 'symbols' | 'animcomp',
+  patternName:
+    | 'supsub'
+    | 'matrix'
+    | 'symbols'
+    | 'animcomp'
+    | 'accent'
+    | 'fraction',
   getFontSize?: FontSizeFunc
-): ScriptPattern | MatrixPattern | SymbolPattern | AnimCompPattern;
+):
+  | ScriptPattern
+  | MatrixPattern
+  | SymbolPattern
+  | AnimCompPattern
+  | AccentPattern
+  | FracPattern;
 
 export default function patternFactory(
   patternName:
@@ -23,7 +37,9 @@ export default function patternFactory(
     | 'supsub'
     | 'matrix'
     | 'symbols'
-    | 'animcomp',
+    | 'animcomp'
+    | 'accent'
+    | 'fraction',
   getFontSize?: FontSizeFunc
 ) {
   if (patternName === 'atom')
@@ -52,6 +68,14 @@ export default function patternFactory(
     });
   if (patternName === 'animcomp')
     return new AnimCompPattern({
+      name: patternName,
+    });
+  if (patternName === 'accent')
+    return new AccentPattern({
+      name: patternName,
+    });
+  if (patternName === 'fraction')
+    return new FracPattern({
       name: patternName,
     });
   else throw new Error(`pattern name ${patternName} is not recognized!`);

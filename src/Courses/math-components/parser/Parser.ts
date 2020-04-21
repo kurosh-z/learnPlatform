@@ -1,21 +1,29 @@
-import AtomPattern from './AtomPattern';
-import AtomSpecPattern from './AtomSpecPattern';
-import SymbolPattern from './SymbolPattern';
+import {
+  PConfigs,
+  parserFactory,
+  AtomPattern,
+  AtomSpecPattern,
+  SymbolPattern,
+  ScriptPattern,
+  AnimCompPattern,
+  AccentPattern,
+  MatrixPattern,
+  FracPattern,
+} from './index';
+
 import { FONTSIZES, FontSizeFunc } from './MathCss';
 import { getStringMetrics, FONT_FAMILIES, FONT_STYLES } from './fontMetrics';
-import MatrixPattern from './MatrixPattern';
 import { MathExpr } from './Pattern';
-import ScriptPattern from './ScriptPattern';
-import PConfigs from './Pconfigs';
-import parserFactory from './parserFactory';
-import AnimCompPattern from './AnimCompPattern';
+
 // import './test.css';
 
 type NoneAtomPatterns =
   | ScriptPattern
   | AnimCompPattern
   | SymbolPattern
-  | MatrixPattern;
+  | MatrixPattern
+  | AccentPattern
+  | FracPattern;
 export type CookedMathExpr = {
   expr: string;
   attr: { x?: number; y?: number; className?: string; transform?: string };
@@ -28,7 +36,10 @@ export type PBBox = {
   width: number;
   height: number;
 };
-type LastElement = { type: 'atom' | 'int' | 'mat'; BBox?: Partial<PBBox> };
+type LastElement = {
+  type: 'atom' | 'int' | 'mat' | 'partial';
+  BBox?: Partial<PBBox>;
+};
 
 type PAnim = {
   component: 'animcomp';
@@ -38,7 +49,13 @@ type PAnim = {
 };
 type Ptext = {
   component: 'text';
-  attr: { x: number; y: number; className: string };
+  attr: {
+    x: number;
+    y: number;
+    className: string;
+    transform?: string;
+    textAnchor: 'start' | 'middle' | 'end';
+  };
   mathExpr: string;
 };
 type Pdelimiter = {
@@ -49,12 +66,19 @@ type Pdelimiter = {
     | 'parentheses_open'
     | 'parentheses_close'
     | 'vertical_bar'
-    | 'check_line';
+    | 'hline'
+    | 'arrow'
+    | 'check_line'
+    | 'bbox';
   dattr: {
-    transform: string;
+    transform?: string;
     height?: number;
     width?: number;
+    fontSize?: number;
+    thickness?: number;
     text?: string;
+    bbox?: Omit<PBBox, 'width' | 'height'>;
+    className?: string;
   };
 };
 type PGroup = {
@@ -223,7 +247,7 @@ export default class Parser {
     while (nstr.length !== 0) {
       const regexAll = new RegExp(this.allRegStrings, 'mg');
       const match = regexAll.exec(nstr);
-      // console.log(match);
+
       if (!match || match.index !== 0) {
         nstr = this._handleAtoms(nstr);
         // console.log('parserStr', this.str);
@@ -233,6 +257,7 @@ export default class Parser {
       } else {
         const pattern = this.whichPattern(match[0], this.patternList);
         pattern.fontKey = this.fontKey;
+        pattern.getFontSize = this.getFontSize;
         pattern.strToMathExpr(nstr, match.index);
         // nstr = this.consume(nstr, pattern.endingIndex);
         nstr = pattern.stringsRest;
@@ -258,7 +283,9 @@ export default class Parser {
     const regexAll = new RegExp(this.allAtomRegStrings, 'mg');
     const match = regexAll.exec(str);
     if (!match || match.index !== 0) {
-      throw new Error(`expr: ${str} is not latex`);
+      throw new Error(
+        `expr: ${str} is not a correct latex code or it's not recognized`
+      );
     }
     const pattern = this.whichPattern(match[0], this.atomPatternsList);
     // pattern's fontkey is defaulted to normalsize and is just required by SepecialCharPattern
@@ -331,10 +358,6 @@ export default class Parser {
       const lheight = lbottom - ltop;
       const lwidth = lastCharMet.width;
 
-      this.lastElement = {
-        type: 'atom',
-        BBox: { top: ltop, bottom: lbottom, height: lheight, width: lwidth },
-      };
       // console.log(
       //   expr,
       //   'width',
@@ -351,12 +374,18 @@ export default class Parser {
         currX += dxx;
       }
       if (dyy) {
-        currX += dyy;
+        currY += dyy;
       }
 
+      currX += 1.3 * font_size;
+      // letter_spacing
       this.currPos = { currX, currY };
-      this._updateBBox(maxAscent, maxDescent);
 
+      this._updateBBox(maxAscent, maxDescent);
+      this.lastElement = {
+        type: 'atom',
+        BBox: { top: ltop, bottom: lbottom, height: lheight, width: lwidth },
+      };
       // console.log('after width', this.currPos.currX);
 
       // console.log(expr, currX);
@@ -377,41 +406,271 @@ export default class Parser {
       this._handleScripts(pattern);
     } else if (pattern instanceof AnimCompPattern) {
       this._handleAnimComp(pattern);
+    } else if (pattern instanceof SymbolPattern) {
+      this._handleSymbols(pattern);
+    } else if (pattern instanceof AccentPattern) {
+      this._handleAccents(pattern);
+    } else if (pattern instanceof FracPattern) {
+      this._handleFraction(pattern);
     }
-    if (pattern instanceof SymbolPattern) {
-      for (const mathExpr of pattern.mathExpressions) {
-        const { currX, currY } = this.currPos;
-        // const parserFontFactor = this.fontFactor ===
-        const parser = parserFactory({
-          str: mathExpr.expr,
-          x: currX + mathExpr.attr.dx,
-          y: currY + mathExpr.attr.dy,
-          fontKey: mathExpr.attr.fontKey,
-          parentParser: this,
+  }
+  _handleFraction(pattern: FracPattern) {
+    const { numerator, denominator } = pattern.fracExprs;
+    const { currX, currY } = this.currPos;
+
+    // if the fraction is index use tiny
+    const font_key = this.fontKey === 'scriptsize' ? 'tiny' : this.fontKey;
+    const numParser = parserFactory({
+      str: numerator,
+      fontKey: font_key,
+      x: 0,
+      y: 0,
+    });
+
+    const denParser = parserFactory({
+      str: denominator,
+      fontKey: font_key,
+      fontSizegetter: this.getFontSize,
+      x: 0,
+      y: 0,
+    });
+    const numTop = numParser.BBox.top;
+    const numBottom = numParser.BBox.bottom;
+    const numWidth = numParser.BBox.width;
+    const denTop = denParser.BBox.top;
+    const denBottom = denParser.BBox.bottom;
+    const denWidth = denParser.BBox.width;
+    const font_factor = this.getFontSize({
+      type: 'main',
+      sizeKey: font_key,
+    });
+    const V_MARGIN = 3 * font_factor;
+    const H_MARGIN = 0;
+
+    const fracWidth =
+      numWidth > denWidth ? numWidth + H_MARGIN : denWidth + H_MARGIN;
+
+    const numdX = fracWidth / 2 - numWidth / 2;
+    const numdY = -Math.abs(numBottom) - V_MARGIN;
+    const dendX = fracWidth / 2 - denWidth / 2;
+    const dendY = Math.abs(denTop) + V_MARGIN;
+    // console.log(fracWidth);
+    const fracLine: ParserOutput<'Pdelimiter'> = {
+      component: 'delimiter',
+      dtype: 'hline',
+      dattr: {
+        width: fracWidth,
+        thickness: 0.6 * font_factor,
+        className: 'fracline',
+      },
+    };
+
+    const numGroup: ParserOutput<'PGroup'> = {
+      component: 'group',
+      gattr: {
+        className: 'numgroup',
+        transform: `translate(${numdX} ${numdY})`,
+      },
+      gelements: numParser.outputs,
+    };
+    const denGroup: ParserOutput<'PGroup'> = {
+      component: 'group',
+      gattr: {
+        className: 'dengroup',
+        transform: `translate(${dendX} ${dendY})`,
+      },
+      gelements: denParser.outputs,
+    };
+
+    const FRAC_DY = 4 * font_factor;
+    const fgroup: ParserOutput<'PGroup'> = {
+      component: 'group',
+      gattr: {
+        className: 'frac',
+        transform: `translate(${currX} ${currY - FRAC_DY})`,
+      },
+      gelements: [fracLine, numGroup, denGroup],
+    };
+
+    this.outputs.push(fgroup);
+
+    // update bbox
+    const top = currY + numdY + numTop - FRAC_DY;
+    const bottom = currY + dendY + denBottom - FRAC_DY;
+    const left = currX;
+    const right = currX + fracWidth;
+    const newBBox = { top, bottom, left, right };
+    this._updateBBoxFromBBox({ BBox: newBBox });
+    // update currPos
+    this.currPos.currX = right + 1.3 * font_factor;
+  }
+
+  _handleAccents(pattern: AccentPattern) {
+    const { currX, currY } = this.currPos;
+
+    const {
+      expr,
+      accent,
+      accentType,
+      fontKey,
+      className,
+      adx,
+    } = pattern.accentExpr;
+    const parser = parserFactory({
+      str: expr,
+      fontKey,
+      x: currX,
+      y: currY,
+    });
+
+    const exprTop = parser.BBox.top;
+    const exprWidth = parser.BBox.width;
+    const font_factor = this.getFontSize({
+      type: 'main',
+      sizeKey: fontKey,
+    });
+    const V_MARGIN = 2.7 * font_factor;
+    if (accentType === 'text') {
+      const accCharMetric = getStringMetrics({
+        str: accent,
+        fontFamily: 'KaTex_Main',
+        fontSize: font_factor,
+        fontStyle: 'normal',
+      });
+      // calculating the position of accent based on accent and expr metrics:
+      const accCharWidth = accCharMetric.width;
+      const accCharDescent = accCharMetric.maxDescent;
+      const accCharAscent = accCharMetric.maxAscent;
+      // console.log(accent, ':', accCharWidth);
+      const accX = currX + exprWidth / 2 - accCharWidth / 2 + adx;
+      const accY = exprTop + accCharDescent - V_MARGIN;
+
+      const accentText: ParserOutput<'Ptext'> = {
+        component: 'text',
+        mathExpr: accent,
+        attr: { x: accX, y: accY, className },
+      };
+
+      //push accent and expressions to outputs:
+      console.log(accCharWidth, exprWidth);
+      this.outputs.push(accentText);
+
+      const right =
+        accX + 2.7 * font_factor + accCharWidth / 2 >
+        parser.BBox.right - 1.8 * font_factor
+          ? accX + 2.7 * font_factor + accCharWidth / 2
+          : parser.BBox.right;
+      this._updateBBoxFromBBox({
+        BBox: {
+          top: accY - accCharAscent,
+          bottom: parser.BBox.bottom,
+          left: currX,
+          right: right,
+        },
+      });
+    } else {
+      const accX = currX + exprWidth / 2 - 2.8 * font_factor + adx;
+      const accY = exprTop - V_MARGIN - 1 * font_factor;
+      const accentPath: ParserOutput<'Pdelimiter'> = {
+        component: 'delimiter',
+        dtype: 'arrow',
+        dattr: {
+          fontSize: font_factor,
+          transform: `translate(${accX} ${accY}) scale(${font_factor})`,
+        },
+      };
+      this.outputs.push(accentPath);
+      this._updateBBoxFromBBox({
+        BBox: {
+          top: accY - 1.75 * font_factor, // rounded lines so that
+          bottom: parser.BBox.bottom,
+          left: currX,
+          right:
+            parser.currPos.currX > accX + 6.34 * font_factor
+              ? parser.currPos.currX
+              : accX + 6.34 * font_factor,
+        },
+      });
+    }
+    for (const output of parser.outputs) {
+      this.outputs.push(output);
+    }
+
+    this.currPos.currX = parser.currPos.currX;
+  }
+  _handleSymbols(pattern: SymbolPattern) {
+    for (const mathExpr of pattern.mathExpressions) {
+      const { currX, currY } = this.currPos;
+      // const parserFontFactor = this.fontFactor ===
+      const parser = parserFactory({
+        str: mathExpr.expr,
+        x: currX + mathExpr.attr.dx,
+        y: currY + mathExpr.attr.dy,
+        fontKey: mathExpr.attr.fontKey,
+        parentParser: this,
+      });
+      if (pattern.symb === 'int') {
+        const { maxAscent, maxDescent, width } = getStringMetrics({
+          str: '∫',
+          fontSize: this.getFontSize({
+            type: 'math_op',
+            sizeKey: this.fontKey,
+          }),
+          fontFamily: 'KaTeX_Size2',
+          fontStyle: 'normal',
         });
-        if (pattern.isInt) {
-          const { maxAscent, maxDescent, width } = getStringMetrics({
-            str: '∫',
-            fontSize: this.getFontSize({
-              type: 'math_op',
-              sizeKey: this.fontKey,
-            }),
-            fontFamily: 'KaTeX_Size2',
-            fontStyle: 'normal',
-          });
-          this.lastElement = {
-            type: 'int',
-            BBox: {
-              left: currX,
-              right: currX + width + mathExpr.attr.dxx,
-              top: currY - maxAscent,
-              bottom: currY + maxDescent,
-            },
-          };
-        }
-        this._pushParserOutputs({ parser: parser, patternExpr: mathExpr });
-        this.currPos.currX = parser.currPos.currX;
+
+        this.lastElement = {
+          type: 'int',
+          BBox: {
+            left: currX,
+            right: currX + width + mathExpr.attr.dxx,
+            top: currY - maxAscent,
+            bottom: currY + maxDescent,
+          },
+        };
+      } else {
+        this.lastElement = {
+          type: 'atom',
+          BBox: {
+            left: currX,
+            right: parser.BBox.right,
+            top: parser.BBox.top,
+            bottom: parser.BBox.bottom,
+          },
+        };
       }
+      const font_factor = this.getFontSize({
+        type: 'main',
+        sizeKey: this.fontKey,
+      });
+      for (const output of parser.outputs) {
+        if (pattern.symb === 'cdots') {
+          const cdots = parser.outputs[0] as ParserOutput<'Ptext'>;
+          cdots.attr.transform = `translate(${0} ${font_factor * 4})`;
+        } else if (pattern.symb === 'vdots') {
+          const vdots = parser.outputs[0] as ParserOutput<'Ptext'>;
+          const metrics = getStringMetrics({
+            str: '...',
+            fontFamily: 'KaTeX_Math',
+            fontStyle: 'normal',
+            fontSize: font_factor,
+          });
+          vdots.attr.textAnchor = 'middle';
+          const width = metrics.width;
+
+          vdots.attr.transform = `rotate(90, ${width} ${-width / 8}) `;
+        }
+      }
+      if (
+        pattern.symb === 'cdots' ||
+        pattern.symb === 'vdots' ||
+        pattern.symb === 'ddots'
+      ) {
+      }
+
+      this._pushParserOutputs({ parser: parser, patternExpr: mathExpr });
+      this.currPos.currX = parser.currPos.currX;
     }
   }
   _handleAnimComp(pattern: AnimCompPattern) {
@@ -429,7 +688,7 @@ export default class Parser {
       component: 'animcomp',
       id: id,
       aAttr: {
-        className: 'test',
+        className: 'animcomp',
       },
       animElements: parser.outputs,
     };
@@ -455,6 +714,7 @@ export default class Parser {
     const MID_MARGIN = 1;
     const baseType = this.lastElement.type;
     const baseHeight = this.lastElement.BBox.height;
+
     const font_factor = this.getFontSize({
       type: 'math_letter',
       sizeKey: this.fontKey,
@@ -471,7 +731,7 @@ export default class Parser {
       const { expr, type, fontKey } = mathExpr;
       const parser = parserFactory({
         str: expr,
-        x: currX,
+        x: currX - 1.3 * font_factor,
         y: currY,
         fontKey: fontKey,
       });
@@ -492,9 +752,13 @@ export default class Parser {
     for (const scriptEl of scriptElements) {
       const scriptType = scriptEl.type;
       let dy: number,
-        dx: number = 0;
+        dx: number = scriptType === 'sub' ? 0 : 0.9 * font_factor;
       if (baseType === 'atom') {
         dy = scriptType === 'sub' ? font_factor * SUB_DY : font_factor * SUP_DY;
+      }
+      if (baseType === 'partial') {
+        dy = scriptType === 'sub' ? font_factor * SUB_DY : font_factor * -6.5;
+        dx = scriptType === 'sub' ? 0 : 3 * font_factor;
       }
       if (baseType === 'int' && this.fontKey === 'normalsize') {
         dy =
@@ -535,7 +799,7 @@ export default class Parser {
           elTopPos - currY + baseMiddleH - font_factor * MID_MARGIN
         );
       }
-      // console.log(scriptEl.elements, currY - baseTop, dy + scriptEl.elBottom);
+
       const output: ParserOutput<'PGroup'> = {
         component: 'group',
         gattr: {
@@ -718,6 +982,7 @@ export default class Parser {
       dattr: {
         transform: `translate(${0} ${-matrixY})`,
         height: delim_hieght,
+        thickness: 0.8 * FONT_FACTOR,
       },
     };
 
@@ -779,6 +1044,7 @@ export default class Parser {
       dattr: {
         transform: `translate(${currX} ${-matrixY})`,
         height: delim_hieght,
+        thickness: 0.8 * FONT_FACTOR,
       },
     };
     matrixGroup.gelements.push(delimiter_close);

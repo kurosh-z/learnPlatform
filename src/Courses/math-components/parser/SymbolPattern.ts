@@ -6,7 +6,7 @@ export default class SymbolPattern extends Pattern {
   regString: string;
   mathExpressions: MathExpr[];
   stringsRest: string;
-  isInt: boolean;
+  symb: 'int' | 'partial' | 'atom' | 'ldots' | 'cdots' | 'vdots' | 'ddots';
   constructor({ name }: PatternArgs) {
     super({ name });
     const regStrs = this._createRegStrings();
@@ -47,8 +47,11 @@ export default class SymbolPattern extends Pattern {
     const match = regexp.exec(str);
     this.stratingIndex = match.index;
     const expr = MATH_SYMBOLS[match[0]];
-    if (expr === '∫') this.isInt = true;
-    else this.isInt = false;
+    if (expr === '∫') this.symb = 'int';
+    else if (expr === '∂') this.symb = 'partial';
+    else if (expr === '...')
+      this.symb = match[2] as 'ldots' | 'cdots' | 'ddots' | 'vdots';
+    else this.symb = 'atom';
     this.endingIndex = regexp.lastIndex;
     this.stringsRest = this.consume(str, this.endingIndex);
 
@@ -85,7 +88,7 @@ const MATH_SYMBOLS = {
   '\\pi': 'π',
   '\\Pi': 'Π',
   '\\rho': 'ρ',
-  '\\siqma': 'σ',
+  '\\sigma': 'σ',
   '\\Siqma': 'Σ',
   '\\tau': 'τ',
   '\\upsilon': 'υ',
@@ -102,4 +105,9 @@ const MATH_SYMBOLS = {
   '\\int': '∫',
   '\\times': '×',
   '\\infty': '∞',
+  '\\partial': '∂',
+  '\\ldots': '...', // horizontal dots on the line
+  '\\cdots': '...', // horizontal dots above the line
+  '\\vdots': '...', // vertical dots
+  '\\ddots': '...', // diagonal dots
 };
