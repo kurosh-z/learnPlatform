@@ -16,7 +16,9 @@ export default class AtomPattern extends Pattern {
   }
   isPattern(str: string) {
     //for the point char(.) between numbers.
-    if (str === '.') return true;
+    // if (str === '.') {
+    //   return true;
+    // }
     const regex = new RegExp(this.regString, 'mg');
     return regex.test(str);
   }
@@ -31,10 +33,7 @@ export default class AtomPattern extends Pattern {
     const regex = new RegExp(this.lettRegStr, 'gm');
     return regex.test(str);
   }
-  isForbidenChar(char: string) {
-    if (char === '_' || char === '^') return false;
-    return false;
-  }
+
   findRangeGroup(expr: string) {
     let idx = -1;
     let groups: { expr: string; type: 'math_number' | 'math_letter' }[] = [];
@@ -42,10 +41,15 @@ export default class AtomPattern extends Pattern {
       expr: '',
       type: 'math_letter',
     };
-
+    let lastChar = '';
+    let nextChar = '';
     for (const char of expr) {
-      if (this.isPattern(char) && !this.isForbidenChar(expr[idx + 2])) {
+      nextChar = idx + 2 <= expr.length ? expr[idx + 2] : '';
+      const numTest = lastChar + char + nextChar; // if . is used as decimal point it is a number
+      //                                             otherwise it is just a dot or cdots ddots etc.
+      if (this.isPattern(char) || this.isNumber(numTest)) {
         idx++;
+        lastChar = char;
       } else {
         break;
       }

@@ -15,8 +15,8 @@ const SPECIAL_CHARS = {
   '-':(font_factor)=>({ dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'math_letter normal' }),
   '+':(font_factor)=>({ dx: 1.3*font_factor, dy: 0, dxx:-1.3*font_factor, dyy: 0, className: 'math_letter normal' }),
   '×':(font_factor)=>({ dx: 2.5*font_factor, dy: 0, dxx: 2.5*font_factor, dyy: 0, className: ' normal math_letter' }),
-  ',':()=>( { dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'normal math_letter' }),
-  '.':()=>( { dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'normal math_letter' }),
+  ',':()=>( { dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'normal' }),
+  '.':()=>( { dx: 0, dy: 0, dxx: 0, dyy: 0, className: 'normal' }),
   '′':(font_factor)=>( { dx: 1*font_factor, dy: -1.5*font_factor, dxx: -1.8*font_factor, dyy: 1.5*font_factor, className: 'normal math_letter' }),
   '′′':(font_factor)=>( { dx: 1*font_factor, dy: -1.5*font_factor, dxx: -1.8*font_factor, dyy: 1.5*font_factor, className: 'normal math_letter' }),
 

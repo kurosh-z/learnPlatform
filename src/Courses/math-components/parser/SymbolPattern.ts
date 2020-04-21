@@ -49,7 +49,7 @@ export default class SymbolPattern extends Pattern {
     const expr = MATH_SYMBOLS[match[0]];
     if (expr === '∫') this.symb = 'int';
     else if (expr === '∂') this.symb = 'partial';
-    else if (expr === '...')
+    else if (expr === '.')
       this.symb = match[2] as 'ldots' | 'cdots' | 'ddots' | 'vdots';
     else this.symb = 'atom';
     this.endingIndex = regexp.lastIndex;
@@ -106,8 +106,8 @@ const MATH_SYMBOLS = {
   '\\times': '×',
   '\\infty': '∞',
   '\\partial': '∂',
-  '\\ldots': '...', // horizontal dots on the line
-  '\\cdots': '...', // horizontal dots above the line
-  '\\vdots': '...', // vertical dots
-  '\\ddots': '...', // diagonal dots
+  '\\ldots': '.', // horizontal dots on the line
+  '\\cdots': '.', // horizontal dots above the line
+  '\\vdots': '.', // vertical dots
+  '\\ddots': '.', // diagonal dots
 };

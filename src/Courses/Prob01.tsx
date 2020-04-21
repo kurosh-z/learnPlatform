@@ -89,10 +89,15 @@ const Prob01: React.FC<{}> = () => {
           y={200}
           fontFactor={1.8}
           mathFormula={String.raw`
-           k^2 \vdots
+          \begin{bmatrix}
+          \lambda_1 && \cdots & 0 \\
+          0 & \lambda_2 & \cdots & 0 \\
+          \vdots & \vdots & \ddots & \vdots \\ 
+          0 & 0 & \cdots & \lambda_n
+          \end{bmatrix}
            `}
          
-          // mathFormula={tex}
+         
            >
           {/* <Latex.Anim id={'Aintegral'} style={animProps} ref={ref1}  />
           <Latex.Anim id={'anim2'} style={animProps2} ref={ref2}  /> */}

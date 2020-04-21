@@ -54,9 +54,13 @@ type Ptext = {
     y: number;
     className: string;
     transform?: string;
-    textAnchor: 'start' | 'middle' | 'end';
+    textAnchor?: 'start' | 'middle' | 'end';
   };
-  mathExpr: string;
+  mathExpr?: string;
+  tspans?: {
+    texpr: string;
+    tattr: { dx?: number; dy?: number; className?: string };
+  }[];
 };
 type Pdelimiter = {
   component: 'delimiter';
@@ -601,6 +605,7 @@ export default class Parser {
   _handleSymbols(pattern: SymbolPattern) {
     for (const mathExpr of pattern.mathExpressions) {
       const { currX, currY } = this.currPos;
+      let coockedSymb: ParserOutput<'Ptext'>;
       // const parserFontFactor = this.fontFactor ===
       const parser = parserFactory({
         str: mathExpr.expr,
@@ -609,6 +614,7 @@ export default class Parser {
         fontKey: mathExpr.attr.fontKey,
         parentParser: this,
       });
+
       if (pattern.symb === 'int') {
         const { maxAscent, maxDescent, width } = getStringMetrics({
           str: '∫',
@@ -639,38 +645,207 @@ export default class Parser {
             bottom: parser.BBox.bottom,
           },
         };
-      }
-      const font_factor = this.getFontSize({
-        type: 'main',
-        sizeKey: this.fontKey,
-      });
-      for (const output of parser.outputs) {
-        if (pattern.symb === 'cdots') {
-          const cdots = parser.outputs[0] as ParserOutput<'Ptext'>;
-          cdots.attr.transform = `translate(${0} ${font_factor * 4})`;
-        } else if (pattern.symb === 'vdots') {
-          const vdots = parser.outputs[0] as ParserOutput<'Ptext'>;
-          const metrics = getStringMetrics({
-            str: '...',
-            fontFamily: 'KaTeX_Math',
-            fontStyle: 'normal',
-            fontSize: font_factor,
+
+        // redering vdots :
+        if (pattern.symb === 'vdots') {
+          const font_factor = this.getFontSize({
+            type: 'main',
+            sizeKey: this.fontKey,
           });
-          vdots.attr.textAnchor = 'middle';
-          const width = metrics.width;
+          const dotMetrics = getStringMetrics({
+            str: '.',
+            fontFamily: 'KaTex_Main',
+            fontSize: font_factor,
+            fontStyle: 'normal',
+          });
+          const width = dotMetrics.width;
 
-          vdots.attr.transform = `rotate(90, ${width} ${-width / 8}) `;
+          const rawSymbol = parser.outputs[0] as ParserOutput<'Ptext'>;
+          coockedSymb = {
+            component: 'text',
+            attr: {
+              x: currX,
+              y: currY,
+              className: pattern.symb,
+            },
+            tspans: [
+              {
+                texpr: rawSymbol.mathExpr,
+                tattr: {
+                  dx: 1.3 * font_factor,
+                  dy: -6.3 * font_factor,
+                  className: 'tiny',
+                },
+              },
+              {
+                texpr: rawSymbol.mathExpr,
+                tattr: { dx: -width, dy: 3.6 * font_factor },
+              },
+              {
+                texpr: rawSymbol.mathExpr,
+                tattr: { dx: -width, dy: 3.6 * font_factor },
+              },
+            ],
+          };
+          this.currPos.currX = parser.currPos.currX + 1.3 * font_factor;
+
+          const bbox = {
+            bottom: currY + dotMetrics.maxDescent + 7.2 * font_factor,
+            top: currY - dotMetrics.maxAscent - 6.3 * font_factor,
+            left: currX,
+            right: this.currPos.currX,
+          };
+          this._updateBBoxFromBBox({ BBox: bbox });
         }
-      }
-      if (
-        pattern.symb === 'cdots' ||
-        pattern.symb === 'vdots' ||
-        pattern.symb === 'ddots'
-      ) {
-      }
+        // redering ldots :
+        else if (pattern.symb === 'ldots') {
+          const font_factor = this.getFontSize({
+            type: 'main',
+            sizeKey: this.fontKey,
+          });
+          const dotMetrics = getStringMetrics({
+            str: '.',
+            fontFamily: 'KaTex_Main',
+            fontSize: font_factor,
+            fontStyle: 'normal',
+          });
+          const width = dotMetrics.width;
 
-      this._pushParserOutputs({ parser: parser, patternExpr: mathExpr });
-      this.currPos.currX = parser.currPos.currX;
+          coockedSymb = {
+            component: 'text',
+            attr: {
+              x: currX,
+              y: currY,
+              className: pattern.symb,
+            },
+            tspans: [
+              {
+                texpr: '...',
+                tattr: {
+                  dx: 0,
+                  dy: 0,
+                  className: 'tiny',
+                },
+              },
+            ],
+          };
+          this.currPos.currX += 3 * width + 1.3 * font_factor;
+          const bbox = {
+            bottom: currY + dotMetrics.maxDescent,
+            top: currY - dotMetrics.maxAscent,
+            left: currX,
+            right: this.currPos.currX,
+          };
+          this._updateBBoxFromBBox({ BBox: bbox });
+        }
+        // redering cdots :
+        else if (pattern.symb === 'cdots') {
+          const font_factor = this.getFontSize({
+            type: 'main',
+            sizeKey: this.fontKey,
+          });
+          const dotMetrics = getStringMetrics({
+            str: '.',
+            fontFamily: 'KaTex_Main',
+            fontSize: font_factor,
+            fontStyle: 'normal',
+          });
+          const width = dotMetrics.width;
+
+          coockedSymb = {
+            component: 'text',
+            attr: {
+              x: currX,
+              y: currY,
+              className: pattern.symb,
+            },
+            tspans: [
+              {
+                texpr: '...',
+                tattr: {
+                  dx: 0,
+                  dy: -3.3 * font_factor,
+                  className: 'tiny',
+                },
+              },
+            ],
+          };
+
+          this.currPos.currX += 3 * width + 1.3 * font_factor;
+          const bbox = {
+            bottom: currY + dotMetrics.maxDescent,
+            top: currY - dotMetrics.maxAscent - 3.3 * font_factor,
+            left: currX,
+            right: this.currPos.currX,
+          };
+          this._updateBBoxFromBBox({ BBox: bbox });
+        }
+
+        // redering ddots :
+        else if (pattern.symb === 'ddots') {
+          const font_factor = this.getFontSize({
+            type: 'main',
+            sizeKey: this.fontKey,
+          });
+          const dotMetrics = getStringMetrics({
+            str: '.',
+            fontFamily: 'KaTex_Main',
+            fontSize: font_factor,
+            fontStyle: 'normal',
+          });
+          const width = dotMetrics.width;
+
+          const rawSymbol = parser.outputs[0] as ParserOutput<'Ptext'>;
+          coockedSymb = {
+            component: 'text',
+            attr: {
+              x: currX,
+              y: currY,
+              className: pattern.symb,
+            },
+            tspans: [
+              {
+                texpr: rawSymbol.mathExpr,
+                tattr: {
+                  dx: 0,
+                  dy: -6.3 * font_factor,
+                  className: 'tiny',
+                },
+              },
+              {
+                texpr: rawSymbol.mathExpr,
+                tattr: {
+                  dx: -width / 2 + 1 * font_factor,
+                  dy: 3.6 * font_factor,
+                },
+              },
+              {
+                texpr: rawSymbol.mathExpr,
+                tattr: {
+                  dx: -width / 2 + 1 * font_factor,
+                  dy: 3.6 * font_factor,
+                },
+              },
+            ],
+          };
+          this.currPos.currX +=
+            2 * (width / 2 + 2 * font_factor) + 3.9 * font_factor;
+
+          const bbox = {
+            bottom: currY + 7.2 * font_factor + dotMetrics.maxDescent,
+            top: currY - 6.3 * font_factor - dotMetrics.maxAscent,
+            left: currX,
+            right: this.currPos.currX,
+          };
+          this._updateBBoxFromBBox({ BBox: bbox });
+        } else {
+          coockedSymb = parser.outputs[0] as ParserOutput<'Ptext'>;
+          this.currPos.currX = parser.currPos.currX;
+        }
+
+        // this._pushParserOutputs({ parser: parser, patternExpr: mathExpr });
+        this.outputs.push(coockedSymb);
+      }
     }
   }
   _handleAnimComp(pattern: AnimCompPattern) {
@@ -752,7 +927,7 @@ export default class Parser {
     for (const scriptEl of scriptElements) {
       const scriptType = scriptEl.type;
       let dy: number,
-        dx: number = scriptType === 'sub' ? 0 : 0.9 * font_factor;
+        dx: number = 0.9 * font_factor;
       if (baseType === 'atom') {
         dy = scriptType === 'sub' ? font_factor * SUB_DY : font_factor * SUP_DY;
       }

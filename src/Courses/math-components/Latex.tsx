@@ -65,7 +65,7 @@ const Latex: React.FC<LatexProps> & LatexAnim = ({
     dtype: 'bbox',
     dattr: { bbox: { top, bottom, left, right } },
   };
-  // parserOutput.push(bbox, topsign);
+  // parserOutput.push(bbox);
   const childrenProps = useMemo(() => {
     const childrenProps: LatexChildrenProps = {};
 
@@ -117,10 +117,21 @@ const ParserComp2: React.FC<ParserCompProps> = (
       {parserOut.map((output, idx: number) => {
         const { component } = output;
         if (component === 'text') {
-          const { attr, mathExpr } = output as ParserOutput<'Ptext'>;
+          const { attr, mathExpr, tspans } = output as ParserOutput<'Ptext'>;
+
           return (
             <text key={idx} {...attr}>
-              {mathExpr}
+              {mathExpr && mathExpr}
+              {tspans &&
+                tspans.map(
+                  (tspan: ParserOutput<'Ptext'>['tspans'][0], j: number) => {
+                    return (
+                      <tspan key={j} {...tspan.tattr}>
+                        {tspan.texpr}
+                      </tspan>
+                    );
+                  }
+                )}
             </text>
           );
         } else if (component === 'group') {
