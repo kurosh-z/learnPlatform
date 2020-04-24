@@ -3,14 +3,15 @@ import React from 'react';
 import './index.css';
 import App from './App';
 import { ThemeProvider } from './theme/themeContext';
-import { MathJaxProvider } from './mathjax/ MathJaxContext';
+import { LatexProvider } from './Courses/math-components/LatexContext';
+// import { MathJaxProvider } from './mathjax/ MathJaxContext';
 // import * as serviceWorker from './serviceWorker';
 
 ReactDOM.render(
   <ThemeProvider>
-    <MathJaxProvider>
+    <LatexProvider>
       <App />
-    </MathJaxProvider>
+    </LatexProvider>
   </ThemeProvider>,
   document.getElementById('root')
 );

@@ -556,7 +556,7 @@ export default class Parser {
       };
 
       //push accent and expressions to outputs:
-      console.log(accCharWidth, exprWidth);
+      // console.log(accCharWidth, exprWidth);
       this.outputs.push(accentText);
 
       const right =
@@ -666,15 +666,14 @@ export default class Parser {
             attr: {
               x: currX,
               y: currY,
-              className: pattern.symb,
+              className: `${pattern.symb} main ${this.fontKey}`,
             },
             tspans: [
               {
                 texpr: rawSymbol.mathExpr,
                 tattr: {
                   dx: 1.3 * font_factor,
-                  dy: -6.3 * font_factor,
-                  className: 'tiny',
+                  dy: -6.2 * font_factor,
                 },
               },
               {
@@ -690,7 +689,7 @@ export default class Parser {
           this.currPos.currX = parser.currPos.currX + 1.3 * font_factor;
 
           const bbox = {
-            bottom: currY + dotMetrics.maxDescent + 7.2 * font_factor,
+            bottom: currY + dotMetrics.maxDescent + 1 * font_factor,
             top: currY - dotMetrics.maxAscent - 6.3 * font_factor,
             left: currX,
             right: this.currPos.currX,
@@ -716,7 +715,7 @@ export default class Parser {
             attr: {
               x: currX,
               y: currY,
-              className: pattern.symb,
+              className: `${pattern.symb} main ${this.fontKey}`,
             },
             tspans: [
               {
@@ -724,7 +723,6 @@ export default class Parser {
                 tattr: {
                   dx: 0,
                   dy: 0,
-                  className: 'tiny',
                 },
               },
             ],
@@ -757,7 +755,7 @@ export default class Parser {
             attr: {
               x: currX,
               y: currY,
-              className: pattern.symb,
+              className: `${pattern.symb} main ${this.fontKey}`,
             },
             tspans: [
               {
@@ -765,7 +763,6 @@ export default class Parser {
                 tattr: {
                   dx: 0,
                   dy: -3.3 * font_factor,
-                  className: 'tiny',
                 },
               },
             ],
@@ -773,7 +770,7 @@ export default class Parser {
 
           this.currPos.currX += 3 * width + 1.3 * font_factor;
           const bbox = {
-            bottom: currY + dotMetrics.maxDescent,
+            bottom: currY,
             top: currY - dotMetrics.maxAscent - 3.3 * font_factor,
             left: currX,
             right: this.currPos.currX,
@@ -801,7 +798,7 @@ export default class Parser {
             attr: {
               x: currX,
               y: currY,
-              className: pattern.symb,
+              className: `${pattern.symb} main ${this.fontKey}`,
             },
             tspans: [
               {
@@ -809,7 +806,6 @@ export default class Parser {
                 tattr: {
                   dx: 0,
                   dy: -6.3 * font_factor,
-                  className: 'tiny',
                 },
               },
               {
@@ -832,7 +828,7 @@ export default class Parser {
             2 * (width / 2 + 2 * font_factor) + 3.9 * font_factor;
 
           const bbox = {
-            bottom: currY + 7.2 * font_factor + dotMetrics.maxDescent,
+            bottom: currY + dotMetrics.maxDescent + 1 * font_factor,
             top: currY - 6.3 * font_factor - dotMetrics.maxAscent,
             left: currX,
             right: this.currPos.currX,

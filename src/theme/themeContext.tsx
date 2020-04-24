@@ -6,7 +6,7 @@ import { themeState, darkModeHook, Theme } from './types';
 
 const defaultContexData = {
   dark: false,
-  toggle: () => {}
+  toggle: () => {},
 };
 const ThemeContext = React.createContext<typeof defaultContexData>(
   defaultContexData
@@ -15,7 +15,7 @@ const useThemeToggler = () => React.useContext(ThemeContext);
 
 const initialThemeState = {
   dark: false,
-  hasThemeMounted: false
+  hasThemeMounted: false,
 };
 
 const useEffectDarkMode: darkModeHook = () => {
@@ -45,10 +45,10 @@ const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
   const value = {
     dark: themeState.dark,
-    toggle: toggle
+    toggle: toggle,
   };
   return (
-    <EmotionThemeProvider theme={computedTheme}>
+    <EmotionThemeProvider theme={computedTheme as Theme}>
       <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
     </EmotionThemeProvider>
   );

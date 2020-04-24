@@ -1,23 +1,30 @@
 import React, { useMemo, ReactElement } from 'react';
 import { animated } from 'react-spring';
 import { MathCss, parserFactory } from './parser';
-import Parser, { ParserOutputList, ParserOutput } from './parser/Parser';
+import Parser, { ParserOutputList, ParserOutput, PBBox } from './parser/Parser';
+import { useLatexBBox } from './LatexContext';
 
 type useParserArgs = {
   mathFormula: string;
   fontFactor: number;
+  latexId: string;
 };
 
 function useParser({
   mathFormula,
   fontFactor,
+  latexId,
 }: useParserArgs): { parser: Parser; mathcss: MathCss } {
+  const [, setLatexBBox] = useLatexBBox();
   const { parser, mathcss } = useMemo(() => {
     const mathcss = new MathCss(fontFactor);
     const parser = parserFactory({
       str: mathFormula,
       fontSizegetter: mathcss.getfontSizeFunc(),
     });
+
+    setLatexBBox({ latexId, bbox: parser.BBox });
+
     return { parser, mathcss };
   }, [mathFormula, fontFactor]);
 
@@ -31,6 +38,7 @@ type LatexProps = {
   style?: React.CSSProperties;
   fontFactor?: number;
   className?: string;
+  latexId: string;
 };
 
 const Latex: React.FC<LatexProps> & LatexAnim = ({
@@ -40,16 +48,19 @@ const Latex: React.FC<LatexProps> & LatexAnim = ({
   children,
   fontFactor = 2,
   style,
+  latexId,
 }) => {
-  const { parser, mathcss } = useParser({ mathFormula, fontFactor });
+  const { parser, mathcss } = useParser({ mathFormula, fontFactor, latexId });
 
   const parserOutput = parser.outputs;
+
   const { top, bottom, right, left, height, width } = parser.BBox;
   const topsign: ParserOutput<'Pdelimiter'> = {
     component: 'delimiter',
     dtype: 'check_line',
     dattr: { transform: `translate(${right} ${top})` },
   };
+
   // const bottomsign: ParserOutput<'Pdelimiter'> = {
   //   component: 'delimiter',
   //   dtype: 'check_line',
@@ -71,6 +82,9 @@ const Latex: React.FC<LatexProps> & LatexAnim = ({
 
     if (children) {
       React.Children.map(children, (child: React.ReactElement) => {
+        if (typeof child === 'string') {
+          throw new Error('expected Latex.Anim as children recevied string');
+        }
         const props = child.props;
         const id = props.id;
 
@@ -118,7 +132,6 @@ const ParserComp2: React.FC<ParserCompProps> = (
         const { component } = output;
         if (component === 'text') {
           const { attr, mathExpr, tspans } = output as ParserOutput<'Ptext'>;
-
           return (
             <text key={idx} {...attr}>
               {mathExpr && mathExpr}

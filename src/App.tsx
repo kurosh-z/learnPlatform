@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 
 import HomePage from './homepage/HomePage';
-import Prob01 from './Courses/Prob01';
+import ExCourse from './Courses/ExCourse';
 
 import './App.css';
 
@@ -11,7 +11,7 @@ const App: React.FC<{}> = () => {
     <Router>
       <Switch>
         <Route path='/' exact component={HomePage} />
-        <Route path='/courses' component={Prob01} />
+        <Route path='/courses' component={ExCourse} />
       </Switch>
     </Router>
   );
