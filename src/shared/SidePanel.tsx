@@ -21,7 +21,7 @@ const drawBg: ({ canv, ctx, nav, navTop }: DrawBgArgs) => void = ({
   canv,
   ctx,
   nav,
-  navTop
+  navTop,
 }) => {
   if (!canv || !ctx) {
     console.log('drawBG: something is wrong');
@@ -65,7 +65,7 @@ const SidePanel: React.FC<{ open?: boolean }> = ({ open = false }) => {
 
   useEffect(() => {
     if (open && t1.current && canvas.current && ctx.current) {
-      console.log('test');
+      // console.log('test');
       t1.current
         .fromTo(
           nav,
@@ -74,7 +74,7 @@ const SidePanel: React.FC<{ open?: boolean }> = ({ open = false }) => {
           {
             x: sWidth - 380,
             ease: Quart.easeInOut,
-            delay: 0
+            delay: 0,
           }
         )
 
@@ -91,12 +91,12 @@ const SidePanel: React.FC<{ open?: boolean }> = ({ open = false }) => {
                 canv: canvas.current,
                 ctx: ctx.current,
                 nav: nav,
-                navTop: navTop
+                navTop: navTop,
               });
             },
             onComplete: () => {
-              setOpened(curr => !curr);
-            }
+              setOpened((curr) => !curr);
+            },
           }
         );
     }
@@ -107,7 +107,7 @@ const SidePanel: React.FC<{ open?: boolean }> = ({ open = false }) => {
       canvas.current &&
       ctx.current
     ) {
-      console.log('reverse');
+      // console.log('reverse');
       t1.current.reverse();
     }
     // return () => t1.current.kill();
@@ -132,14 +132,14 @@ const SidePanel: React.FC<{ open?: boolean }> = ({ open = false }) => {
       height: '100%',
       background: 'transparent',
       //   border: '1px solid white',
-      opacity: 1
+      opacity: 1,
     },
 
     a: {
       color: theme.palette.white.light,
       fontFamily: 'open-sans,Helvetica,Arial,sans-serif',
       textTransform: 'uppercase',
-      textDecoration: 'none'
+      textDecoration: 'none',
     },
     '.sidepanel__up': {
       boreder: '1px solid red',
@@ -153,7 +153,7 @@ const SidePanel: React.FC<{ open?: boolean }> = ({ open = false }) => {
       whiteSpace: 'nowrap',
       textAlign: 'right',
       fontSize: theme.typography.fontSizes[4],
-      letterSpacing: theme.spaces.sm // TODO:consider changing the theme spacing
+      letterSpacing: theme.spaces.sm, // TODO:consider changing the theme spacing
     },
     '.sidepanel__down': {
       display: 'flex',
@@ -161,15 +161,15 @@ const SidePanel: React.FC<{ open?: boolean }> = ({ open = false }) => {
       position: 'absolute',
       bottom: 100,
       right: 100,
-      fontSize: theme.typography.fontSizes[0]
-    }
+      fontSize: theme.typography.fontSizes[0],
+    },
   });
   return (
     <Router>
       <div className='sidepanel' css={sidepanel}>
         <canvas
           id='sideBg'
-          ref={el => {
+          ref={(el) => {
             canvas.current = el;
           }}
           className='sidepanel__bg'
@@ -187,14 +187,14 @@ const SidePanel: React.FC<{ open?: boolean }> = ({ open = false }) => {
             {/* ------------------ */}
 
             <li className='up__list__item'>
-              <Link to='/courses' className='Courses'>
+              <a href='/courses' className='Courses'>
                 courses
-              </Link>
+              </a>
             </li>
             {/* ------------------ */}
 
             <li className='up__list__item'>
-              <Link to='/community' className='community'>
+              <Link to={`/community`} className='community'>
                 our community
               </Link>
             </li>

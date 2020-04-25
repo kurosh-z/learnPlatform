@@ -12,27 +12,27 @@ const calTicksRotation = (axes: 'xAxes' | 'yAxes' | 'zAxes') =>
   ({
     xAxes: [0, 0, 0],
     yAxes: [0, 0, PI / 2],
-    zAxes: [0, 0, PI / 2]
+    zAxes: [0, 0, PI / 2],
   }[axes]);
 
 const calTickPosition = (axes: 'xAxes' | 'yAxes' | 'zAxes', val: number) =>
   ({
     xAxes: [val, 0, 0],
     yAxes: [0, val, 0],
-    zAxes: [0, 0, val]
+    zAxes: [0, 0, val],
   }[axes]);
 
 const calAxesVector = (axes: 'xAxes' | 'yAxes' | 'zAxes', val: number) =>
   ({
     xAxes: [val, 0, 0],
     yAxes: [0, val, 0],
-    zAxes: [0, 0, val]
+    zAxes: [0, 0, val],
   }[axes]);
 
 const defaultcolors = {
   xAxes: 'rgb(255, 127, 14)', // orange
   yAxes: 'rgb(23, 227, 57)', //green
-  zAxes: 'rgb(0,128,255)' // blue
+  zAxes: 'rgb(0,128,255)', // blue
 };
 
 interface TickProps {
@@ -60,7 +60,7 @@ const AxesTick: React.FC<TickProps> = ({
   tickValues,
   color = 'black',
   scale,
-  format
+  format,
 }) => {
   const tickrotation = useMemo(() => calTicksRotation(axes), [axes]);
 
@@ -76,9 +76,9 @@ const AxesTick: React.FC<TickProps> = ({
           />
           <meshBasicMaterial attach='material' color={color} />
         </mesh>
-        <Dom position={calTickPosition(axes, scale(val))}>
+        {/* <Dom position={calTickPosition(axes, scale(val))}>
           <div className='tick'>{format(val)}</div>
-        </Dom>
+        </Dom> */}
       </group>
     );
   });
@@ -105,13 +105,13 @@ interface AxesProps {
   ) => string;
 }
 
-const directionVectors: (
-  axes: 'xAxes' | 'yAxes' | 'zAxes'
-) => THREE.Vector3 = axes =>
+const directionVectors: (axes: 'xAxes' | 'yAxes' | 'zAxes') => THREE.Vector3 = (
+  axes
+) =>
   ({
     xAxes: I,
     yAxes: J,
-    zAxes: K
+    zAxes: K,
   }[axes]);
 
 const Axes: React.FC<AxesProps> = ({
@@ -120,7 +120,7 @@ const Axes: React.FC<AxesProps> = ({
   origin = ORIGIN,
   scale,
   tickValues,
-  format
+  format,
 }) => {
   return (
     <group>

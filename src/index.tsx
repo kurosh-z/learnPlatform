@@ -3,7 +3,7 @@ import React from 'react';
 import './index.css';
 import App from './App';
 import { ThemeProvider } from './theme/themeContext';
-import { LatexProvider } from './Courses/math-components/LatexContext';
+import { LatexProvider } from './math-components/LatexContext';
 // import { MathJaxProvider } from './mathjax/ MathJaxContext';
 // import * as serviceWorker from './serviceWorker';
 

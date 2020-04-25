@@ -6,12 +6,14 @@ import { useTheme } from 'emotion-theming';
 import { Theme } from '../theme/types';
 import { css as emoCSS } from '@emotion/core';
 import Plane from '../3D-components/Plane';
-import Coordinates from '../3D-components/Coordinates';
+import Coordinates from './Coordinates';
 import Grids from '../3D-components/Grids';
 import Controls from '../3D-components/Controls';
 import Latex from '../math-components/Latex';
 import { useLatexBBox } from '../math-components/LatexContext';
 import Button from '../components/Button/Button';
+import ContentHeader from './ContentHeader';
+import InlineLatex from '../math-components/InlineLatex';
 
 const Camera = (props) => {
   const camRef = useRef<THREE.PerspectiveCamera>(null);
@@ -119,9 +121,42 @@ const ExCourse: React.FC<{}> = () => {
     fill: !toggle1 ? 'black' : 'red',
   });
 
+  const course = emoCSS({
+    '.course__header': {
+      width: '100%',
+      height: '80px',
+      backgroundColor: theme.palette.aubergine.base,
+    },
+    '.coursepage': {
+      width: '100%',
+    },
+    '.main': {
+      backgroundColor: 'rgba(220, 224, 221, .1)',
+      width: '96%',
+      margin: 'auto',
+    },
+    '.mathcontent': {
+      '*': { fontFamily: 'KaTeX_SansSerif' },
+    },
+  });
+
   return (
-    <div css={prob01_Container}>
-      <svg
+    <div css={course}>
+      <div className='course__header' />
+      <div className='coursepage'>
+        <main className='main mathcontent'>
+          <ContentHeader>
+            <ContentHeader.Objective>
+              Understand the definition of
+            </ContentHeader.Objective>
+            <ContentHeader.Objective>
+              Second Objective
+              <Latex font_size={1.25} inline mathFormula={String.raw`R^n`} />
+              after that
+            </ContentHeader.Objective>
+          </ContentHeader>
+        </main>
+        {/* <svg
         className='course_svg katexfont '
         xmlns='http://www.w3.org/2000/svg'
         xmlnsXlink='http://www.w3.org/1999/xlink'
@@ -132,7 +167,7 @@ const ExCourse: React.FC<{}> = () => {
       >
         <Latex
           x={10}
-          y={300}
+          y={200}
           fontFactor={1.3}
           latexId={prob01_Container.name}
           mathFormula={String.raw`
@@ -175,7 +210,8 @@ const ExCourse: React.FC<{}> = () => {
         size={'md'}
         className={'anim_btn'}>
         animate
-      </Button>
+      </Button> */}
+      </div>
     </div>
   );
 };

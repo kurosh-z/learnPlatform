@@ -877,7 +877,7 @@ export default class Parser {
       elRight: number;
     };
     const scriptElements: RawScriptElement[] = [];
-    const SUP_DY = -4.5;
+    const SUP_DY = -5;
     const SUB_DY = 3;
     const INT_SUP_DY = -18;
     const INT_SUB_DY = 15;
@@ -923,7 +923,7 @@ export default class Parser {
     for (const scriptEl of scriptElements) {
       const scriptType = scriptEl.type;
       let dy: number,
-        dx: number = 0.9 * font_factor;
+        dx: number = 1.1 * font_factor;
       if (baseType === 'atom') {
         dy = scriptType === 'sub' ? font_factor * SUB_DY : font_factor * SUP_DY;
       }

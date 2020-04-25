@@ -23,7 +23,8 @@ export type LatexContextType = [LatexBBoxRef, SetLatexBBox];
 
 const LatexContext = createContext<LatexContextType>([null, () => {}]);
 
-export const useLatexBBox = () => useContext<LatexContextType>(LatexContext);
+export const useLatexBBox: () => LatexContextType = () =>
+  useContext<LatexContextType>(LatexContext);
 
 export const LatexProvider = ({ children }: { children: React.ReactNode }) => {
   const latexBBoxRef = useRef<LatexBBox>({});

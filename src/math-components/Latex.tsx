@@ -1,13 +1,14 @@
 import React, { useMemo, ReactElement } from 'react';
 import { animated } from 'react-spring';
 import { MathCss, parserFactory } from './parser';
+import { css as emoCSS } from '@emotion/core';
 import Parser, { ParserOutputList, ParserOutput, PBBox } from './parser/Parser';
 import { useLatexBBox } from './LatexContext';
 
 type useParserArgs = {
   mathFormula: string;
   fontFactor: number;
-  latexId: string;
+  latexId?: string;
 };
 
 function useParser({
@@ -31,25 +32,28 @@ function useParser({
   return { parser, mathcss };
 }
 
-type LatexProps = {
+export type LatexProps = {
   mathFormula?: string;
-  x: number;
-  y: number;
+  x?: number;
+  y?: number;
   style?: React.CSSProperties;
-  fontFactor?: number;
+  font_size?: number;
   className?: string;
-  latexId: string;
+  latexId?: string;
+  inline?: boolean;
 };
 
 const Latex: React.FC<LatexProps> & LatexAnim = ({
   mathFormula,
-  x,
-  y,
+  x = 0,
+  y = 0,
+  inline = false,
   children,
-  fontFactor = 2,
+  font_size = 2,
   style,
   latexId,
 }) => {
+  const fontFactor = font_size / 1.2;
   const { parser, mathcss } = useParser({ mathFormula, fontFactor, latexId });
 
   const parserOutput = parser.outputs;
@@ -97,14 +101,56 @@ const Latex: React.FC<LatexProps> & LatexAnim = ({
     return childrenProps;
   }, [children]);
 
+  const inlineLatex = emoCSS({
+    display: 'inline-block',
+    height: font_size * 18,
+    width: width,
+    marginLeft: font_size * 0.2 + 'rem',
+    marginRight: font_size * 0.2 + 'rem',
+  });
+
   return (
-    <g
-      className={'latex'}
-      css={mathcss.css}
-      style={style}
-      transform={`translate(${x} ${y})`}>
-      <ParserComp parserOut={parserOutput} childrenProps={childrenProps} />>
-    </g>
+    <>
+      {!inline && (
+        <svg
+          className='katexfont '
+          xmlns='http://www.w3.org/2000/svg'
+          xmlnsXlink='http://www.w3.org/1999/xlink'>
+          <g
+            className={'latex'}
+            css={mathcss.css}
+            style={style}
+            transform={`translate(${x} ${y})`}>
+            <ParserComp
+              parserOut={parserOutput}
+              childrenProps={childrenProps}
+            />
+            >
+          </g>
+        </svg>
+      )}
+      {inline && (
+        <span css={inlineLatex} style={style} className='inline_latex'>
+          <svg
+            className='katexfont'
+            xmlns='http://www.w3.org/2000/svg'
+            xmlnsXlink='http://www.w3.org/1999/xlink'
+            width={'100%'}
+            height={'100%'}>
+            <g
+              className={'latex'}
+              css={mathcss.css}
+              transform={`translate(${x} ${y + font_size * 16})`}>
+              <ParserComp
+                parserOut={parserOutput}
+                childrenProps={childrenProps}
+              />
+              >
+            </g>
+          </svg>
+        </span>
+      )}
+    </>
   );
 };
 
