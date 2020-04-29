@@ -32,11 +32,11 @@ const BurgerBtn: React.FC<BurgerProps> = ({ color, text, burgerCB }) => {
     alignItems: 'center',
     padding: '.5em',
     marginRight: '1em',
-    cursor: 'pointer'
+    cursor: 'pointer',
   });
   const burger__btn = emoCSS({
     marginLeft: '0.5em',
-    marginRight: '.5em'
+    marginRight: '.5em',
 
     // border: '1px solid red'
 
@@ -53,7 +53,7 @@ const BurgerBtn: React.FC<BurgerProps> = ({ color, text, burgerCB }) => {
     // right: '50%',
     borderRadius: '5px',
     backgroundColor: color ? color : theme.palette.white.light,
-    transitionDuration: '.5s',
+    transitionDuration: '.01s',
 
     // transform: 'translateX(-5px)',
     ':before, &:after': {
@@ -65,15 +65,14 @@ const BurgerBtn: React.FC<BurgerProps> = ({ color, text, burgerCB }) => {
       right: 0,
       borderRadius: '5px',
       backgroundColor: color ? color : theme.palette.white.light,
-      transition:
-        'transform 0.3s ease-in-out, top 0.3s ease-in-out 0.3s ,background-color ease-in-out .1s .1s',
-      willChange: 'transform top background-color'
+      transition: 'transform 0.1s ease-in-out, top 0.3s ease-in-out 0.3s ',
+      willChange: 'transform top background-color',
     },
     ':before': {
-      top: '-6px'
+      top: '-6px',
     },
     '&:after': {
-      top: '6px'
+      top: '6px',
     },
 
     // .open & ==> selects current element within the parent element with class open ==> .open >
@@ -86,20 +85,20 @@ const BurgerBtn: React.FC<BurgerProps> = ({ color, text, burgerCB }) => {
       ':before': {
         transition: 'top 0.3s ease-in-out, transform .3s ease-in-out .2s ',
         top: '0px',
-        transform: 'rotateZ(-45deg)'
+        transform: 'rotateZ(-45deg)',
       },
       ':after': {
         transition: 'top 0.3s ease-in-out, transform .3s ease-in-out .2s',
         top: '0px',
-        transform: 'rotateZ(45deg)'
-      }
-    }
+        transform: 'rotateZ(45deg)',
+      },
+    },
   });
   const burger__text = emoCSS({
     display: 'block',
     maxWidth: '150px',
     overflow: 'hidden',
-    color: theme.palette.white.base,
+    color: color ? color : theme.palette.white.base,
     fontSize: theme.typography.fontSizes[1],
     fontWeight: theme.typography.fontWeights.bold,
     textAlign: 'center',
@@ -107,7 +106,7 @@ const BurgerBtn: React.FC<BurgerProps> = ({ color, text, burgerCB }) => {
     textDecoration: 'none',
     marginRight: '1em',
     whiteSpace: 'nowrap',
-    userSelect: 'none'
+    userSelect: 'none',
   });
   const textseperator = emoCSS({
     borderLeft: `1.7px solid ${theme.palette.orange.base}`,
@@ -115,7 +114,7 @@ const BurgerBtn: React.FC<BurgerProps> = ({ color, text, burgerCB }) => {
     opacity: 0.4,
     height: '60%',
     padding: '.1em',
-    margin: 'auto 1em auto 2em'
+    margin: 'auto 1em auto 2em',
   });
 
   // toggle open class when clicked:
@@ -131,7 +130,7 @@ const BurgerBtn: React.FC<BurgerProps> = ({ color, text, burgerCB }) => {
 
       <a
         css={burger__btn}
-        ref={el => {
+        ref={(el) => {
           burgerRef.current = el;
         }}>
         <div css={burger__buns} />

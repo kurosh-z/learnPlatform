@@ -313,9 +313,10 @@ export default class Parser {
       className += ' ' + this.fontKey;
 
       let font_size = this.getFontSize({
-        type: 'math_number',
+        type: 'main',
         sizeKey: this.fontKey,
       });
+
       let fontFamily: FONT_FAMILIES = 'KaTeX_Math';
       let fontStyle: FONT_STYLES = 'italic';
       if (pattern instanceof AtomPattern && pattern.isNumber(expr)) {
@@ -607,6 +608,7 @@ export default class Parser {
       const { currX, currY } = this.currPos;
       let coockedSymb: ParserOutput<'Ptext'>;
       // const parserFontFactor = this.fontFactor ===
+
       const parser = parserFactory({
         str: mathExpr.expr,
         x: currX + mathExpr.attr.dx,
@@ -635,6 +637,8 @@ export default class Parser {
             bottom: currY + maxDescent,
           },
         };
+        coockedSymb = parser.outputs[0] as ParserOutput<'Ptext'>;
+        this.currPos.currX = parser.currPos.currX;
       } else {
         this.lastElement = {
           type: 'atom',
@@ -645,6 +649,8 @@ export default class Parser {
             bottom: parser.BBox.bottom,
           },
         };
+
+        // rendering dots
 
         // redering vdots :
         if (pattern.symb === 'vdots') {
@@ -838,10 +844,11 @@ export default class Parser {
           coockedSymb = parser.outputs[0] as ParserOutput<'Ptext'>;
           this.currPos.currX = parser.currPos.currX;
         }
-
-        // this._pushParserOutputs({ parser: parser, patternExpr: mathExpr });
-        this.outputs.push(coockedSymb);
       }
+
+      this.outputs.push(coockedSymb);
+
+      // this._pushParserOutputs({ parser: parser, patternExpr: mathExpr });
     }
   }
   _handleAnimComp(pattern: AnimCompPattern) {
@@ -1317,6 +1324,5 @@ export default class Parser {
   parse() {
     let str = this.str;
     this.strToMathExpressions(str);
-    return this.outputs;
   }
 }

@@ -1,7 +1,11 @@
 import React, { useMemo } from 'react';
+import * as THREE from 'three';
 import { format as d3format } from 'd3-format';
 import { scaleLinear } from 'd3-scale';
+import { useTheme } from 'emotion-theming';
 import Axes from '../3D-components/Axes';
+import Vector from '../3D-components/Vector';
+import { Theme } from '../theme/types';
 
 const Coordinates = () => {
   const n = 10;
@@ -33,6 +37,10 @@ const Coordinates = () => {
         scale={scale}
         tickValues={tickValues}
         format={format}
+      />
+      <Vector
+        vector={[1, 2, 1]}
+        color={new THREE.Color('rgb(189, 183, 107)')}
       />
     </>
   );

@@ -13,9 +13,13 @@ export default function parserFactory({
   fontSizegetter?: FontSizeFunc;
   parentParser?: Parser;
 }) {
-  const configs = fontSizegetter
-    ? PConfigs.getInstance({ getFontSize: fontSizegetter })
-    : PConfigs.getInstance({});
+  let configs;
+  if (fontSizegetter) {
+    configs = PConfigs.getInstance({ getFontSize: fontSizegetter });
+    configs.setConfigs(fontSizegetter);
+  } else {
+    configs = PConfigs.getInstance({});
+  }
   // const configs = new PConfigs(pfontSizes);
   const parser = new Parser({ str, x, y, fontKey, configs });
   parser.parse();

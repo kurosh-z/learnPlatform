@@ -1,19 +1,22 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 
 import HomePage from './homepage/HomePage';
-import ExCourse from './Courses/ExCourse';
+
+const ExCourse = lazy(() => import('./Courses/ExCourse'));
 
 import './App.css';
 
 const App: React.FC<{}> = () => {
   return (
-    <Router>
-      <Switch>
-        <Route path='/' exact component={HomePage} />
-        <Route path='/courses' component={ExCourse} />
-      </Switch>
-    </Router>
+    <Suspense fallback={null}>
+      <Router>
+        <Switch>
+          <Route path='/' exact component={HomePage} />
+          <Route path='/courses' component={ExCourse} />
+        </Switch>
+      </Router>
+    </Suspense>
   );
 };
 

@@ -1,5 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { TimelineMax, Quart } from 'gsap';
+import { useSpring, config, animated as a, useTransition } from 'react-spring';
 // import { useSprings, config, animated as a, useSpring } from 'react-spring';
 import { css as emoCSS } from '@emotion/core';
 import { BrowserRouter as Router, Link } from 'react-router-dom';
@@ -11,107 +12,76 @@ import { Theme } from '../theme/types';
 // sidebar width:
 const sWidth = 600;
 
-interface DrawBgArgs {
-  canv: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
-  nav: { x: number };
-  navTop: { x: number };
-}
-const drawBg: ({ canv, ctx, nav, navTop }: DrawBgArgs) => void = ({
-  canv,
-  ctx,
-  nav,
-  navTop,
-}) => {
-  if (!canv || !ctx) {
-    console.log('drawBG: something is wrong');
-    return;
-  }
-  //   console.log('nav:', nav.x);
-  //   console.log('navT:', navTop.x);
+const PanelCanvas: React.FC<{
+  navTop: number;
+  nav: number;
+  visibility: boolean;
+}> = ({ nav, navTop, visibility }) => {
+  const canvRef = useRef<HTMLCanvasElement>(null);
 
-  let newH = window.innerHeight;
-  canv.height = newH;
-  ctx.fillStyle = '#2c142e'; //'#1a1c1a'; //'#bababa'; // '#2c142e';
-  ctx.beginPath();
-  ctx.moveTo(sWidth, 0);
-  ctx.lineTo(navTop.x, 0);
-  ctx.lineTo(nav.x, newH);
-  ctx.lineTo(sWidth, newH);
-  ctx.closePath();
-  ctx.fill();
+  if (canvRef.current) {
+    const canv = canvRef.current;
+    const ctx = canv.getContext('2d');
+    let newH = window.innerHeight;
+    canv.height = newH;
+    // ctx.clearRect(0, 0, 600, newH);
+    ctx.fillStyle = '#2c142e'; //'#1a1c1a'; //'#bababa'; // '#2c142e';
+    ctx.beginPath();
+    ctx.moveTo(sWidth, 0);
+    ctx.lineTo(navTop, 0);
+    ctx.lineTo(nav, newH);
+    ctx.lineTo(sWidth, newH);
+    // ctx.lineTo(sWidth, 0);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  const theme = useTheme<Theme>();
+  const sidepanel__canv = emoCSS({
+    position: 'fixed',
+    top: 0,
+    right: 0,
+    height: '100vh',
+    minWidth: 500,
+    opacity: 1,
+
+    zIndex: theme.zIndices.sticky,
+  });
+  return (
+    <canvas
+      style={{ display: visibility ? 'block' : 'none' }}
+      id='sideBg'
+      css={sidepanel__canv}
+      ref={(el) => {
+        canvRef.current = el;
+      }}
+      className='sidepanel__bg'
+      width='550'
+      height='1000'></canvas>
+  );
 };
 
+const ApanelCanvas = a(PanelCanvas);
+
 const SidePanel: React.FC<{ open?: boolean }> = ({ open = false }) => {
-  // ref to canvas:
-  const canvas = useRef<HTMLCanvasElement | null>(null);
-  const ctx = useRef<CanvasRenderingContext2D | null>(null);
-  const [opened, setOpened] = useState<boolean>(false);
-  useEffect(() => {
-    if (canvas.current) {
-      ctx.current = canvas.current.getContext('2d');
-    }
-    // console.log('ctx: ', ctx.current);
-  }, [canvas.current, ctx.current]);
-  //setting up a timeline
-  const t1 = useRef<TimelineMax>();
-  // init the timeline in callback
-  useEffect(() => {
-    t1.current = new TimelineMax();
-  }, [t1]);
+  const [opened, setOpened] = useState<boolean>(true);
 
-  const navTop = { x: sWidth };
-  const nav = { x: sWidth };
+  const [{ nav }, setNav] = useSpring(() => ({
+    nav: sWidth,
+    config: { mass: 1, friction: 30, tension: 370, velocity: 100 },
+  }));
+  const [{ navTop }, setNavTop] = useSpring(() => ({
+    navTop: sWidth,
+    config: { mass: 1, friction: 40, tension: 400, delay: 1200 },
+    onRest: () => {
+      setOpened((curr) => !curr);
+    },
+  }));
 
   useEffect(() => {
-    if (open && t1.current && canvas.current && ctx.current) {
-      // console.log('test');
-      t1.current
-        .fromTo(
-          nav,
-          0.26,
-          { x: sWidth },
-          {
-            x: sWidth - 380,
-            ease: Quart.easeInOut,
-            delay: 0,
-          }
-        )
-
-        .fromTo(
-          navTop,
-          0.4,
-          { x: sWidth },
-          {
-            x: sWidth - 600,
-            ease: Quart.easeInOut,
-            delay: 0,
-            onUpdate: () => {
-              drawBg({
-                canv: canvas.current,
-                ctx: ctx.current,
-                nav: nav,
-                navTop: navTop,
-              });
-            },
-            onComplete: () => {
-              setOpened((curr) => !curr);
-            },
-          }
-        );
-    }
-    if (
-      opened &&
-      !open &&
-      !t1.current.isActive() &&
-      canvas.current &&
-      ctx.current
-    ) {
-      // console.log('reverse');
-      t1.current.reverse();
-    }
-    // return () => t1.current.kill();
-  }, [canvas.current, open]);
+    setNav({ nav: open ? sWidth - 380 : sWidth });
+    setNavTop({ navTop: open ? sWidth - 600 : sWidth });
+  }, [open]);
 
   const theme = useTheme<Theme>();
 
@@ -124,16 +94,7 @@ const SidePanel: React.FC<{ open?: boolean }> = ({ open = false }) => {
     minWidth: 500,
     // backgroundColor: 'black',
     zIndex: theme.zIndices.sticky,
-
-    '.sidepanel__bg': {
-      //   position: 'absolute',
-      display: 'inline-block',
-      width: '100%',
-      height: '100%',
-      background: 'transparent',
-      //   border: '1px solid white',
-      opacity: 1,
-    },
+    backgroundColor: 'transparent',
 
     a: {
       color: theme.palette.white.light,
@@ -166,23 +127,16 @@ const SidePanel: React.FC<{ open?: boolean }> = ({ open = false }) => {
   });
   return (
     <Router>
+      <ApanelCanvas nav={nav} navTop={navTop} visibility={open || opened} />
       <div className='sidepanel' css={sidepanel}>
-        <canvas
-          id='sideBg'
-          ref={(el) => {
-            canvas.current = el;
-          }}
-          className='sidepanel__bg'
-          width='550'
-          height='1000'></canvas>
         <div className='sidepanel__up'>
           {/* upper list items:  */}
           <ul className='up__list'>
             {/* ------------------ */}
             <li className='up__list__item'>
-              <Link to='/' className='home'>
+              <a href='/' className='home'>
                 home
-              </Link>
+              </a>
             </li>
             {/* ------------------ */}
 

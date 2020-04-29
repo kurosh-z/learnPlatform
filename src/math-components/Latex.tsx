@@ -6,34 +6,38 @@ import Parser, { ParserOutputList, ParserOutput, PBBox } from './parser/Parser';
 import { useLatexBBox } from './LatexContext';
 
 type useParserArgs = {
-  mathFormula: string;
+  math_formula: string;
   fontFactor: number;
   latexId?: string;
 };
 
 function useParser({
-  mathFormula,
+  math_formula,
   fontFactor,
   latexId,
 }: useParserArgs): { parser: Parser; mathcss: MathCss } {
   const [, setLatexBBox] = useLatexBBox();
   const { parser, mathcss } = useMemo(() => {
     const mathcss = new MathCss(fontFactor);
+    const getfontfunc = mathcss.getfontSizeFunc();
+
     const parser = parserFactory({
-      str: mathFormula,
+      str: math_formula,
       fontSizegetter: mathcss.getfontSizeFunc(),
     });
 
-    setLatexBBox({ latexId, bbox: parser.BBox });
-
+    if (latexId) {
+      setLatexBBox({ latexId, bbox: parser.BBox });
+    }
     return { parser, mathcss };
-  }, [mathFormula, fontFactor]);
+  }, [math_formula, fontFactor]);
+  // console.log('math_fromula', math_formula, parser.BBox);
 
   return { parser, mathcss };
 }
 
 export type LatexProps = {
-  mathFormula?: string;
+  math_formula: string;
   x?: number;
   y?: number;
   style?: React.CSSProperties;
@@ -44,21 +48,29 @@ export type LatexProps = {
 };
 
 const Latex: React.FC<LatexProps> & LatexAnim = ({
-  mathFormula,
+  math_formula,
   x = 0,
   y = 0,
   inline = false,
   children,
-  font_size = 2,
+  font_size = 1,
   style,
   latexId,
 }) => {
   const fontFactor = font_size / 1.2;
-  const { parser, mathcss } = useParser({ mathFormula, fontFactor, latexId });
+  const { parser, mathcss } = useParser({ math_formula, fontFactor, latexId });
 
   const parserOutput = parser.outputs;
 
-  const { top, bottom, right, left, height, width } = parser.BBox;
+  const { top, bottom, right, left, height, width } = useMemo(() => {
+    // console.log(
+    //   parser.str,
+    //   parser.BBox.height,
+    //   parser.getFontSize({ type: 'math_letter', sizeKey: 'normalsize' })
+    // );
+    return parser.BBox;
+  }, [font_size, math_formula]);
+
   const topsign: ParserOutput<'Pdelimiter'> = {
     component: 'delimiter',
     dtype: 'check_line',
@@ -100,27 +112,39 @@ const Latex: React.FC<LatexProps> & LatexAnim = ({
     }
     return childrenProps;
   }, [children]);
+  const spanHeight = height + 0.25 * font_size * 16;
 
   const inlineLatex = emoCSS({
     display: 'inline-block',
-    height: font_size * 18,
+    // flexDirection: 'column',
+    // alignItems: 'bottom',
+    position: 'relative',
+    top: `${bottom + font_size * 2}px`,
+    height: spanHeight,
     width: width,
+    overflow: 'visible',
     marginLeft: font_size * 0.2 + 'rem',
     marginRight: font_size * 0.2 + 'rem',
+    svg: {
+      // alignSelf: 'center',
+    },
   });
-
+  // console.log(parserOutput);
   return (
     <>
       {!inline && (
         <svg
           className='katexfont '
           xmlns='http://www.w3.org/2000/svg'
-          xmlnsXlink='http://www.w3.org/1999/xlink'>
+          xmlnsXlink='http://www.w3.org/1999/xlink'
+          width={width + 0.3 * fontFactor}
+          height={height + 0.3 * fontFactor}>
           <g
             className={'latex'}
             css={mathcss.css}
-            style={style}
-            transform={`translate(${x} ${y})`}>
+            transform={`translate(${x + 0.15 * fontFactor} ${
+              y - top + 0.15 * fontFactor
+            })`}>
             <ParserComp
               parserOut={parserOutput}
               childrenProps={childrenProps}
@@ -130,17 +154,22 @@ const Latex: React.FC<LatexProps> & LatexAnim = ({
         </svg>
       )}
       {inline && (
-        <span css={inlineLatex} style={style} className='inline_latex'>
+        <span
+          css={inlineLatex}
+          // style={{ backgroundColor: 'rgba(235, 213, 52,.4)' }}
+          className='inline_latex'>
           <svg
             className='katexfont'
             xmlns='http://www.w3.org/2000/svg'
             xmlnsXlink='http://www.w3.org/1999/xlink'
             width={'100%'}
-            height={'100%'}>
+            height={'100%'}
+            // style={{ backgroundColor: 'rgba(235, 213, 52,.4)' }}
+          >
             <g
               className={'latex'}
               css={mathcss.css}
-              transform={`translate(${x} ${y + font_size * 16})`}>
+              transform={`translate(${x} ${y - top + 0.125 * font_size * 16})`}>
               <ParserComp
                 parserOut={parserOutput}
                 childrenProps={childrenProps}

@@ -10,9 +10,14 @@ import BurgerBtn from '../components/Button/BurgerBtn';
 interface HeaderPanelProps {
   opacity?: number;
   burgerCB: () => void; // callback function runs when burger button gets clicked
+  textColor?: string;
 }
 // page panel:
-const HeaderPanel: React.FC<HeaderPanelProps> = ({ opacity = 0, burgerCB }) => {
+const HeaderPanel: React.FC<HeaderPanelProps> = ({
+  opacity = 0,
+  burgerCB,
+  textColor,
+}) => {
   // getting theme from emotion
   const theme = useTheme<Theme>();
 
@@ -20,23 +25,24 @@ const HeaderPanel: React.FC<HeaderPanelProps> = ({ opacity = 0, burgerCB }) => {
   const headerCss = emoCSS({
     position: 'fixed',
     display: 'flex',
+    top: 0,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100vw',
     height: '80px',
     // borderBottom: `2px solid ${theme.seperator.default}`,
-    zIndex: theme.zIndices.fixed
+    zIndex: theme.zIndices.fixed,
   });
 
   const header__logoContainer = emoCSS({
     width: '200px',
     height: '100%',
-    padding: '1%'
+    padding: '1%',
   });
   const header__logo = emoCSS({
     width: '100%',
-    height: '100%'
+    height: '100%',
   });
 
   const header__nav = emoCSS({
@@ -46,17 +52,17 @@ const HeaderPanel: React.FC<HeaderPanelProps> = ({ opacity = 0, burgerCB }) => {
     cursor: 'pointer',
 
     '.nav__concept': {
-      color: theme.palette.white.base,
+      color: textColor ? textColor : theme.palette.white.base,
       fontSize: theme.typography.fontSizes[1],
       fontWeight: theme.typography.fontWeights.bold,
       textAlign: 'center',
       textTransform: 'uppercase',
       textDecoration: 'none',
-      marginRight: '1em'
-    }
+      marginRight: '1em',
+    },
   });
   const nav__btn = emoCSS({
-    margin: '.7em 2em auto .5em'
+    margin: '.7em 2em auto .5em',
   });
 
   return (
@@ -76,7 +82,7 @@ const HeaderPanel: React.FC<HeaderPanelProps> = ({ opacity = 0, burgerCB }) => {
           concept
         </a>
 
-        <BurgerBtn text='navigation' burgerCB={burgerCB} />
+        <BurgerBtn text='navigation' burgerCB={burgerCB} color={textColor} />
         <Button borderRad='xl' size='lg' css={nav__btn}>
           log in
         </Button>

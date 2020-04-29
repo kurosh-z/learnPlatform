@@ -4,9 +4,11 @@ import { css as emoCSS } from '@emotion/core';
 import { useTheme } from 'emotion-theming';
 import { Theme } from '../theme/types';
 import SidePanel from '../shared/SidePanel';
-import HeaderPanel from './HeaderPanel';
+import HeaderPanel from '../shared/HeaderPanel';
 import MastHead from './MastHead';
 import Card from './Card';
+import NavPanel from '../shared/NavPanel';
+import { alpha } from '../theme/colors';
 // import { useThemeToggler } from './theme/themeContext';
 
 interface AnimPorps {
@@ -31,11 +33,11 @@ const HomePage: React.FC<{}> = () => {
   // use offset of videotrigger element to top of the window to animate opacity of the video
   const [{ offset }, set] = useSpring<AnimPorps>(() => ({
     offset: initialOffset,
-    config: config.molasses
+    config: config.molasses,
   }));
   // TODO: is there any better way to set the initialOffset after DOM is loaded?
   useEffect(() => {
-    setTimeout(function() {
+    setTimeout(function () {
       if (!videobgtriggerEl.current) return;
       let rect = videobgtriggerEl.current.getBoundingClientRect();
       initialOffset = rect.top;
@@ -43,7 +45,7 @@ const HomePage: React.FC<{}> = () => {
     }, 1200);
   });
   //  interpolating video opacity
-  const opMastHead = offset.interpolate(off => {
+  const opMastHead = offset.interpolate((off) => {
     if (typeof off !== 'number') return;
     // as offset: initialoffset -> 0 ==> opacity goes: 1 -> 0
     if (off < -100) return 0;
@@ -51,22 +53,29 @@ const HomePage: React.FC<{}> = () => {
   });
 
   // interpolate navbar opacity
-  // const opHeaderPanel = offset.interpolate(off => {
-  //   if (typeof off !== 'number') return;
-  //   // as offset: initialoffset -> 20 ==> opacity goes: 1 -> 0
-  //   return off >= 100 ? (-off + initialOffset) / 80 : 1;
-  // });
+  const opHeaderPanel = offset.interpolate((off) => {
+    if (typeof off !== 'number') return;
+    // as offset: initialoffset -> 20 ==> opacity goes: 1 -> 0
+    return off >= 100 ? (-off + initialOffset) / 80 : 1;
+  });
 
   /* use toggle instead of interpolating offset: 
      by scrolling toggle turns on --> opacit: 1
   */
 
   const [navOpon, navOptoggle] = useState<Boolean>(false);
-  const [{ navOp }, setNavOp] = useSpring<{ navOp: number }>(() => ({
-    navOp: 0,
-    config: config.stiff
+  const [{ navBackColor }, setNavBackColor] = useSpring<{
+    navBackColor: string;
+  }>(() => ({
+    navBackColor: alpha(theme.palette.aubergine.dark, 1),
+    config: config.stiff,
   }));
-  setNavOp({ navOp: navOpon ? 1 : 0 });
+  setNavBackColor({
+    navBackColor: navOpon
+      ? alpha(theme.palette.aubergine.dark, 1)
+      : alpha(theme.palette.aubergine.dark, 0),
+  });
+
   // scroll handler function
   const onScrollHandler = useCallback(() => {
     if (!videobgtriggerEl.current) return;
@@ -89,20 +98,26 @@ const HomePage: React.FC<{}> = () => {
   // toggling the sidepanel:
   const [sidepanelOn, sidepaneltoggle] = useState<boolean>(false);
   // callback function to close the sidepanel
-  const burgerCB = () => sidepaneltoggle(curr => !curr);
+  const burgerCB = () => sidepaneltoggle((curr) => !curr);
 
   // styling:
   const homepageCss = emoCSS({
     position: 'relative',
     overflowX: 'hidden',
-    overflowY: 'scroll'
+    overflowY: 'scroll',
     // backgroundColor: theme.palette.aubergine.dark
   });
 
   return (
     <div className='homepage' css={homepageCss}>
-      <SidePanel open={sidepanelOn} />
-      <AnimHeaderPanel opacity={navOp} burgerCB={burgerCB} />
+      {/* <SidePanel open={sidepanelOn} />
+      <AnimHeaderPanel opacity={navOp} burgerCB={burgerCB} /> */}
+      <NavPanel
+        background_color={navBackColor}
+        textColor_closed={theme.palette.white.base}
+        textColor_opened={theme.palette.white.base}
+        navCB={burgerCB}
+      />
       <section className='mainpage'>
         <AnimMastHead
           videoOpacity={opMastHead}

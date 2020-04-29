@@ -43,6 +43,9 @@ export default class PConfigs {
       patternFactory('special_chars', getFontSize),
     ];
   }
+  public setConfigs(getFontSize: FontSizeFunc) {
+    this.getFontSize = getFontSize;
+  }
   public static getInstance({ getFontSize }: Partial<PConfigsConstArgs>) {
     if (!PConfigs.instance) {
       PConfigs.instance = new PConfigs({ getFontSize });

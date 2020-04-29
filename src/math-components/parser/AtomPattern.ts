@@ -5,7 +5,7 @@ export default class AtomPattern extends Pattern {
   stratingIndex: number;
   endingIndex: number;
   stringsRest: string;
-  numRegStr = '([-+]?)(\\d+.?\\d*)';
+  numRegStr = '(^[-+]?)(\\d+[.]?\\d*)$';
   lettRegStr = `[${LETTERS}]+`;
   regString = `[${LETTERS}]+|([-+]?)(\\d+.?\\d*)`;
   constructor({ name }: PatternArgs) {
@@ -44,9 +44,10 @@ export default class AtomPattern extends Pattern {
     let lastChar = '';
     let nextChar = '';
     for (const char of expr) {
-      nextChar = idx + 2 <= expr.length ? expr[idx + 2] : '';
+      nextChar = idx + 2 <= expr.length ? expr[idx + 2] : 'g';
       const numTest = lastChar + char + nextChar; // if . is used as decimal point it is a number
       //                                             otherwise it is just a dot or cdots ddots etc.
+
       if (this.isPattern(char) || this.isNumber(numTest)) {
         idx++;
         lastChar = char;

@@ -4,7 +4,7 @@ import {
   ThemeLineHeight,
   ThemeFontWeights,
   h,
-  ThemeTypography
+  ThemeTypography,
 } from './types';
 
 // font sizes
@@ -18,7 +18,7 @@ const fontSizes: ThemeFontSize = {
   6: '2.5rem', //37.5px
   7: '3.5rem',
   8: '4.5rem',
-  9: '5.5rem'
+  9: '5.5rem',
 };
 
 const sansFonts: string = [
@@ -26,7 +26,7 @@ const sansFonts: string = [
   '"Segoe UI"',
   '"Roboto"',
   'Raleway',
-  'Helvetica'
+  'Helvetica',
 ].join(',');
 
 const baseFonts: string = `Rossario`;
@@ -37,27 +37,27 @@ const monospaceFonts: string = [
   'Consolas',
   '"Liberation Mono"',
   '"Courier New"',
-  'monospace'
+  'monospace',
 ].join(',');
 
 const fonts: ThemeFont = {
   sans: sansFonts,
   base: baseFonts,
-  monospace: monospaceFonts
+  monospace: monospaceFonts,
 };
 
 const lineHeights: ThemeLineHeight = {
   reg: 1,
   md: 1.07,
   lg: 1.17,
-  xl: 1.33
+  xl: 1.33,
 };
 
 const fontWeights: ThemeFontWeights = {
   light: 300,
   regular: 400,
   medium: 500,
-  bold: 700
+  bold: 700,
 };
 
 const h1: h = {
@@ -65,56 +65,56 @@ const h1: h = {
   fontWeight: 300,
   fontSize: '6rem',
   lineHeight: 1,
-  letterSpacing: '-0.01562em'
+  letterSpacing: '-0.01562em',
 };
 const h2: h = {
   fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
   fontWeight: 300,
   fontSize: '3.75rem',
   lineHeight: 1,
-  letterSpacing: '-0.00833em'
+  letterSpacing: '-0.00833em',
 };
 const h3: h = {
   fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
   fontWeight: 400,
   fontSize: '3rem',
   lineHeight: 1.04,
-  letterSpacing: '0em'
+  letterSpacing: '0em',
 };
 const h4: h = {
   fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
   fontWeight: 400,
   fontSize: '2.125rem',
   lineHeight: 1.17,
-  letterSpacing: '-0.00735em'
+  letterSpacing: '-0.00735em',
 };
 const h5: h = {
   fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
   fontWeight: 300,
   fontSize: '1.5rem',
   lineHeight: 1.33,
-  letterSpacing: '0.0em'
+  letterSpacing: '0.0em',
 };
 const h6: h = {
   fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
   fontWeight: 500,
-  fontSize: '1.25rem',
+  fontSize: '1.3rem',
   lineHeight: 1.6,
-  letterSpacing: '0.0075em'
+  letterSpacing: '0.0075em',
 };
 const subtitle1: h = {
   fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
   fontWeight: 400,
   fontSize: '1rem',
   lineHeight: 1.75,
-  letterSpacing: '0.00938em'
+  letterSpacing: '0.00938em',
 };
 const subtitle2: h = {
   fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
   fontWeight: 500,
   fontSize: '0.875rem',
   lineHeight: 1.57,
-  letterSpacing: '0.00714em'
+  letterSpacing: '0.00714em',
 };
 
 const body1: h = {
@@ -122,7 +122,7 @@ const body1: h = {
   fontWeight: 400,
   fontSize: '1rem',
   lineHeight: 1.5,
-  letterSpacing: '0.00938em'
+  letterSpacing: '0.00938em',
 };
 
 const body2: h = {
@@ -130,7 +130,7 @@ const body2: h = {
   fontWeight: 400,
   fontSize: '0.875rem',
   lineHeight: 1.43,
-  letterSpacing: '0.01071em'
+  letterSpacing: '0.01071em',
 };
 const button: h = {
   fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
@@ -138,14 +138,14 @@ const button: h = {
   fontSize: '0.875rem',
   lineHeight: 1.75,
   letterSpacing: '0.02857em',
-  textTransform: 'uppercase'
+  textTransform: 'uppercase',
 };
 const caption: h = {
   fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
   fontWeight: 400,
   fontSize: '0.75rem',
   lineHeight: 1.66,
-  letterSpacing: '0.03333em'
+  letterSpacing: '0.03333em',
 };
 export const typography: ThemeTypography = {
   fontSizes: fontSizes,
@@ -163,5 +163,5 @@ export const typography: ThemeTypography = {
   body1,
   body2,
   button,
-  caption
+  caption,
 };
