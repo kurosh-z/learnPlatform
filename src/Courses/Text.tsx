@@ -2,17 +2,21 @@ import * as THREE from 'three';
 import React, { forwardRef, useMemo } from 'react';
 import { useLoader, useUpdate } from 'react-three-fiber';
 import { ReactThreeFiber } from 'react-three-fiber/three-types';
+//@ts-ignore
 import bold from './bold.blob';
 
 // /resources/fonts/bold.blob'
 type TextrefProps = {
   children: string;
-  vAlign: 'center' | 'top';
-  hAlign: 'center' | 'right';
-  size: number;
-  color: string;
-};
-const Textref: React.FC<TextrefProps> = (
+  vAlign?: 'center' | 'top';
+  hAlign?: 'center' | 'right';
+  size?: number;
+  color?: string;
+} & ReactThreeFiber.Events;
+const Text: React.ForwardRefRenderFunction<
+  ReactThreeFiber.Object3DNode<THREE.Group, typeof THREE.Group>,
+  TextrefProps
+> = (
   {
     children,
     vAlign = 'center',
@@ -47,9 +51,4 @@ const Textref: React.FC<TextrefProps> = (
   );
 };
 
-const Text: React.RefForwardingComponent<
-  typeof Textref,
-  ReactThreeFiber.Object3DNode<THREE.Group, typeof THREE.Group>
-> = forwardRef(Textref);
-
-export default Text;
+export default forwardRef(Text);

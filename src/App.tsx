@@ -3,7 +3,9 @@ import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 
 import HomePage from './homepage/HomePage';
 
-const ExCourse = lazy(() => import('./Courses/ExCourse'));
+const ExCourse = lazy(() =>
+  import(/* webpackPrefetch: true */ './Courses/ExCourse')
+);
 
 import './App.css';
 

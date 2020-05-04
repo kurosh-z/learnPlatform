@@ -3,12 +3,18 @@ import { css as emoCSS } from '@emotion/core';
 import { useTheme } from 'emotion-theming';
 import { Theme } from '../theme/types';
 
-const Figure1: React.FC<{
-  data_src: string;
-  caption_number: string;
-  caption_text: string;
-  show: boolean;
-}> = ({ data_src, caption_text, caption_number, show }, ref) => {
+const ImageLoader = lazy(() =>
+  import(/* webpackPrefetch: true */ './ImageLoader')
+);
+const Figure: React.RefForwardingComponent<
+  HTMLDivElement,
+  {
+    data_src: string;
+    caption_number: string;
+    caption_text: string;
+    show: boolean;
+  }
+> = ({ data_src, caption_text, caption_number, show }, ref) => {
   const theme = useTheme<Theme>();
   const fig_wrapper = useMemo(() => {
     const fig_wrapper = emoCSS({
@@ -39,9 +45,11 @@ const Figure1: React.FC<{
         fontWeight: theme.typography.fontWeights.bold,
       },
       '.fig__loading': {
-        width: '200px',
-        backgroundColor: 'blue',
-        height: '300px',
+        '&::after': {
+          content: '"...loading"',
+          display: 'block',
+          fontSize: '3rem',
+        },
       },
     });
     return fig_wrapper;
@@ -53,12 +61,16 @@ const Figure1: React.FC<{
       css={fig_wrapper}
       className='fig__wrapper '
       id={'img' + caption_number}>
-      <a className='fig__link' href={'#img' + caption_number}>
+      <a
+        className='fig__link'
+        //  href={'#img' + caption_number}
+      >
         <Suspense fallback={<div className='fig__loading' />}>
-          <img
-            className='fig block_diagram'
-            data-src={data_src}
-            src={show ? data_src : null}></img>
+          <ImageLoader
+            src={data_src}
+            className='fig'
+            hidden={show ? false : true}
+          />
         </Suspense>
         <h6 className='fig__caption'>
           <span className='caption__number'>Figure {caption_number}: </span>
@@ -69,6 +81,4 @@ const Figure1: React.FC<{
   );
 };
 
-const Figure = React.forwardRef(Figure1);
-
-export default Figure;
+export default React.forwardRef(Figure);

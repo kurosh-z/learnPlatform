@@ -3,6 +3,7 @@
  *********************************/
 const entry = {
   app: './src/index',
+  latex_parser: './src/math-components/parser/index',
 };
 /*********************************
  * Resolve
@@ -71,6 +72,7 @@ const optimization = {
         chunks: 'all',
       },
     },
+    chunks: 'all',
   },
 };
 /*********************************

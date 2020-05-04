@@ -19,7 +19,7 @@ function useParser({
   const [, setLatexBBox] = useLatexBBox();
   const { parser, mathcss } = useMemo(() => {
     const mathcss = new MathCss(fontFactor);
-    const getfontfunc = mathcss.getfontSizeFunc();
+    // const getfontfunc = mathcss.getfontSizeFunc();
 
     const parser = parserFactory({
       str: math_formula,
@@ -71,11 +71,11 @@ const Latex: React.FC<LatexProps> & LatexAnim = ({
     return parser.BBox;
   }, [font_size, math_formula]);
 
-  const topsign: ParserOutput<'Pdelimiter'> = {
-    component: 'delimiter',
-    dtype: 'check_line',
-    dattr: { transform: `translate(${right} ${top})` },
-  };
+  // const topsign: ParserOutput<'Pdelimiter'> = {
+  //   component: 'delimiter',
+  //   dtype: 'check_line',
+  //   dattr: { transform: `translate(${right} ${top})` },
+  // };
 
   // const bottomsign: ParserOutput<'Pdelimiter'> = {
   //   component: 'delimiter',
@@ -87,11 +87,11 @@ const Latex: React.FC<LatexProps> & LatexAnim = ({
   //   dtype: 'hline',
   //   dattr: { transform: `translate(${0} ${90})`, width: width },
   // };
-  const bbox: ParserOutput<'Pdelimiter'> = {
-    component: 'delimiter',
-    dtype: 'bbox',
-    dattr: { bbox: { top, bottom, left, right } },
-  };
+  // const bbox: ParserOutput<'Pdelimiter'> = {
+  //   component: 'delimiter',
+  //   dtype: 'bbox',
+  //   dattr: { bbox: { top, bottom, left, right } },
+  // };
   // parserOutput.push(bbox);
   const childrenProps = useMemo(() => {
     const childrenProps: LatexChildrenProps = {};
@@ -192,15 +192,10 @@ type ParserCompProps = {
   childrenProps: LatexChildrenProps;
 };
 
-// const ParserComp: React.RefForwardingComponent<SVGGElement, ParserCompProps> = (
-//   { parserOut, pgroupAttr, childrenProps },
-//   ref
-// ) => {
-// }
-const ParserComp2: React.FC<ParserCompProps> = (
-  { parserOut, pgroupAttr, childrenProps },
-  ref
-) => {
+const ParserCompRef: React.RefForwardingComponent<
+  SVGGElement,
+  ParserCompProps
+> = ({ parserOut, pgroupAttr, childrenProps }, ref) => {
   return (
     <animated.g {...pgroupAttr} ref={ref}>
       {parserOut.map((output, idx: number) => {
@@ -254,7 +249,7 @@ const ParserComp2: React.FC<ParserCompProps> = (
     </animated.g>
   );
 };
-const ParserComp = React.forwardRef(ParserComp2);
+const ParserComp = React.forwardRef(ParserCompRef);
 
 type DelimiterProps = {
   dattr: ParserOutput<'Pdelimiter'>['dattr'];
@@ -319,7 +314,8 @@ type PAnimCompProps = {
   animProps?: React.SVGAttributes<SVGGElement>;
 };
 
-const PanimComp2: React.FC<
+const PanimCompRef: React.ForwardRefRenderFunction<
+  typeof ParserComp,
   PAnimCompProps & React.SVGAttributes<SVGGElement>
 > = ({ parserOut, childrenProps, aAttr, animProps }, ref) => {
   // <animated.g id={id} {...animProps}>    </animated.g>
@@ -333,7 +329,7 @@ const PanimComp2: React.FC<
     />
   );
 };
-const PanimComp = React.forwardRef(PanimComp2);
+const PanimComp = React.forwardRef(PanimCompRef);
 interface LatexAnim {
   Anim: typeof PanimComp;
 }
