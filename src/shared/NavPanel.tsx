@@ -148,9 +148,29 @@ const NavPanel: React.FC<NavPanelProps> = ({
     const nav__btn = emoCSS({
         margin: '.7em 2em auto .5em',
     })
+    const navpanel = emoCSS({
+        '.nav__overlay': {
+            width: '100vw',
+            height: '100vh',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            backgroundColor: alpha(theme.palette.gray.lightest, 0.3),
+            visibility: 'visible',
+            willChange: 'background-color, visibility',
+            transition: 'background-color .5s ease-in-out',
+
+            '&.hidden': {
+                visibility: 'hidden',
+                backgroundColor: alpha(theme.palette.gray.light, 0.0),
+                transition:
+                    'visibility 1s ease-in-out, background-color .6s ease-in-out ',
+            },
+        },
+    })
 
     return (
-        <>
+        <div className="navpanel" css={navpanel}>
             <a.header
                 className="headerpanel"
                 css={headerCss}
@@ -192,7 +212,14 @@ const NavPanel: React.FC<NavPanelProps> = ({
                 </nav>
             </a.header>
             <SidePanel />
-        </>
+            <div
+                className={
+                    uiState.navToggle === 'open'
+                        ? 'nav__overlay'
+                        : 'nav__overlay hidden'
+                }
+            />
+        </div>
     )
 }
 

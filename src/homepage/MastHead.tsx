@@ -1,22 +1,13 @@
 import React, { useRef } from 'react'
-// import { useSpring, animated as a } from 'react-spring';
+import { useSpring, animated as a } from 'react-spring'
 import { css as emoCSS } from '@emotion/core'
 import { useTheme } from 'emotion-theming'
 import { Theme } from '../theme/types'
-
-interface MastHead {
-    videoOpacity: any
-    textHorzPos?: 'left' | 'right' | 'default'
-    textVertPos?: 'top' | 'bottom' | 'default'
-    overlayColor?: string | null
-}
+import { useScrollPosition } from '../shared'
+// import { useUiState } from '../app_states/stateContext'
+// import { alpha } from '../theme/colors'
 // homepage master header :
-const MastHead: React.FC<MastHead> = ({
-    videoOpacity,
-    // textHorzPos, //TODO: implement thease args
-    // textVertPos,
-    overlayColor,
-}) => {
+const MastHead: React.FC<{}> = () => {
     // getting theme from emotion
     const theme = useTheme<Theme>()
     const videoRef = useRef(null)
@@ -58,7 +49,7 @@ const MastHead: React.FC<MastHead> = ({
             // opacity: videoOpacity
         },
         '.masthead__overlay': {
-            opacity: 0.9,
+            opacity: 0.93,
             position: 'absolute',
             top: 0,
             width: '100%',
@@ -67,9 +58,34 @@ const MastHead: React.FC<MastHead> = ({
             // backgroundColor: theme.palette.aubergine.dark,
             // backgroundColor: theme.palette.white.base,
             willChange: 'background-color',
-            transition: 'background-color 500ms ease-in-out',
+            transition: 'background-color .5s ease-in-out',
         },
     })
+
+    const [{ scroll }, setScroll] = useSpring(() => ({
+        scroll: window.innerHeight / 8,
+        config: { mass: 1, friction: 40, tension: 130 },
+    }))
+    const scrollThreshold = window.innerHeight / 8
+    useScrollPosition(
+        ({ currPos }) => {
+            const currScroll = Math.abs(currPos.y)
+            const threshold = currScroll > scrollThreshold
+            const maxScroll = 4 * scrollThreshold
+            setScroll({
+                scroll: threshold
+                    ? currScroll <= maxScroll
+                        ? currScroll
+                        : maxScroll
+                    : scrollThreshold,
+            })
+        },
+
+        [],
+        null,
+        false
+    )
+    // const uiState = useUiState()
 
     return (
         <header className="masthead" css={styleCss}>
@@ -81,9 +97,15 @@ const MastHead: React.FC<MastHead> = ({
             </div>
 
             {/* <div className='masthead__videoposwrapper'> */}
-            <div
+            <a.div
                 className="masthead__videosizewrapper"
-                style={{ opacity: videoOpacity }}
+                style={{
+                    opacity: scroll.interpolate(
+                        (s) =>
+                            (8 * s - 32 * scrollThreshold) /
+                            (-24 * scrollThreshold)
+                    ),
+                }}
             >
                 <iframe
                     ref={videoRef}
@@ -97,13 +119,11 @@ const MastHead: React.FC<MastHead> = ({
                 ></iframe>
                 <div
                     className="masthead__overlay"
-                    style={
-                        overlayColor
-                            ? { backgroundColor: overlayColor, opacity: 0.3 }
-                            : { backgroundColor: theme.palette.aubergine.dark }
-                    }
+                    style={{
+                        backgroundColor: theme.palette.aubergine.dark,
+                    }}
                 />
-            </div>
+            </a.div>
             {/* </div> */}
         </header>
     )

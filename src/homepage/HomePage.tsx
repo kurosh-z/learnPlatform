@@ -1,78 +1,34 @@
-import React, { useRef, useEffect } from 'react'
-import { useSpring, config, animated as a } from 'react-spring'
+import React, { useEffect } from 'react'
 import { css as emoCSS } from '@emotion/core'
 import { useTheme } from 'emotion-theming'
 import { Theme } from '../theme/types'
 import MastHead from './MastHead'
 import Card from './Card'
 import NavPanel from '../shared/NavPanel'
-// import { alpha } from '../theme/colors'
-// import { useThemeToggler } from './theme/themeContext';
-
-interface AnimPorps {
-    offset: number
-}
-
-// initial offset of videotriger element to top of the windwo , we use this to interpolate opacity of video
-let initialOffset = 480
-
-// make animated version of comonents useSpring on it.
-const AnimMastHead = a(MastHead)
 
 // Homepage component:
 const HomePage: React.FC<{}> = () => {
-    // reference to the components
-    const videobgtriggerEl = useRef<HTMLDivElement>(null)
-
     // getting theme from emotion
     const theme = useTheme<Theme>()
-
-    // use offset of videotrigger element to top of the window to animate opacity of the video
-    const [{ offset }, set] = useSpring<AnimPorps>(() => ({
-        offset: initialOffset,
-        config: config.molasses,
-    }))
-    // TODO: is there any better way to set the initialOffset after DOM is loaded?
-    useEffect(() => {
-        setTimeout(function () {
-            if (!videobgtriggerEl.current) return
-            const rect = videobgtriggerEl.current.getBoundingClientRect()
-            initialOffset = rect.top
-            // console.log('init', initialOffset);
-        }, 1200)
-    })
-    //  interpolating video opacity
-    const opMastHead = offset.interpolate((off) => {
-        if (typeof off !== 'number') return
-        // as offset: initialoffset -> 0 ==> opacity goes: 1 -> 0
-        if (off < -100) return 0
-        return off >= 0 ? 1 + (off - initialOffset) / (initialOffset - 80) : 0
-    })
 
     // styling:
     const homepageCss = emoCSS({
         position: 'relative',
         overflowX: 'hidden',
         overflowY: 'scroll',
-        // backgroundColor: theme.palette.aubergine.dark
     })
-
+    useEffect(() => {
+        document.body.style.cssText = `background-color: ${theme.background.primary}`
+    }, [])
     return (
         <div className="homepage" css={homepageCss}>
-            {/* <SidePanel open={sidepanelOn} />
-      <AnimHeaderPanel opacity={navOp} burgerCB={burgerCB} /> */}
             <NavPanel
                 background_color={'transparent'}
                 textColor_closed={theme.palette.white.base}
                 textColor_opened={theme.palette.white.base}
-                // navCB={burgerCB}
             />
             <section className="mainpage">
-                <AnimMastHead
-                    videoOpacity={opMastHead}
-                    overlayColor={theme.palette.aubergine.lightest}
-                />
-                <div className="videobgtrigger" ref={videobgtriggerEl}></div>
+                <MastHead />
                 <Card
                     title1="Found the Future"
                     text=" Entrepreneur First is the world’s leading talent investor. We
