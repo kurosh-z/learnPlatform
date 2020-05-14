@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useSpring, animated as a } from 'react-spring'
 import { css as emoCSS } from '@emotion/core'
 import { useTheme } from 'emotion-theming'
@@ -44,7 +44,7 @@ function useNavBackground({
                         : alpha(background_color, 0),
                 })
             }
-            //else if it's openning we do the animation to change the value stored here but we return the immidiate value!
+            //else if it's openning we do the animation to change the value stored in navBackColor but we return the end value!
             else {
                 setNavBackColor({
                     navBackColor: alpha(background_color, 0),
@@ -105,87 +105,98 @@ const NavPanel: React.FC<NavPanelProps> = ({
             uiState.navToggle === 'open' ? textColor_opened : textColor_closed,
     })
 
-    // header component
-    const headerCss = emoCSS({
-        position: 'fixed',
-        display: 'flex',
-        top: 0,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        width: '100vw',
-        height: '80px',
-        // borderBottom: `2px solid ${theme.seperator.default}`,
-        zIndex: theme.zIndices.fixed,
-    })
+    const navpanel = useMemo(
+        () =>
+            emoCSS({
+                position: 'fixed',
+                display: 'flex',
+                top: 0,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                width: '100vw',
+                height: '80px',
+                // borderBottom: `2px solid ${theme.seperator.default}`,
+                zIndex: theme.zIndices.fixed,
+                '.headerpanel': {
+                    position: 'fixed',
+                    display: 'flex',
+                    top: 0,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100vw',
+                    height: '80px',
+                    // borderBottom: `2px solid ${theme.seperator.default}`,
+                    zIndex: theme.zIndices.fixed,
+                },
+                '.header__nav': {
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    cursor: 'pointer',
 
-    const header__logoContainer = emoCSS({
-        width: '200px',
-        height: '100%',
-        padding: '1%',
-    })
-    const header__logo = emoCSS({
-        width: '100%',
-        height: '100%',
-    })
+                    '.nav__concept': {
+                        color: theme.palette.white.base,
+                        fontSize: theme.typography.fontSizes[1],
+                        fontWeight: theme.typography.fontWeights.bold,
+                        textAlign: 'center',
+                        textTransform: 'uppercase',
+                        textDecoration: 'none',
+                        marginRight: '1em',
+                    },
+                },
+                '.nav__btn': {
+                    margin: '.7em 2em auto .5em',
+                },
+                '.header__logoContainer': {
+                    width: '200px',
+                    height: '100%',
+                    padding: '1%',
+                    '& .header__logo': {
+                        width: '100%',
+                        height: '100%',
+                    },
+                },
 
-    const header__nav = emoCSS({
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        cursor: 'pointer',
+                '.nav__overlay': {
+                    width: '100vw',
+                    height: '100vh',
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    backgroundColor: alpha(theme.palette.gray.lightest, 0.3),
+                    visibility: 'visible',
+                    willChange: 'background-color, visibility',
+                    transition: 'background-color .5s ease-in-out',
 
-        '.nav__concept': {
-            color: theme.palette.white.base,
-            fontSize: theme.typography.fontSizes[1],
-            fontWeight: theme.typography.fontWeights.bold,
-            textAlign: 'center',
-            textTransform: 'uppercase',
-            textDecoration: 'none',
-            marginRight: '1em',
-        },
-    })
-    const nav__btn = emoCSS({
-        margin: '.7em 2em auto .5em',
-    })
-    const navpanel = emoCSS({
-        '.nav__overlay': {
-            width: '100vw',
-            height: '100vh',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            backgroundColor: alpha(theme.palette.gray.lightest, 0.3),
-            visibility: 'visible',
-            willChange: 'background-color, visibility',
-            transition: 'background-color .5s ease-in-out',
-
-            '&.hidden': {
-                visibility: 'hidden',
-                backgroundColor: alpha(theme.palette.gray.light, 0.0),
-                transition:
-                    'visibility 1s ease-in-out, background-color .6s ease-in-out ',
-            },
-        },
-    })
+                    '&.hidden': {
+                        visibility: 'hidden',
+                        backgroundColor: alpha(theme.palette.gray.light, 0.0),
+                        transition:
+                            'visibility 1s ease-in-out, background-color .6s ease-in-out ',
+                    },
+                },
+            }),
+        [theme]
+    )
 
     return (
         <div className="navpanel" css={navpanel}>
             <a.header
                 className="headerpanel"
-                css={headerCss}
                 style={{
                     backgroundColor: navBackColor,
                 }}
             >
-                <a href="#" css={header__logoContainer}>
+                <a href="#" className="header__logoContainer">
                     <img
-                        css={header__logo}
+                        className="header__logo"
                         src="https://drive.google.com/uc?id=18ghVt5qnGDcZ8srU6_RojYE2YQpt5SE4"
                     />
                 </a>
 
-                <nav css={header__nav}>
+                <nav className="header__nav">
                     <a.a
                         href="#"
                         className="nav__concept"
@@ -206,7 +217,7 @@ const NavPanel: React.FC<NavPanelProps> = ({
                         }}
                         color={textColor}
                     />
-                    <Button borderRad="xl" size="lg" css={nav__btn}>
+                    <Button borderRad="xl" size="lg" className="nav__btn">
                         log in
                     </Button>
                 </nav>

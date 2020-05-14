@@ -23,7 +23,7 @@ const HomePage: React.FC<{}> = () => {
     return (
         <div className="homepage" css={homepageCss}>
             <NavPanel
-                background_color={'transparent'}
+                background_color={theme.palette.aubergine.dark}
                 textColor_closed={theme.palette.white.base}
                 textColor_opened={theme.palette.white.base}
             />
