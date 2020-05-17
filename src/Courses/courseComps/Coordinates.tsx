@@ -6,6 +6,7 @@ import { ReactThreeFiber } from 'react-three-fiber'
 type CoordinatesProps = {
     scale: ScaleLinear<number, number>
     tickValues?: number[]
+    showTickValues?: { xAxes: boolean; yAxes: boolean; zAxes: boolean }
     format: (
         n:
             | number
@@ -26,9 +27,11 @@ const Coordinates: React.FC<CoordinatesProps> = ({
     tickValues,
     format,
     showAxis = { xAxes: true, yAxes: true, zAxes: true },
+    showTickValues = {},
     lengths = {},
     colors = {},
 }) => {
+    console.log('coordinates')
     return (
         <>
             {showAxis['zAxes'] && (
@@ -37,9 +40,14 @@ const Coordinates: React.FC<CoordinatesProps> = ({
                     scale={scale}
                     tickValues={tickValues}
                     format={format}
-                    thicknessFactor={0.9}
+                    thicknessFactor={1}
                     length={'zAxes' in lengths ? lengths['zAxes'] : 1}
                     color={'zAxes' in colors ? colors['zAxes'] : null}
+                    showTickValues={
+                        'zAxes' in showTickValues
+                            ? showTickValues['zAxes']
+                            : false
+                    }
                 />
             )}
             {showAxis['yAxes'] && (
@@ -47,10 +55,15 @@ const Coordinates: React.FC<CoordinatesProps> = ({
                     axes="yAxes"
                     scale={scale}
                     tickValues={tickValues}
-                    thicknessFactor={0.9}
+                    thicknessFactor={1.1}
                     format={format}
                     length={'yAxes' in lengths ? lengths['yAxes'] : 1}
                     color={'yAxes' in colors ? colors['yAxes'] : null}
+                    showTickValues={
+                        'yAxes' in showTickValues
+                            ? showTickValues['yAxes']
+                            : false
+                    }
                 />
             )}
             {showAxis['xAxes'] && (
@@ -62,6 +75,11 @@ const Coordinates: React.FC<CoordinatesProps> = ({
                     format={format}
                     length={'xAxes' in lengths ? lengths['xAxes'] : 1}
                     color={'xAxes' in colors ? colors['xAxes'] : null}
+                    showTickValues={
+                        'xAxes' in showTickValues
+                            ? showTickValues['xAxes']
+                            : false
+                    }
                 />
             )}
         </>

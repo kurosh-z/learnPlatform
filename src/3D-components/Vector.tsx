@@ -5,6 +5,8 @@ import { HTML } from 'drei'
 import { ReactThreeFiber, extend } from 'react-three-fiber'
 import { CustomCylinderBufferGeometry } from './CustomCylinderGeometry'
 import { ORIGIN } from './constants'
+import Point from './Point'
+import { Latex } from '../math-components'
 
 // extend the class to use it in react!
 extend({ CustomCylinderBufferGeometry })
@@ -157,12 +159,14 @@ const Head: React.FC<HeadProps> = ({
 }
 
 // vector component:
-interface VectorProps {
+export interface VectorProps {
     vector: THREE.Vector3 | [number, number, number]
     origin?: THREE.Vector3 | [number, number, number]
     thicknessFacor?: number
     color?: ReactThreeFiber.Color
     label?: string
+    latexParser?: boolean
+    labelStyle?: React.CSSProperties
     onPointerDown?: (e) => void
 }
 const Vector: React.RefForwardingComponent<
@@ -175,6 +179,8 @@ const Vector: React.RefForwardingComponent<
         origin = ORIGIN,
         thicknessFacor = 0.12,
         label,
+        labelStyle,
+        latexParser = false,
         onPointerDown,
     },
     ref
@@ -208,40 +214,71 @@ const Vector: React.RefForwardingComponent<
     useEffect(() => {
         document.body.style.cursor = hovered ? 'pointer' : 'auto'
     }, [hovered])
-    return (
-        <group ref={ref} position={origin}>
-            <Shaft
-                mag={_mag - thicknessFacor * HHEIGHT} // we have to change the lenght a little bit to make room for head!
-                direction={_dir}
-                color={color}
-                onPointerDown={onPointerDown}
-                thicknessFactor={thicknessFacor}
-                hover={hover}
-            />
-            <Head
-                position={headPos}
-                direction={_dir}
-                color={color}
-                thicknessFactor={thicknessFacor}
-                onPointerDown={onPointerDown}
-                hover={hover}
-            />
-            {label && (
+
+    // console.log('vector')
+    const labelComp = useMemo(() => {
+        if (label && latexParser) {
+            return (
                 <HTML position={headPos}>
-                    <p
+                    <Latex
+                        math_formula={label}
+                        font_size={1.3}
                         style={{
-                            padding: '0 .6rem 0 .6rem',
-                            margin: '-1rem auto auto auto',
-                            fontFamily: 'KaTex_Math',
-                            fontSize: '1.3rem',
-                            fontStyle: 'italic',
+                            position: 'absolute',
+                            transform: 'translate(-.5rem, .1rem)',
                         }}
+                    />
+                </HTML>
+            )
+        } else if (label && latexParser === false) {
+            return (
+                <HTML position={headPos}>
+                    <span
+                        style={
+                            labelStyle
+                                ? labelStyle
+                                : {
+                                      padding: '0 .6rem 0 .6rem',
+                                      margin: '-1rem auto auto auto',
+                                      fontFamily: 'KaTex_Math',
+                                      fontSize: '1.3rem',
+                                      fontStyle: 'italic',
+                                  }
+                        }
                     >
                         {label}
-                    </p>
+                    </span>
                 </HTML>
+            )
+        }
+    }, [headPos, label, latexParser, labelStyle])
+
+    // if magnitude of the vector is less than the headsize just return a point at origin
+    return (
+        <group ref={ref} position={origin}>
+            {_mag > thicknessFacor * HHEIGHT ? (
+                <>
+                    <Shaft
+                        mag={_mag - thicknessFacor * HHEIGHT} // we have to change the lenght a little bit to make room for head!
+                        direction={_dir}
+                        color={color}
+                        onPointerDown={onPointerDown}
+                        thicknessFactor={thicknessFacor}
+                        hover={hover}
+                    />
+                    <Head
+                        position={headPos}
+                        direction={_dir}
+                        color={color}
+                        thicknessFactor={thicknessFacor}
+                        onPointerDown={onPointerDown}
+                        hover={hover}
+                    />
+                </>
+            ) : (
+                <Point color={color} position={ORIGIN} opacity={1} />
             )}
-            {/* <axesHelper args={[1.5]} /> */}
+            {labelComp}
         </group>
     )
 }

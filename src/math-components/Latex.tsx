@@ -2,7 +2,7 @@ import React, { useMemo, ReactElement } from 'react'
 import { animated } from 'react-spring'
 import { MathCss, parserFactory } from './parser'
 import { css as emoCSS } from '@emotion/core'
-import Parser, { ParserOutputList, ParserOutput, PBBox } from './parser/Parser'
+import Parser, { ParserOutputList, ParserOutput } from './parser/Parser'
 import { useLatexBBox } from './LatexContext'
 
 type useParserArgs = {

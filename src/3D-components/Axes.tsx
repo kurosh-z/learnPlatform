@@ -7,19 +7,24 @@ import Vector from './Vector'
 import { ORIGIN, PI } from './constants'
 
 // axes tick component
-const calTicksRotation = (axes: 'xAxes' | 'yAxes' | 'zAxes') =>
+const calTicksRotation: (
+    axes: 'xAxes' | 'yAxes' | 'zAxes'
+) => [number, number, number] = (axes) =>
     ({
         xAxes: [0, 0, 0],
         yAxes: [0, 0, PI / 2],
         zAxes: [0, 0, PI / 2],
-    }[axes])
+    }[axes] as [number, number, number])
 
-const calTickPosition = (axes: 'xAxes' | 'yAxes' | 'zAxes', val: number) =>
+const calTickPosition: (
+    axes: 'xAxes' | 'yAxes' | 'zAxes',
+    val: number
+) => [number, number, number] = (axes, val) =>
     ({
         xAxes: [val, 0, 0],
         yAxes: [0, val, 0],
         zAxes: [0, 0, val],
-    }[axes])
+    }[axes] as [number, number, number])
 
 const calAxesVector = (axes: 'xAxes' | 'yAxes' | 'zAxes', val: number) =>
     ({
@@ -40,6 +45,7 @@ interface TickProps {
     length?: number
     color?: ReactThreeFiber.Color
     tickValues: number[]
+    showTickValues: boolean
     axesThickness: number
     axesLength?: number
     format: (
@@ -49,15 +55,16 @@ interface TickProps {
                   valueOf(): number
               }
     ) => string
-    scale: ScaleLinear<number, number> // TODO: for now its okay, but probably you should make it more general than jsut numbers!
+    scale: ScaleLinear<number, number>
 }
-// TODO: I used cylincergeometry for ticks becuase fat lines are pretty hacky in threejs and Meshline disapears when it gets zoomed in!
+// TODO: find a way to calculates margins and position of tick values base on 2d plane (xy ...) and one for general 3d view
 
 const AxesTick: React.FC<TickProps> = ({
     axes,
-    thickness = 0.003,
+    thickness = 0.005,
     length = 0.15,
     tickValues,
+    showTickValues,
     axesThickness,
     color = 'black',
     scale,
@@ -65,38 +72,55 @@ const AxesTick: React.FC<TickProps> = ({
 }) => {
     const tickrotation = useMemo(() => calTicksRotation(axes), [axes])
 
-    const ticks = tickValues.map((val, idx) => {
-        return (
-            <group key={idx}>
-                <mesh
-                    position={
-                        calTickPosition(axes, scale(val)) as [
-                            number,
-                            number,
-                            number
-                        ]
-                    }
-                    rotation={tickrotation as [number, number, number]}
-                >
-                    <cylinderBufferGeometry
-                        attach="geometry"
-                        args={[
-                            thickness,
-                            thickness,
-                            length * axesThickness,
-                            20,
-                        ]}
-                    />
-                    <meshBasicMaterial attach="material" color={color} />
-                </mesh>
-                {/* <Dom position={calTickPosition(axes, scale(val))}>
-          <div className='tick'>{format(val)}</div>
-        </Dom> */}
-            </group>
-        )
-    })
+    return (
+        <group>
+            {tickValues.map((val, idx) => {
+                return (
+                    <group key={idx}>
+                        <mesh
+                            position={calTickPosition(axes, scale(val))}
+                            rotation={tickrotation}
+                        >
+                            <cylinderBufferGeometry
+                                attach="geometry"
+                                args={[
+                                    thickness,
+                                    thickness,
+                                    length * axesThickness,
+                                    20,
+                                ]}
+                            />
+                            <meshBasicMaterial
+                                attach="material"
+                                color={color}
+                            />
+                        </mesh>
 
-    return <group>{ticks}</group>
+                        {showTickValues && (
+                            <HTML position={calTickPosition(axes, scale(val))}>
+                                <span
+                                    className="axes__tick"
+                                    style={{
+                                        fontFamily: 'KaTex_Main',
+                                        fontSize: '.8rem',
+                                        margin: '.4rem .1rem auto .1rem',
+                                        position: 'absolute',
+                                        left:
+                                            axes === 'xAxes'
+                                                ? '-.3rem'
+                                                : '-1.2rem',
+                                        top: axes === 'yAxes' ? '-1rem' : 0,
+                                    }}
+                                >
+                                    {format(val)}
+                                </span>
+                            </HTML>
+                        )}
+                    </group>
+                )
+            })}
+        </group>
+    )
 }
 
 // Axes component:
@@ -109,6 +133,7 @@ interface AxesProps {
     origin?: THREE.Vector3
     thicknessFactor?: number
     scale: ScaleLinear<number, number>
+    showTickValues?: boolean
     tickValues?: number[]
     format: (
         n:
@@ -127,6 +152,7 @@ const Axes: React.FC<AxesProps> = ({
     scale,
     length,
     tickValues,
+    showTickValues = false,
     showlabel = true,
     format,
 }) => {
@@ -148,6 +174,7 @@ const Axes: React.FC<AxesProps> = ({
                     scale={scale}
                     format={format}
                     axesThickness={thicknessFactor}
+                    showTickValues={showTickValues}
                 />
             )}
             {showlabel && (
@@ -164,6 +191,7 @@ const Axes: React.FC<AxesProps> = ({
                             fontFamily: 'KaTex_Math',
                             fontSize: '1.3rem',
                             fontStyle: 'italic',
+                            position: 'absolute',
                             // backgroundColor: 'yellow',
                         }}
                     >

@@ -25,6 +25,7 @@ const ExampleCourse: React.FC<{}> = () => {
                 background_color={theme.palette.white.light}
                 textColor_closed={theme.palette.aubergine.dark}
                 textColor_opened={theme.palette.white.base}
+                conceptVisibility={false}
             />
             <main className="main mathcontent">
                 <ExHeader className="content__header" />

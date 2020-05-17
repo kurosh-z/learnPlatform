@@ -17,10 +17,12 @@ const PlayButton: React.FC<PlayButtonPrps> = ({
         () =>
             emoCSS({
                 /*  border: 1px solid red;*/
+
                 display: 'inline-block',
                 width: '100%',
                 height: '100%',
                 // transition: 'all 0.5s ease',
+
                 svg: {
                     backgorundColor: 'red',
                 },
@@ -56,6 +58,13 @@ const PlayButton: React.FC<PlayButtonPrps> = ({
                     transform: 'translateY(0)',
                 },
                 '&:hover': {
+                    cursor: 'pointer',
+                    '.pause_l1, .pause_l2': {
+                        stroke: '#f8aa28',
+                        transform: 'scale(1.2)',
+                        transformOrigin: 'center',
+                        transition: 'all .5 ease-in-out',
+                    },
                     '.play__triangle': {
                         strokeDashoffset: 0,
                         // opacity: 1,
@@ -97,7 +106,7 @@ const PlayButton: React.FC<PlayButtonPrps> = ({
             style={style}
         >
             <a
-                href="#"
+                href={null}
                 className={clicked ? 'playBtn clicked' : 'playBtn'}
                 role="button"
                 css={playBtn}

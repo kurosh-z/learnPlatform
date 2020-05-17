@@ -4,9 +4,9 @@ export const SET_CANV_VISIBLE = '[canv] set visible'
 export const SET_SVG_VISIBLE = '[svg] set visible'
 export const HIDE_CANV = '[canv] hide'
 export const HIDE_SVG = '[svg] hide'
-export const PLAY = '[mathbox] play'
-export const PAUSE = '[mathbox] pause'
-export const TOGGLE_PLAY = '[mathbox toggle '
+// export const PLAY = '[mathbox] play'
+// export const PAUSE = '[mathbox] pause'
+export const TOGGLE_PAUSE = '[mathbox] toggle'
 
 export type MathBoxActions = {
     type:
@@ -14,22 +14,20 @@ export type MathBoxActions = {
         | typeof SET_SVG_VISIBLE
         | typeof HIDE_CANV
         | typeof HIDE_SVG
-        | typeof PLAY
-        | typeof PAUSE
-        | typeof TOGGLE_PLAY
+        | typeof TOGGLE_PAUSE
     playload?: object
 }
 
 export type MathBoxState = Readonly<{
     canvVisibility: boolean
     svgVisibility: boolean
-    play: boolean
+    pause: boolean
 }>
 
 export const initMathBoxState: MathBoxState = {
     canvVisibility: true,
     svgVisibility: false,
-    play: false,
+    pause: false,
 }
 
 export function mathboxReducer(
@@ -53,16 +51,8 @@ export function mathboxReducer(
             state.svgVisibility = false
             break
         }
-        case PLAY: {
-            state.play = true
-            break
-        }
-        case PAUSE: {
-            state.play = false
-            break
-        }
-        case TOGGLE_PLAY: {
-            state.play = !state.play
+        case TOGGLE_PAUSE: {
+            state.pause = !state.pause
         }
 
         default:

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useCallback } from 'react'
 import { useSpring, animated as a } from 'react-spring'
 // import { useSprings, config, animated as a, useSpring } from 'react-spring';
 import { css as emoCSS } from '@emotion/core'
@@ -72,24 +72,39 @@ const SidePanel: React.FC = () => {
 
     const [{ navBottom }, setNavBottom] = useSpring(() => ({
         navBottom: sWidth,
-        config: { mass: 1, friction: 30, tension: 370, velocity: 100 },
+        config: { mass: 1, friction: 30, velocity: 0 },
     }))
     const [{ navTop }, setNavTop] = useSpring(() => ({
         navTop: sWidth,
-        config: { mass: 1, friction: 40, tension: 400, delay: 1200 },
+        config: { mass: 1.4, friction: 40, tension: 340, delay: 5000 },
         onRest: () => {
             uiDispatch({ type: '[ui] nav anim finished' })
         },
     }))
 
+    const openCallback = useCallback(async () => {
+        await Promise.all([
+            uiDispatch({ type: '[ui] nav anim progress' }),
+            setNavBottom({ navBottom: sWidth - 380, config: { tension: 180 } }),
+            setNavTop({
+                navTop: sWidth - 600,
+            }),
+        ])
+    }, [])
+
+    const closeCallback = useCallback(async () => {
+        await Promise.all([
+            uiDispatch({ type: '[ui] nav anim progress' }),
+            setNavBottom({ navBottom: sWidth, config: { tension: 150 } }),
+            setNavTop({ navTop: sWidth }),
+        ])
+    }, [])
+
     useEffect(() => {
-        uiDispatch({ type: '[ui] nav anim progress' })
         if (uiState.navToggle === 'open') {
-            setNavBottom({ navBottom: sWidth - 380 })
-            setNavTop({ navTop: sWidth - 600 })
-        } else if (uiState.navToggle === 'close') {
-            setNavBottom({ navBottom: sWidth })
-            setNavTop({ navTop: sWidth })
+            openCallback()
+        } else if (uiState.navToggle === 'close' && uiState.nav !== 'closed') {
+            closeCallback()
         }
     }, [uiState.navToggle])
 

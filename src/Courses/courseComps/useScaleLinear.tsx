@@ -31,22 +31,22 @@ export const useScaleLinear: UseScaleLinear = ({
     axLength,
     justPositive = false,
 }) => {
-    let { tickValues, scale, format } = useMemo(() => {
+    const { tickValues, scale, format } = useMemo(() => {
         const scale = scaleLinear().domain(domain).range(range)
         const format = d3format('.0f')
-        const tickValues = scale.ticks(numTicks)
+        let tickValues = scale.ticks(numTicks)
+
+        if (axLength) {
+            tickValues = tickValues.filter((val) => {
+                const con = justPositive
+                    ? val < axLength && val > 0
+                    : val < axLength
+                return con
+            })
+        }
+
         return { scale, tickValues, format }
     }, [])
-
-    if (axLength) {
-        tickValues = tickValues.filter((val) => {
-            const con = justPositive
-                ? val < axLength && val > 0
-                : val < axLength
-
-            return con
-        })
-    }
 
     return { scale, tickValues, format }
 }
