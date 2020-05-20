@@ -1,14 +1,8 @@
-import React, { useMemo, useEffect, useRef, useState } from 'react'
+import React, { useMemo, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { useImmerReducer } from 'use-immer'
-import { useSpring, a } from 'react-spring'
-import {
-    Vector,
-    Grids,
-    Point,
-    ImperativePoints,
-    VectorOp,
-} from '../../3D-components'
+import { a } from 'react-spring'
+import { Grids, Points as NPoints, ALine, Meshline } from '../../3D-components'
 import {
     mathboxReducer,
     initMathBoxState,
@@ -22,14 +16,14 @@ import { Theme } from '../../theme/types'
 import { alpha } from '../../theme/colors'
 import PlayButton from '../../components/Button/PlayButtton'
 import Latex from '../../math-components/Latex'
-
 import Coordinates from '../courseComps/Coordinates'
+import LinearCombination from '../courseComps/LinearCombination'
 import { useScaleLinear } from '../courseComps/useScaleLinear'
+import { useMathboxAnim } from './useMathboxAnim'
 
-type VectorArg = [number, number, number]
-const Avector = a(Vector)
-const AvectorOp = a(VectorOp)
 const AplayButton = a(PlayButton)
+const AlinearCombination = a(LinearCombination)
+const Points = React.memo(NPoints)
 
 const TestCamera: React.FC = () => {
     const camRef = useRef(null)
@@ -63,18 +57,23 @@ const Camera: React.FC<{ children?: React.ReactChildren }> = ({ children }) => {
     //     cam.current.lookAt(0, 0, 0)
     //     // cam.current.up.set(0, 0, 1)
     // })
-    return (
-        <PerspectiveCamera
-            makeDefault
-            up={[0, 1, 0]}
-            position={[0, 0, 10]}
-            fov={60}
-            ref={cam}
-        >
-            {children}
-        </PerspectiveCamera>
-    )
+    const mathboxCamera = useMemo(() => {
+        return (
+            <PerspectiveCamera
+                makeDefault
+                up={[0, 1, 0]}
+                position={[0, 0, 10]}
+                fov={60}
+                ref={cam}
+            >
+                {children}
+            </PerspectiveCamera>
+        )
+    }, [])
+
+    return <> {mathboxCamera}</>
 }
+
 const useMathboxStyles = (theme: Theme) => {
     const mathbox = useMemo(
         () =>
@@ -138,67 +137,44 @@ const MathBox: React.FC = () => {
         axLength: 11,
         justPositive: true,
     })
+    const {
+        x1,
+        x1Ref,
+        x2,
+        x2Ref,
+        u,
+        line,
+        lineRef,
+        overlayStyle,
+        newPoints,
+        playBtn,
+    } = useMathboxAnim({
+        scale,
+    })
+    const { playSize, ...playStyles } = playBtn
 
-    // animation srpings:
+    // useEffect(() => {
+    //     // the pause state is always lag behind the actual pausing state of app
+    //     // that's why we use it's oposite to manage other things like ovarlay
+    //     setOverlay({
+    //         display: mathBoxState.pause ? 'none' : 'block',
+    //         default: { immediate: true },
+    //     })
+    //     setOverlay({
+    //         opacity: mathBoxState.pause ? 0 : 1,
+    //     })
+    // }, [mathBoxState.pause])
 
-    const [{ v_x1 }, setv_x1] = useSpring<{ v_x1: VectorArg }>(() => ({
-        v_x1: [scale(4), scale(-2), 0],
-        // config: { friction: 40, mass: 10, tension: 40 },
-    }))
-
-    const [{ v_x2 }, setv_x2] = useSpring<{ v_x2: VectorArg }>(() => ({
-        v_x2: [scale(2), scale(3), 0],
-        // config: { friction: 100, mass: 3, tension: 80 },
-    }))
-
-    // playButton:
-    const [{ playSize, ...playStyles }, setPlay] = useSpring(() => ({
-        playSize: 100,
-        top: '50%',
-        left: '50%',
-    }))
-    // overlay
-    const [overlayStyle, setOverlay] = useSpring(() => ({
-        opacity: 1,
-        display: 'block',
-    }))
-    const [newPoints, addNewPoints] = useState(null)
-    const animCallback = async () => {
-        const delay = 150
-        await setPlay({ top: '97%', left: '5%', playSize: 30 })
-        await setv_x1({ v_x1: [scale(1.5), scale(-1), 0], delay: 0.2 * delay })
-        await Promise.all([
-            addNewPoints({
-                p2: {
-                    color: 'red',
-                    radius: 0.08,
-                    position: [scale(1.5), scale(-1), 0],
-                },
-            }),
-        ])
-        await setv_x2({ v_x2: [scale(0), scale(5), 0], delay })
-        await Promise.all([
-            addNewPoints({
-                p3: {
-                    color: 'blue',
-                    radius: 0.08,
-                    position: [scale(0), scale(5), 0],
-                },
-            }),
-        ])
-        await setv_x1({ v_x1: [scale(-1.5), scale(-6), 0], delay })
-        await setv_x2({ v_x2: [scale(1.5), scale(-1), 0], delay })
-    }
     useEffect(() => {
-        // the pause state is always lag behind the actual pausing state of app
-        // that's why we use it's oposite to manage other things like ovarlay
-        setOverlay({
-            display: mathBoxState.pause ? 'none' : 'block',
-            default: { immediate: true },
-        })
-        setOverlay({
-            opacity: mathBoxState.pause ? 0 : 1,
-        })
+        if (mathBoxState.pause) {
+            x1Ref.current.pause()
+            x2Ref.current.pause()
+            lineRef.current.pause()
+        } else {
+            x1Ref.current.start()
+            x2Ref.current.start()
+            lineRef.current.start()
+        }
     }, [mathBoxState.pause])
 
     const mathboxCoordinates = useMemo(() => {
@@ -225,6 +201,43 @@ const MathBox: React.FC = () => {
             />
         )
     }, [])
+    const mathboxGrids = useMemo(() => {
+        return <Grids scale={scale} type="xy" length={22} />
+    }, [scale])
+
+    const mathboxLatex = useMemo(() => {
+        return (
+            <Latex
+                style={{
+                    fill: 'black',
+                    position: 'absolute',
+                    top: 30,
+                    left: 10,
+                    zIndex: 1,
+                }}
+                font_size={1.7}
+                className={'mathbox__svg'}
+                math_formula={String.raw`
+                            \begin{bmatrix}
+                            e^{\lambda_1} & 0& \cdots & 0 \\
+                            0 & \anim<test>{e^{\lambda_2}} & \cdots & 0 \\
+                            \vdots & \vdots & \ddots & \vdots \\ 
+                            0 & 0 & \cdots & e^{\lambda_n}
+                            \end{bmatrix} `}
+            >
+                <Latex.Anim
+                    id="test"
+                    css={emoCss({
+                        '&:hover': {
+                            fill: 'red',
+                            scale: '1.2',
+                            cursor: 'pointer',
+                        },
+                    })}
+                />
+            </Latex>
+        )
+    }, [])
 
     return (
         <div className="mathbox" css={mathboxStyles}>
@@ -234,64 +247,39 @@ const MathBox: React.FC = () => {
                 size={playSize}
                 style={playStyles}
                 onClick={() => {
-                    setv_x1({ default: { pause: mathBoxState.pause } })
-                    setv_x2({ default: { pause: mathBoxState.pause } })
-                    if (!mathBoxState.pause) {
-                        animCallback()
-                    }
+                    // setv_x1({ default: { pause: mathBoxState.pause } })
+                    // setv_x2({ default: { pause: mathBoxState.pause } })
+                    // if (!mathBoxState.pause) {
+                    //     animCallback()
+                    // }
                     mathBoxDispatch({ type: TOGGLE_PAUSE })
                 }}
             />
+
             {mathBoxState.canvVisibility && (
                 <Canvas
                     className="mathbox__canvaswrapper"
                     pixelRatio={window.devicePixelRatio}
-                    // onCreated={(el) => {
-                    //     setCanvSize({
-                    //         width: el.size.width,
-                    //         height: el.size.height,
-                    //     })
-                    // }}
                 >
                     <Camera />
-                    <OrbitControls dampingFactor={0.9} />
+                    {/* <ALine p1={p1} p2={p2} /> */}
+                    {/* <ALine
+                        p1={[0, 0, 0]}
+                        p2={[scale(2), scale(3), 0]}
+                        width={0.04}
+                        color={'#32a852'} */}
+                    />
+                    {/* <OrbitControls dampingFactor={0.9} /> */}
                     {/* <TestCamera /> */}
-                    <Grids scale={scale} type="xy" length={22} />
-                    {/* <Point position={[scale(3), scale(3), 0]} /> */}
+                    {mathboxGrids}
                     {mathboxCoordinates}
-
-                    <Avector
-                        vector={v_x1}
-                        color={theme.palette.lime.light}
-                        thicknessFacor={1.7}
-                        label={String.raw`\vec{x_1}`}
-                        latexParser
-                    />
-
-                    <Avector
-                        vector={v_x2}
-                        color={theme.palette.orange.base}
-                        thicknessFacor={1.5}
-                        label={String.raw`\vec{x_2}`}
-                        latexParser
-                    />
-                    <AvectorOp
-                        vector1={v_x1}
-                        vector2={v_x2}
-                        op="add"
-                        color={theme.palette.blue.light}
-                        thicknessFacor={1.5}
-                        label={String.raw`\vec{u}`}
-                        latexParser
-                    />
-                    <ImperativePoints
-                        points={{
-                            p1: {
-                                color: 'black',
-                                position: [scale(-3), scale(3), 0],
-                            },
-                        }}
-                        newPoints={newPoints}
+                    <LinearCombination x1={x1} x2={x2} u={u} />
+                    <NPoints impPoints={newPoints} />
+                    <ALine
+                        p1={line.p1}
+                        p2={line.p2}
+                        opacity={line.opacity}
+                        color={'gray'}
                     />
                     <ambientLight
                         castShadow
@@ -301,37 +289,7 @@ const MathBox: React.FC = () => {
                 </Canvas>
             )}
 
-            {true && (
-                <Latex
-                    style={{
-                        fill: 'black',
-                        position: 'absolute',
-                        top: 30,
-                        left: 10,
-                        zIndex: 1,
-                    }}
-                    font_size={1.7}
-                    className={'mathbox__svg'}
-                    math_formula={String.raw`
-                                \begin{bmatrix}
-                                e^{\lambda_1} & 0& \cdots & 0 \\
-                                0 & \anim<test>{e^{\lambda_2}} & \cdots & 0 \\
-                                \vdots & \vdots & \ddots & \vdots \\ 
-                                0 & 0 & \cdots & e^{\lambda_n}
-                                \end{bmatrix} `}
-                >
-                    <Latex.Anim
-                        id="test"
-                        css={emoCss({
-                            '&:hover': {
-                                fill: 'red',
-                                scale: '1.2',
-                                cursor: 'pointer',
-                            },
-                        })}
-                    />
-                </Latex>
-            )}
+            {false && mathboxLatex}
             <div style={{ height: 200, width: '100vw' }} />
         </div>
     )

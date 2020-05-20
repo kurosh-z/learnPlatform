@@ -31,7 +31,6 @@ const Coordinates: React.FC<CoordinatesProps> = ({
     lengths = {},
     colors = {},
 }) => {
-    console.log('coordinates')
     return (
         <>
             {showAxis['zAxes'] && (

@@ -7,6 +7,7 @@ import { CustomCylinderBufferGeometry } from './CustomCylinderGeometry'
 import { ORIGIN } from './constants'
 import Point from './Point'
 import { Latex } from '../math-components'
+import { sMultiply } from '../shared'
 
 // extend the class to use it in react!
 extend({ CustomCylinderBufferGeometry })
@@ -30,8 +31,8 @@ function calCurrentDirection(object3d: THREE.Object3D) {
 }
 
 // size constants:
-const HRADIUS = 0.06
-const HHEIGHT = 0.09
+const HRADIUS = 0.07
+const HHEIGHT = 0.1
 const SRADIUS = 0.02
 
 // shaft component:
@@ -39,6 +40,7 @@ interface ShaftProps {
     mag: number
     direction: THREE.Vector3 | number[]
     color?: ReactThreeFiber.Color
+    opacity?: number
     thicknessFactor: number
     onPointerDown?: (e) => void
     hover?: (hoverd: boolean) => void
@@ -47,6 +49,7 @@ const Shaft: React.FC<ShaftProps> = ({
     mag,
     direction,
     color = '#3761fa',
+    opacity = 1,
     thicknessFactor,
     onPointerDown,
     hover,
@@ -92,7 +95,12 @@ const Shaft: React.FC<ShaftProps> = ({
                     },
                 ]}
             />
-            <meshBasicMaterial attach="material" color={color} />
+            <meshStandardMaterial
+                attach="material"
+                color={color}
+                opacity={opacity}
+                transparent
+            />
         </mesh>
     )
 }
@@ -102,6 +110,7 @@ interface HeadProps {
     position: [number, number, number]
     direction: THREE.Vector3 | [number, number, number]
     color?: ReactThreeFiber.Color
+    opacity?: number
     thicknessFactor: number
     onPointerDown: (e) => void
     hover: (e) => void
@@ -110,6 +119,7 @@ const Head: React.FC<HeadProps> = ({
     position,
     direction,
     color = '#3761fa',
+    opacity = 1,
     thicknessFactor,
     onPointerDown,
     hover,
@@ -153,7 +163,12 @@ const Head: React.FC<HeadProps> = ({
                     },
                 ]}
             />
-            <meshBasicMaterial attach="material" color={color} />
+            <meshStandardMaterial
+                attach="material"
+                color={color}
+                opacity={opacity}
+                transparent
+            />
         </mesh>
     )
 }
@@ -164,6 +179,7 @@ export interface VectorProps {
     origin?: THREE.Vector3 | [number, number, number]
     thicknessFacor?: number
     color?: ReactThreeFiber.Color
+    opacity?: number
     label?: string
     latexParser?: boolean
     labelStyle?: React.CSSProperties
@@ -177,6 +193,7 @@ const Vector: React.RefForwardingComponent<
         vector,
         color,
         origin = ORIGIN,
+        opacity = 1,
         thicknessFacor = 0.12,
         label,
         labelStyle,
@@ -219,20 +236,27 @@ const Vector: React.RefForwardingComponent<
     const labelComp = useMemo(() => {
         if (label && latexParser) {
             return (
-                <HTML position={headPos}>
+                <HTML
+                    position={sMultiply(
+                        (_mag - 3 * thicknessFacor * HHEIGHT) / 2,
+                        _dir
+                    )}
+                >
                     <Latex
                         math_formula={label}
-                        font_size={1.3}
-                        style={{
-                            position: 'absolute',
-                            transform: 'translate(-.5rem, .1rem)',
-                        }}
+                        font_size={1.4}
+                        style={labelStyle}
+                        // style={{
+                        //     position: 'absolute',
+                        //     // transform: 'translate(-2.5rem, 2.5rem)',
+                        //     opacity: opacity,
+                        // }}
                     />
                 </HTML>
             )
         } else if (label && latexParser === false) {
             return (
-                <HTML position={headPos}>
+                <HTML position={sMultiply(0.5, headPos)}>
                     <span
                         style={
                             labelStyle
@@ -241,8 +265,9 @@ const Vector: React.RefForwardingComponent<
                                       padding: '0 .6rem 0 .6rem',
                                       margin: '-1rem auto auto auto',
                                       fontFamily: 'KaTex_Math',
-                                      fontSize: '1.3rem',
+                                      fontSize: '1.4rem',
                                       fontStyle: 'italic',
+                                      opacity: opacity,
                                   }
                         }
                     >
@@ -251,7 +276,7 @@ const Vector: React.RefForwardingComponent<
                 </HTML>
             )
         }
-    }, [headPos, label, latexParser, labelStyle])
+    }, [headPos, label, latexParser, labelStyle, opacity])
 
     // if magnitude of the vector is less than the headsize just return a point at origin
     return (
@@ -262,6 +287,7 @@ const Vector: React.RefForwardingComponent<
                         mag={_mag - thicknessFacor * HHEIGHT} // we have to change the lenght a little bit to make room for head!
                         direction={_dir}
                         color={color}
+                        opacity={opacity}
                         onPointerDown={onPointerDown}
                         thicknessFactor={thicknessFacor}
                         hover={hover}
@@ -270,13 +296,18 @@ const Vector: React.RefForwardingComponent<
                         position={headPos}
                         direction={_dir}
                         color={color}
+                        opacity={opacity}
                         thicknessFactor={thicknessFacor}
                         onPointerDown={onPointerDown}
                         hover={hover}
                     />
                 </>
             ) : (
-                <Point color={color} position={ORIGIN} opacity={1} />
+                <Point
+                    color={color}
+                    position={[ORIGIN.x, ORIGIN.y, ORIGIN.z]}
+                    opacity={opacity}
+                />
             )}
             {labelComp}
         </group>

@@ -27,7 +27,7 @@ export type MathBoxState = Readonly<{
 export const initMathBoxState: MathBoxState = {
     canvVisibility: true,
     svgVisibility: false,
-    pause: false,
+    pause: true,
 }
 
 export function mathboxReducer(

@@ -1,33 +1,42 @@
 import React, { useMemo } from 'react'
 import { ReactThreeFiber } from 'react-three-fiber'
-import { Vector3 } from 'three'
-
 import Vector, { VectorProps } from './Vector'
+import { addVectors } from '../shared'
 
 type VectorOpProps = {
     op: 'add'
     vector1: ReactThreeFiber.Vector3
     vector2: ReactThreeFiber.Vector3
+    label_transform?: string
 } & Omit<VectorProps, 'vector'>
 
 const VectorOp: React.FC<VectorOpProps> = ({
     vector1,
     vector2,
     op,
+    label_transform,
     ...rest
 }) => {
+    let labelStyle: React.CSSProperties = {}
+    if (label_transform) {
+        labelStyle = {
+            position: 'absolute',
+            transform: label_transform,
+            opacity: 'opacity' in rest ? rest['opacity'] : 1,
+        }
+    }
+
     const vector = useMemo(() => {
         if (op === 'add') {
-            const _vector1 =
-                vector1 instanceof Vector3 ? vector1 : new Vector3(...vector1)
-            const _vector2 =
-                vector2 instanceof Vector3 ? vector2 : new Vector3(...vector2)
-            const res = new Vector3()
-            return res.addVectors(_vector1, _vector2)
+            return addVectors(vector1, vector2)
         }
     }, [vector1, vector2, op])
 
-    return <Vector vector={vector} {...rest} />
+    return (
+        <>
+            <Vector vector={vector} {...rest} labelStyle={labelStyle} />
+        </>
+    )
 }
 
 export default VectorOp

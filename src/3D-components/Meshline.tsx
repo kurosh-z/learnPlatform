@@ -1,75 +1,82 @@
-import React, { useMemo } from 'react';
-import * as THREE from 'three';
-import { MeshLine, MeshLineMaterial } from 'three.meshline';
-import { Vector3, Vec2, Vector2 } from 'three';
-import { ReactThreeFiber } from 'react-three-fiber';
+/* eslint-disable @typescript-eslint/no-namespace */
+import React from 'react'
+import { animated } from 'react-spring'
+import { extend, ReactThreeFiber, useThree } from 'react-three-fiber'
+import { Vector3, Vector2 } from 'three'
+import { MeshLine, MeshLineMaterial, MeshLineRaycast } from 'threejs-meshline'
 
-interface MeshlineProps {
-  points: Vector3[];
-  color?: ReactThreeFiber.Color;
-  resolution: Vector2 | number[];
-  lineWidth?: number;
-  near?: number;
-  far?: number;
-  rotation?: [number, number, number];
-  position?: [number, number, number];
-  rest?: any;
+extend({ MeshLine, MeshLineMaterial })
+
+declare global {
+    namespace JSX {
+        interface IntrinsicElements {
+            meshLine: ReactThreeFiber.Object3DNode<MeshLine, typeof Meshline>
+            meshLineMaterial: ReactThreeFiber.Object3DNode<
+                MeshLineMaterial,
+                typeof MeshLineMaterial
+            >
+        }
+    }
 }
 
-const Meshline: React.RefForwardingComponent<
-  JSX.IntrinsicElements,
-  MeshlineProps
-> = React.forwardRef(
-  (
-    {
-      points,
-      color = 'blue',
-      resolution,
-      lineWidth = 0.009,
-      near,
-      far,
-      position,
-      rotation,
-      rest
-    },
-    ref
-  ) => {
-    // use MeshLine to create a geometry and material
-    const { geometry, material } = useMemo(() => {
-      const linegeo = new THREE.Geometry().setFromPoints(points);
-      const line = new MeshLine();
-      line.setGeometry(linegeo);
-      const material = new MeshLineMaterial({
-        useMap: false,
-        color: new THREE.Color(color),
-        resolution:
-          resolution instanceof Vector2
-            ? resolution
-            : new THREE.Vector2(resolution[0], resolution[1]),
-        sizeAttenuation: 1,
-        lineWidth: lineWidth,
-        near: -100,
-        far: 100,
-        // dashArray: 0.1,
-        // dashOffset: 0,
-        // dashRatio: 1,
-        transparent: true,
-        depthWrite: false
-      });
+type MeshlineProps = {
+    vertices: Vector3[]
+    width?: number
+    color?: ReactThreeFiber.Color
+    dashArray?: number
+    dashRatio?: number
+    opacity?: number
+    resolution?: Vector2
+    far?: number
+    near?: number
+}
 
-      return { geometry: line.geometry, material: material };
-    }, []);
+const Meshline: React.FC<MeshlineProps> = ({
+    vertices,
+    width = 0.05,
+    color = '#2a2c33',
+    dashArray = 0,
+    dashRatio = 0,
+    opacity = 1,
+    resolution = new Vector2(window.innerWidth, window.innerHeight),
+    far = -10,
+    near = 10,
+}) => {
+    const { camera } = useThree()
 
     return (
-      <mesh
-        geometry={geometry}
-        material={material}
-        rotaton={rotation}
-        position={position}
-        ref={ref}
-        {...rest}></mesh>
-    );
-  }
-);
+        <mesh raycast={MeshLineRaycast}>
+            <meshLine attach="geometry" vertices={vertices} />
+            <meshLineMaterial
+                attach="material"
+                useMap={false}
+                transparent
+                near={near ? near : camera.near}
+                far={far ? far : camera.far}
+                depthTest={false}
+                lineWidth={width}
+                resolution={resolution}
+                color={color}
+                opacity={opacity}
+                dashArray={dashArray}
+                dashRatio={dashRatio}
+            />
+        </mesh>
+    )
+}
 
-export default Meshline;
+export type AlineProps = {
+    p1: [number, number, number]
+    p2: [number, number, number]
+} & Omit<MeshlineProps, 'vertices'>
+
+const Line: React.FC<AlineProps> = ({ p1, p2, ...rest }) => {
+    const vertices: Vector3[] = []
+    vertices.push(new Vector3(...p1))
+    vertices.push(new Vector3(...p2))
+    console.log(vertices)
+    return <Meshline vertices={vertices} {...rest} />
+}
+
+export const ALine = animated(Line)
+export default Meshline

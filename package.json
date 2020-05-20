@@ -89,7 +89,7 @@
         "react-three-fiber": "^4.0.16",
         "three": "^0.113.2",
         "three.meshline": "^1.2.0",
-        "threejs-meshline": "^2.0.9",
+        "threejs-meshline": "^2.0.11",
         "use-immer": "^0.4.0"
     }
 }

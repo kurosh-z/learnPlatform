@@ -30,12 +30,11 @@ const HomePage: React.FC<{}> = () => {
             <section className="mainpage">
                 <MastHead />
                 <Card
-                    title1="Found the Future"
-                    text=" Entrepreneur First is the world’s leading talent investor. We
-                  invest time and money in the world’s most talented and
-                  ambitious individuals, helping them to find a co-founder,
-                  develop an idea, and start a company. So far, we’ve helped
-                  2,000+ people create 300+ companies, worth a combined $2bn
+                    title1="Learn Anywhere, Anytime"
+                    text=" You learn best when you get to apply what you learn quickly.
+                    That’s why we’ve developed Courses that combine short interactive Animations 
+                    with immediate exercises. Why we have built Practice Mode with instant and personalised feedback on every exercise.
+                    And why we have developed Projects based on real-world problems.
                   "
                     textPosition="center"
                 ></Card>
@@ -51,7 +50,7 @@ const HomePage: React.FC<{}> = () => {
                     title1=" “change"
                     title2="is the end result"
                     text="  of all true learning.” ―Leo Buscaglia
-          This last one is mine! You’re always going to encounter a learning curve when 
+          You’re always going to encounter a learning curve when 
           you learn something new — it’s one of the requirements to actually learning!
            The frustrations and struggles that come with it are also a requirement.
           The learning curve doesn’t mean that you should quit — as long as you

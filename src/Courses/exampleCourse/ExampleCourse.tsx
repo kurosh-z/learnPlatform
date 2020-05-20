@@ -6,7 +6,6 @@ import { Theme } from '../../theme/types'
 import NavPanel from '../../shared/NavPanel'
 import Mathbox from './MathBox'
 import ExHeader from './ExHeader'
-// import { useUiState, useUiDispatch } from '../app_states/stateContext';
 
 const ExampleCourse: React.FC<{}> = () => {
     const theme = useTheme<Theme>()
@@ -30,6 +29,7 @@ const ExampleCourse: React.FC<{}> = () => {
             <main className="main mathcontent">
                 <ExHeader className="content__header" />
                 <Mathbox />
+                {/* <Calibrator /> */}
             </main>
         </div>
     )
