@@ -51,7 +51,7 @@ const HomePage: React.FC<{}> = () => {
                     title2="is the end result"
                     text="  of all true learning.” ―Leo Buscaglia
           You’re always going to encounter a learning curve when 
-          you learn something new — it’s one of the requirements to actually learning!
+          you learn something new — it’s one of the requirements to actually learn`ing!
            The frustrations and struggles that come with it are also a requirement.
           The learning curve doesn’t mean that you should quit — as long as you
            face the challenges and work through those frustrations, you will make progress."
