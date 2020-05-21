@@ -31,7 +31,7 @@ const calAxesVector = (axes: 'xAxes' | 'yAxes' | 'zAxes', val: number) =>
         xAxes: [val, 0, 0],
         yAxes: [0, val, 0],
         zAxes: [0, 0, val],
-    }[axes])
+    }[axes] as [number, number, number])
 
 const defaultcolors = {
     xAxes: 'rgb(255, 127, 14)', // orange
