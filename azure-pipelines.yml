@@ -6,7 +6,7 @@
 trigger:
 - master
 variables: 
-  build: 'build'
+  BUILD_DIR: 'build'
 pool:
   vmImage: 'ubuntu-latest'
 
@@ -21,14 +21,9 @@ steps:
     yarn build
   displayName: 'yarn install and build'
 
-- task: CopyFiles@2
-  inputs:
-    Contents: 'web.config'
-    TargetFolder: '${build}'
-
 - task: ArchiveFiles@2
   inputs:
-    rootFolderOrFile: '$(build)'
+    rootFolderOrFile: '$(BUILD_DIR)'
     includeRootFolder: false
     archiveType: 'zip'
     archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
