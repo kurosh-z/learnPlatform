@@ -2,86 +2,86 @@
  * Entry
  *********************************/
 const entry = {
-  app: './src/index',
-  latex_parser: './src/math-components/parser/index',
-};
+    app: './src/index',
+    latex_parser: './src/math-components/parser/index',
+}
 /*********************************
  * Resolve
  *********************************/
 const resolve = {
-  extensions: ['.ts', '.tsx', '.js'],
-};
+    extensions: ['.ts', '.tsx', '.js'],
+}
 /*********************************
  * Module
  *********************************/
 const _module = {
-  rules: [
-    // we use babel-loader to load our jsx and tsx files
-    {
-      test: /\.(ts|js)x?$/,
-      exclude: /node_modules/,
-      use: {
-        loader: 'babel-loader',
-      },
-    },
-    {
-      test: /\.(jpg|png)$/,
-      exclude: /node_modules/,
-      use: [
+    rules: [
+        // we use babel-loader to load our jsx and tsx files
         {
-          loader: 'file-loader',
-          options: {
-            name: '[name].[ext]',
-            outputPath: 'imgs',
-          },
+            test: /\.(ts|js)x?$/,
+            exclude: /node_modules/,
+            use: {
+                loader: 'babel-loader',
+            },
         },
-      ],
-    },
-    {
-      test: /\.pug$/,
-      exclude: /node_modules/,
-      use: ['raw-loader', 'pug-html-loader'],
-    },
-    {
-      test: /\.(woff(2)?|ttf|eot|svg|blob)(\?v=\d+\.\d+\.\d+)?$/,
-      use: [
         {
-          loader: 'file-loader',
-          options: {
-            name: '[name].[ext]',
-            outputPath: 'fonts',
-          },
+            test: /\.(jpg|png)$/,
+            exclude: /node_modules/,
+            use: [
+                {
+                    loader: 'file-loader',
+                    options: {
+                        name: '[name].[ext]',
+                        outputPath: 'imgs',
+                    },
+                },
+            ],
         },
-      ],
-    },
-    {
-      test: /\.css$/,
-      use: ['style-loader', 'css-loader'],
-    },
-  ],
-};
+        {
+            test: /\.pug$/,
+            exclude: /node_modules/,
+            use: ['raw-loader', 'pug-html-loader'],
+        },
+        {
+            test: /\.(woff(2)?|ttf|eot|svg|blob)(\?v=\d+\.\d+\.\d+)?$/,
+            use: [
+                {
+                    loader: 'file-loader',
+                    options: {
+                        name: '[name].[ext]',
+                        outputPath: 'fonts',
+                    },
+                },
+            ],
+        },
+        {
+            test: /\.css$/,
+            use: ['style-loader', 'css-loader'],
+        },
+    ],
+}
 /*********************************
  * Optimization
  *********************************/
 const optimization = {
-  splitChunks: {
-    cacheGroups: {
-      commons: {
-        test: /[\\/]node_modules[\\/]/,
-        name: 'common',
+    splitChunks: {
+        cacheGroups: {
+            commons: {
+                test: /[\\/]node_modules[\\/]/,
+                name: 'common',
+                chunks: 'all',
+            },
+        },
         chunks: 'all',
-      },
     },
-    chunks: 'all',
-  },
-};
+}
 /*********************************
  * Exports
  *********************************/
 
 module.exports = {
-  entry: entry,
-  resolve: resolve,
-  module: _module,
-  optimization: optimization,
-};
+    entry: entry,
+    resolve: resolve,
+    module: _module,
+    optimization: optimization,
+}

@@ -13,7 +13,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 const output = {
     path: path.join(__dirname, '/build'),
     filename: '[name].[contentHash].bundle.js',
-    publicPath: path.resolve(__dirname, 'build'),
+    publicPath: '/',
 }
 /*********************************
  * Optimization
