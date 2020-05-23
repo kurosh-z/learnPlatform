@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect } from 'react'
 import './../course.css'
 import { useTheme } from 'emotion-theming'
 import { css as emoCss } from '@emotion/core'
@@ -9,6 +9,7 @@ import ExHeader from './ExHeader'
 
 const ExampleCourse: React.FC<{}> = () => {
     const theme = useTheme<Theme>()
+
     const coursepage = useMemo(
         () =>
             emoCss({
@@ -18,6 +19,7 @@ const ExampleCourse: React.FC<{}> = () => {
             }),
         [theme]
     )
+
     return (
         <div className="coursepage" css={coursepage}>
             <NavPanel
@@ -29,7 +31,6 @@ const ExampleCourse: React.FC<{}> = () => {
             <main className="main mathcontent">
                 <ExHeader className="content__header" />
                 <Mathbox />
-                {/* <Calibrator /> */}
             </main>
         </div>
     )

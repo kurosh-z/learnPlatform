@@ -94,7 +94,7 @@ export function useMathboxAnim({ scale }) {
         },
         // config: { friction: 12, mass: 1, tension: 30 },
         to: async (animX1) => {
-            const delay = 100
+            const delay = 200
             await animX1({
                 to: { origin: x2_base, base_opacity: 0 },
                 delay,
@@ -161,6 +161,8 @@ export function useMathboxAnim({ scale }) {
                             vec2: x2_base,
                         }),
                     },
+                    config: SLOW,
+                    delay: delay * 3,
                 }),
             ])
         },

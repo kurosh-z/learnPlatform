@@ -22,7 +22,6 @@ import { useScaleLinear } from '../courseComps/useScaleLinear'
 import { useMathboxAnim } from './useMathboxAnim'
 
 const AplayButton = a(PlayButton)
-const AlinearCombination = a(LinearCombination)
 const Points = React.memo(NPoints)
 
 const TestCamera: React.FC = () => {
@@ -201,9 +200,9 @@ const MathBox: React.FC = () => {
             />
         )
     }, [])
-    const mathboxGrids = useMemo(() => {
-        return <Grids scale={scale} type="xy" length={22} />
-    }, [scale])
+    // const mathboxGrids = useMemo(() => {
+    //     return <Grids scale={scale} type="xy" len1={46} len2={22} />
+    // }, [scale])
 
     const mathboxLatex = useMemo(() => {
         return (
@@ -247,11 +246,6 @@ const MathBox: React.FC = () => {
                 size={playSize}
                 style={playStyles}
                 onClick={() => {
-                    // setv_x1({ default: { pause: mathBoxState.pause } })
-                    // setv_x2({ default: { pause: mathBoxState.pause } })
-                    // if (!mathBoxState.pause) {
-                    //     animCallback()
-                    // }
                     mathBoxDispatch({ type: TOGGLE_PAUSE })
                 }}
             />
@@ -262,19 +256,12 @@ const MathBox: React.FC = () => {
                     pixelRatio={window.devicePixelRatio}
                 >
                     <Camera />
-                    {/* <ALine p1={p1} p2={p2} /> */}
-                    {/* <ALine
-                        p1={[0, 0, 0]}
-                        p2={[scale(2), scale(3), 0]}
-                        width={0.04}
-                        color={'#32a852'} */}
-                    />
-                    {/* <OrbitControls dampingFactor={0.9} /> */}
-                    {/* <TestCamera /> */}
-                    {mathboxGrids}
+                    <OrbitControls dampingFactor={0.9} />
+                    {/* {mathboxGrids} */}
+                    <Grids scale={scale} type="xy" len1={46} len2={22} />
                     {mathboxCoordinates}
                     <LinearCombination x1={x1} x2={x2} u={u} />
-                    <NPoints impPoints={newPoints} />
+                    <Points impPoints={newPoints} />
                     <ALine
                         p1={line.p1}
                         p2={line.p2}
@@ -289,7 +276,7 @@ const MathBox: React.FC = () => {
                 </Canvas>
             )}
 
-            {false && mathboxLatex}
+            {true && mathboxLatex}
             <div style={{ height: 200, width: '100vw' }} />
         </div>
     )
