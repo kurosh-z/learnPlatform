@@ -5,9 +5,11 @@
 
 trigger:
 - master
+
 variables:
-  BUILD_DIR: 'build'
-  
+  build: 'build'
+  configs: 'configs'
+
 pool:
   vmImage: 'ubuntu-latest'
 
@@ -22,10 +24,16 @@ steps:
     yarn build
   displayName: 'yarn install and build'
 
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: '$(configs)'
+    Contents: '**'
+    TargetFolder: '$(build)'
+    OverWrite: true
 - task: ArchiveFiles@2
   inputs:
-    rootFolderOrFile: '$(BUILD_DIR)'
-    includeRootFolder: true
+    rootFolderOrFile: '$(build)'
+    includeRootFolder: false
     archiveType: 'zip'
     archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
     replaceExistingArchive: true
