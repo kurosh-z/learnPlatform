@@ -74,7 +74,7 @@ const Line: React.FC<AlineProps> = ({ p1, p2, ...rest }) => {
     const vertices: Vector3[] = []
     vertices.push(new Vector3(...p1))
     vertices.push(new Vector3(...p2))
-    console.log(vertices)
+    // console.log(vertices)
     return <Meshline vertices={vertices} {...rest} />
 }
 

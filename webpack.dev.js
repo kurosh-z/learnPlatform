@@ -8,7 +8,7 @@ const common = require('./webpack.common')
  *********************************/
 const plugins = [
     new HtmlWebpackPlugin({
-        template: './src/index.html',
+        template: './public/index.html',
     }),
 ]
 /*********************************

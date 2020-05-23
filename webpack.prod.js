@@ -23,7 +23,7 @@ const optimization = {
         new OptimizeCssAssetsPlugin(),
         new TerserPlugin(),
         new HtmlWebpackPlugin({
-            template: './src/index.html',
+            template: './public/index.html',
             minify: {
                 emoveAttributeQuotes: true,
                 collapseWhitespace: true,

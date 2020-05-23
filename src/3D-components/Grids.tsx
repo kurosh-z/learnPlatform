@@ -27,80 +27,102 @@ declare global {
 // Grids
 interface GridProps {
     type?: 'xy' | 'xz' | 'yz'
-    length?: number
+    len1?: number
+    len2?: number
     scale: ScaleLinear<number, number>
 }
 
-const Grids: React.FC<GridProps> = ({ type = 'xy', length = 20, scale }) => {
+const Grids: React.FC<GridProps> = ({
+    type = 'xy',
+    len1 = 20,
+    len2 = 20,
+    scale,
+}) => {
     const { pointsArray1, pointsArray2 } = useMemo(() => {
         const pointsArray1 = []
         const pointsArray2 = []
-        const halfLength = length / 2
-        const values = scale.ticks(20)
-        if (type === 'xy') {
-            values.forEach((val) => {
-                // prettier-ignore
-                const linePoints1 = [scale(val), scale(halfLength), 0.001, scale(val), scale(-halfLength), 0.001];
-                // prettier-ignore
-                const linePoints2 = [scale(18), scale(val), 0.001, scale(-18), scale(val), 0.001];
-                pointsArray1.push(linePoints1)
-                pointsArray2.push(linePoints2)
-            })
+        const halflen1 = len1 / 2
+        const halflen2 = len2 / 2
+        const dist = 1
+        // vertical lines
+        for (
+            let i = scale(-halflen1 + dist);
+            i < scale(halflen1);
+            i += scale(dist)
+        ) {
+            // prettier-ignore
+            const linePoints1 = [ i, scale(halflen2), 0.001, i, scale(-halflen2), 0.001]
+            pointsArray1.push(linePoints1)
         }
+        for (
+            let j = scale(-halflen2 + dist);
+            j < scale(halflen2);
+            j += scale(dist)
+        ) {
+            // prettier-ignore
+            const linePoints2 = [scale(halflen1), j, 0.001, scale(-halflen1), j, 0.001];
+            pointsArray2.push(linePoints2)
+        }
+
         return { pointsArray1, pointsArray2 }
-    }, [type, length])
+    }, [type, len1, len2])
     const { size } = useThree()
 
-    const gridlines1 = pointsArray1.map((linePoints, idx) => {
-        return (
-            <line2 key={idx}>
-                <lineGeometry
-                    attach="geometry"
-                    onUpdate={(self: LineGeometry) => {
-                        self.setPositions(linePoints)
-                    }}
-                />
-                <lineMaterial
-                    attach="material"
-                    args={[
-                        {
-                            color: 'gray',
-                            linewidth: 1,
-                            resolution: new THREE.Vector2(
-                                size.width,
-                                size.height
-                            ),
-                        },
-                    ]}
-                />
-            </line2>
-        )
-    })
-    const gridlines2 = pointsArray2.map((linePoints, idx) => {
-        return (
-            <line2 key={idx}>
-                <lineGeometry
-                    attach="geometry"
-                    onUpdate={(self: LineGeometry) => {
-                        self.setPositions(linePoints)
-                    }}
-                />
-                <lineMaterial
-                    attach="material"
-                    args={[
-                        {
-                            color: '#9d9e9e',
-                            linewidth: 0.5,
-                            resolution: new THREE.Vector2(
-                                size.width,
-                                size.height
-                            ),
-                        },
-                    ]}
-                />
-            </line2>
-        )
-    })
+    const gridlines1 = useMemo(() => {
+        return pointsArray1.map((linePoints, idx) => {
+            return (
+                <line2 key={idx}>
+                    <lineGeometry
+                        attach="geometry"
+                        onUpdate={(self: LineGeometry) => {
+                            self.setPositions(linePoints)
+                        }}
+                    />
+                    <lineMaterial
+                        attach="material"
+                        args={[
+                            {
+                                color: 'gray',
+                                linewidth: 1,
+                                resolution: new THREE.Vector2(
+                                    size.width,
+                                    size.height
+                                ),
+                            },
+                        ]}
+                    />
+                </line2>
+            )
+        })
+    }, [pointsArray1])
+
+    const gridlines2 = useMemo(() => {
+        return pointsArray2.map((linePoints, idx) => {
+            return (
+                <line2 key={idx}>
+                    <lineGeometry
+                        attach="geometry"
+                        onUpdate={(self: LineGeometry) => {
+                            self.setPositions(linePoints)
+                        }}
+                    />
+                    <lineMaterial
+                        attach="material"
+                        args={[
+                            {
+                                color: '#9d9e9e',
+                                linewidth: 0.5,
+                                resolution: new THREE.Vector2(
+                                    size.width,
+                                    size.height
+                                ),
+                            },
+                        ]}
+                    />
+                </line2>
+            )
+        })
+    }, [pointsArray2])
     return (
         <group>
             {gridlines1}
