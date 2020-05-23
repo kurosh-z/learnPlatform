@@ -10,12 +10,16 @@ import { useUiState, useUiDispatch } from '../app_states/stateContext'
 // import Probability01 from '../Courses/Probability01';
 
 // sidebar width:
-const sWidth = 600
+const SWIDTH = 600
+const SWIDTH_MOB = 350
+const BTM_CONST_MOB = 150
+const BTM_CONST = 380
 
 const PanelCanvas: React.FC<{
     navTop: number
     navBottom: number
-}> = ({ navBottom, navTop }) => {
+    sWidth: number
+}> = ({ navBottom, navTop, sWidth }) => {
     const canvRef = useRef<HTMLCanvasElement>(null)
 
     if (canvRef.current) {
@@ -41,9 +45,9 @@ const PanelCanvas: React.FC<{
         top: 0,
         right: 0,
         height: '100vh',
-        minWidth: 500,
+        // minWidth: 280,
+        width: sWidth,
         opacity: 1,
-
         zIndex: theme.zIndices.sticky,
     })
     const uiState = useUiState()
@@ -57,7 +61,7 @@ const PanelCanvas: React.FC<{
                 canvRef.current = el
             }}
             className="sidepanel__bg"
-            width="550"
+            width={sWidth - 20}
             height="1000"
         ></canvas>
     )
@@ -69,6 +73,9 @@ const SidePanel: React.FC = () => {
     // const [opened, setOpened] = useState<boolean>(true)
     const uiState = useUiState()
     const uiDispatch = useUiDispatch()
+
+    const sWidth = uiState.isMobile ? SWIDTH_MOB : SWIDTH
+    const BtmConst = uiState.isMobile ? BTM_CONST_MOB : BTM_CONST
 
     const [{ navBottom }, setNavBottom] = useSpring(() => ({
         navBottom: sWidth,
@@ -85,9 +92,12 @@ const SidePanel: React.FC = () => {
     const openCallback = useCallback(async () => {
         await Promise.all([
             uiDispatch({ type: '[ui] nav anim progress' }),
-            setNavBottom({ navBottom: sWidth - 380, config: { tension: 180 } }),
+            setNavBottom({
+                navBottom: sWidth - BtmConst,
+                config: { tension: 180 },
+            }),
             setNavTop({
-                navTop: sWidth - 600,
+                navTop: 0,
             }),
         ])
     }, [])
@@ -132,26 +142,39 @@ const SidePanel: React.FC = () => {
             flexDirection: 'column',
             position: 'absolute',
             top: 150,
-            right: 40,
+            right: 20,
             //   marginTop: 150,
             flexWrap: 'nowrap',
             whiteSpace: 'nowrap',
             textAlign: 'right',
-            fontSize: theme.typography.fontSizes[4],
+            color: 'red',
+            fontSize: theme.typography.fontSizes[2],
             letterSpacing: theme.spaces.sm, // TODO:consider changing the theme spacing
+            [theme.mediaQueries.sm]: {
+                fontSize: theme.typography.fontSizes[4],
+                right: 40,
+            },
         },
         '.sidepanel__down': {
             display: 'flex',
             flexDirection: 'column',
             position: 'absolute',
             bottom: 100,
-            right: 100,
+            right: 30,
             fontSize: theme.typography.fontSizes[0],
+            [theme.mediaQueries.sm]: {
+                fontSize: theme.typography.fontSizes[0],
+                right: 100,
+            },
         },
     })
     return (
         <Router>
-            <ApanelCanvas navBottom={navBottom} navTop={navTop} />
+            <ApanelCanvas
+                navBottom={navBottom}
+                navTop={navTop}
+                sWidth={sWidth}
+            />
             <div
                 className="sidepanel"
                 css={sidepanel}
