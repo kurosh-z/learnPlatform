@@ -1,10 +1,13 @@
 import { useState, useCallback, useRef } from 'react'
 import { useSpring } from 'react-spring'
-import { SpringHandle } from '@react-spring/core'
+import { SpringHandle, SpringStartFn } from '@react-spring/core'
 import { sMultiply as multiply, addVectors } from '../../shared'
 import { VectorProps } from '../courseComps/LinearCombination'
+import { GAnimProps } from '../../3D-components/Grids'
+
 const SLOW = { friction: 30, mass: 2, tension: 40 }
 const VSLOW = { friction: 100, mass: 3, tension: 80 }
+const GRID_CONF = { friction: 30, mass: 2, tension: 40 }
 
 type LinearCombArgs = {
     alpha1?: number
@@ -18,6 +21,8 @@ function linearComb({ alpha1 = 1, alpha2 = 1, vec1, vec2 }: LinearCombArgs) {
 }
 
 export function useMathboxAnim({ scale }) {
+    const gridStartRef = useRef<SpringStartFn<GAnimProps>>(null)
+
     const x1_base: VectorProps['vec'] = [scale(2), scale(-2), 0]
     const x2_base: VectorProps['vec'] = [scale(2), scale(3), 0]
     //mathbox State
@@ -94,7 +99,19 @@ export function useMathboxAnim({ scale }) {
         },
         // config: { friction: 12, mass: 1, tension: 30 },
         to: async (animX1) => {
+            const gridStartFn = gridStartRef.current
             const delay = 200
+            await Promise.all([
+                gridStartFn({
+                    _endPoint1: 32 / 2,
+                    config: GRID_CONF,
+                }),
+                gridStartFn({
+                    _endPoint2: -22 / 2,
+                    delay: 400,
+                    config: GRID_CONF,
+                }),
+            ])
             await animX1({
                 to: { origin: x2_base, base_opacity: 0 },
                 delay,
@@ -198,5 +215,6 @@ export function useMathboxAnim({ scale }) {
         playBtn: playBtn,
         overlayStyle: overlayStyle,
         setOverlay: setOverlay,
+        gridStartRef,
     }
 }

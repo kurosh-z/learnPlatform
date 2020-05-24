@@ -39,13 +39,13 @@ const Meshline: React.FC<MeshlineProps> = ({
     dashRatio = 0,
     opacity = 1,
     resolution = new Vector2(window.innerWidth, window.innerHeight),
-    far = -10,
-    near = 10,
+    far,
+    near,
 }) => {
     const { camera } = useThree()
 
     return (
-        <mesh raycast={MeshLineRaycast}>
+        <mesh raycast={MeshLineRaycast} frustumCulled={false}>
             <meshLine attach="geometry" vertices={vertices} />
             <meshLineMaterial
                 attach="material"
@@ -70,7 +70,7 @@ export type AlineProps = {
     p2: [number, number, number]
 } & Omit<MeshlineProps, 'vertices'>
 
-const Line: React.FC<AlineProps> = ({ p1, p2, ...rest }) => {
+export const Line: React.FC<AlineProps> = ({ p1, p2, ...rest }) => {
     const vertices: Vector3[] = []
     vertices.push(new Vector3(...p1))
     vertices.push(new Vector3(...p2))
