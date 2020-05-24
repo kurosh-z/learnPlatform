@@ -147,6 +147,7 @@ const MathBox: React.FC = () => {
         overlayStyle,
         newPoints,
         playBtn,
+        gridStartRef,
     } = useMathboxAnim({
         scale,
     })
@@ -200,9 +201,6 @@ const MathBox: React.FC = () => {
             />
         )
     }, [])
-    // const mathboxGrids = useMemo(() => {
-    //     return <Grids scale={scale} type="xy" len1={46} len2={22} />
-    // }, [scale])
 
     const mathboxLatex = useMemo(() => {
         return (
@@ -257,8 +255,15 @@ const MathBox: React.FC = () => {
                 >
                     <Camera />
                     <OrbitControls dampingFactor={0.9} />
-                    {/* {mathboxGrids} */}
-                    <Grids scale={scale} type="xy" len1={46} len2={22} />
+
+                    <Grids
+                        scale={scale}
+                        type="xy"
+                        len1={32}
+                        len2={22}
+                        pause={mathBoxState.pause}
+                        gFuncRef={gridStartRef}
+                    />
                     {mathboxCoordinates}
                     <LinearCombination x1={x1} x2={x2} u={u} />
                     <Points impPoints={newPoints} />

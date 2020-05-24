@@ -147,7 +147,8 @@ const NavPanel: React.FC<NavPanelProps> = ({
                     },
                 },
                 '.nav__btn': {
-                    margin: '.7em 2em auto .5em',
+                    margin: 'auto 1.5rem auto .5rem',
+                    alignSelf: 'center',
                 },
                 '.header__logoContainer': {
                     width: '200px',
@@ -202,22 +203,27 @@ const NavPanel: React.FC<NavPanelProps> = ({
                         className="nav__concept"
                         style={{
                             color: textColor,
-                            visibility: conceptVisibility
-                                ? 'visible'
-                                : 'hidden',
+                            visibility:
+                                conceptVisibility && !uiState.isMobile
+                                    ? 'visible'
+                                    : 'hidden',
                         }}
                     >
                         concept
                     </a.a>
 
                     <ABurgerBtn
-                        text="navigation"
+                        text={uiState.isMobile ? null : 'navigation'}
                         burgerCB={() => {
                             uiDispatch({ type: '[ui] toggle nav' })
                         }}
                         color={textColor}
                     />
-                    <Button borderRad="xl" size="lg" className="nav__btn">
+                    <Button
+                        borderRad="xl"
+                        size={uiState.isMobile ? 'sm' : 'lg'}
+                        className="nav__btn"
+                    >
                         log in
                     </Button>
                 </nav>
