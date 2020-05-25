@@ -2,7 +2,7 @@ import React, { useMemo, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { useImmerReducer } from 'use-immer'
 import { a } from 'react-spring'
-import { Grids, Points as NPoints, ALine, Meshline } from '../../3D-components'
+import { Grids, ALine, APoints } from '../../3D-components'
 import {
     mathboxReducer,
     initMathBoxState,
@@ -22,7 +22,6 @@ import { useScaleLinear } from '../courseComps/useScaleLinear'
 import { useMathboxAnim } from './useMathboxAnim'
 
 const AplayButton = a(PlayButton)
-const Points = React.memo(NPoints)
 
 const TestCamera: React.FC = () => {
     const camRef = useRef(null)
@@ -145,9 +144,10 @@ const MathBox: React.FC = () => {
         line,
         lineRef,
         overlayStyle,
-        newPoints,
         playBtn,
         gridStartRef,
+        setPointsStringsRef,
+        points,
     } = useMathboxAnim({
         scale,
     })
@@ -225,10 +225,12 @@ const MathBox: React.FC = () => {
                 <Latex.Anim
                     id="test"
                     css={emoCss({
+                        transition: ' all .5s ease-in-out',
                         '&:hover': {
                             fill: 'red',
                             scale: '1.2',
                             cursor: 'pointer',
+                            transition: ' all .5s ease-in-out',
                         },
                     })}
                 />
@@ -265,8 +267,13 @@ const MathBox: React.FC = () => {
                         gFuncRef={gridStartRef}
                     />
                     {mathboxCoordinates}
+                    <APoints
+                        pause={mathBoxState.pause}
+                        points={points}
+                        setSpringsRef={setPointsStringsRef}
+                    />
                     <LinearCombination x1={x1} x2={x2} u={u} />
-                    <Points impPoints={newPoints} />
+
                     <ALine
                         p1={line.p1}
                         p2={line.p2}

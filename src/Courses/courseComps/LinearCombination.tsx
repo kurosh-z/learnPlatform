@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { animated, SpringValue } from 'react-spring'
-import { Vector, VectorOp, ImperativePoints } from '../../3D-components'
+import { Vector, VectorOp } from '../../3D-components'
 import { format as d3format } from 'd3-format'
 
 export type VectorProps = {
@@ -119,4 +119,4 @@ const LinearCombination: React.FC<LinearCombinationProps> = ({ x1, x2, u }) => {
     )
 }
 
-export default LinearCombination
+export default animated(LinearCombination)

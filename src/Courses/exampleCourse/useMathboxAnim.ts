@@ -1,13 +1,18 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { useSpring } from 'react-spring'
 import { SpringHandle, SpringStartFn } from '@react-spring/core'
 import { sMultiply as multiply, addVectors } from '../../shared'
 import { VectorProps } from '../courseComps/LinearCombination'
 import { GAnimProps } from '../../3D-components/Grids'
+import { PointsProps, PAnimatedProps } from '../../3D-components'
+import { easeCubicInOut } from 'd3-ease'
 
 const SLOW = { friction: 30, mass: 2, tension: 40 }
 const VSLOW = { friction: 100, mass: 3, tension: 80 }
-const GRID_CONF = { friction: 30, mass: 2, tension: 40 }
+const GRID_CONF = {
+    duration: 3000,
+    easing: easeCubicInOut,
+}
 
 type LinearCombArgs = {
     alpha1?: number
@@ -20,13 +25,88 @@ function linearComb({ alpha1 = 1, alpha2 = 1, vec1, vec2 }: LinearCombArgs) {
     return res.toArray() as [number, number, number]
 }
 
+type CalPointsArgs = {
+    alpha1_range?: number[]
+    alpha2_range?: number[]
+    alpha1?: number
+    alpha2?: number
+    base1: [number, number, number]
+    base2: [number, number, number]
+    reverse?: boolean
+}
+
+function claculatePoints({
+    alpha1_range,
+    alpha2_range,
+    alpha1 = 1,
+    alpha2 = 2,
+    base1,
+    base2,
+}: CalPointsArgs): PointsProps['points'] {
+    const points: PointsProps['points'] = []
+    if (alpha1_range) {
+        let idx = 0
+        const a = alpha1_range[0]
+        const b = alpha1_range[1]
+
+        for (let alpha = a; alpha <= b; alpha++) {
+            const pos = linearComb({
+                alpha1: alpha,
+                alpha2: alpha2,
+                vec1: base1,
+                vec2: base2,
+            })
+            points.push({
+                opacity: 0,
+                radius: 0.001,
+                position: pos,
+                color: 'green',
+                pkey: 'p' + idx,
+            })
+            idx++
+        }
+    } else if (alpha2_range) {
+        let idx = 0
+        for (let alpha = alpha2_range[0]; alpha <= alpha2_range[1]; alpha++) {
+            const pos = linearComb({
+                alpha1: alpha1,
+                alpha2: alpha,
+                vec1: base1,
+                vec2: base2,
+            })
+            points.push({
+                opacity: 1,
+                radius: 0.1,
+                position: pos,
+                color: 'green',
+                pkey: 'p' + idx,
+            })
+            idx++
+        }
+    }
+
+    return points
+}
+
 export function useMathboxAnim({ scale }) {
     const gridStartRef = useRef<SpringStartFn<GAnimProps>>(null)
+    const setPointsStringsRef = useRef<SpringStartFn<PAnimatedProps>>(null)
 
     const x1_base: VectorProps['vec'] = [scale(2), scale(-2), 0]
     const x2_base: VectorProps['vec'] = [scale(2), scale(3), 0]
+
+    const points = useMemo(
+        () =>
+            claculatePoints({
+                alpha1_range: [-5, 5],
+                alpha2: 1,
+                base1: x1_base,
+                base2: x2_base,
+            }),
+        []
+    )
     //mathbox State
-    const [newPoints, addNewPoints] = useState({})
+
     // animation srpings:
     const x2Ref = useRef<SpringHandle<VectorProps>>(null)
     const [_x2, setv_x2] = useSpring<VectorProps>(() => ({
@@ -100,11 +180,13 @@ export function useMathboxAnim({ scale }) {
         // config: { friction: 12, mass: 1, tension: 30 },
         to: async (animX1) => {
             const gridStartFn = gridStartRef.current
+            const pointStartFn = setPointsStringsRef.current
             const delay = 200
             await Promise.all([
                 gridStartFn({
                     _endPoint1: 32 / 2,
                     config: GRID_CONF,
+                    delay,
                 }),
                 gridStartFn({
                     _endPoint2: -22 / 2,
@@ -112,57 +194,40 @@ export function useMathboxAnim({ scale }) {
                     config: GRID_CONF,
                 }),
             ])
+
             await animX1({
                 to: { origin: x2_base, base_opacity: 0 },
-                delay,
+                delay: 3 * delay,
                 // config: SLOW,
             })
             await Promise.all([
-                animX1({
-                    vec: multiply(6, x1_base),
-                    factor: 6,
-                    delay: delay,
-                    // config: SLOW,
-                }),
+                // animX1({
+                //     vec: multiply(6, x1_base),
+                //     factor: 6,
+                //     delay: delay,
+                //     // config: SLOW,
+                // }),
                 set_u({
                     opacity: 1,
                     // config: SLOW,
                 }),
             ])
-            await Promise.all([
-                addNewPoints({
-                    p2: {
-                        color: 'gray',
-                        radius: 0.07,
-                        opacity: 1,
-                        position: linearComb({
-                            alpha1: 6,
-                            vec1: x1_base,
-                            vec2: x2_base,
-                        }),
-                    },
-                }),
-            ])
-            for (let alpha = -5; alpha < 5; alpha++) {
+            let idx = points.length - 1
+            for (let alpha = 5; alpha > -5; alpha += -1) {
                 await animX1({
-                    vec: multiply(-alpha, x1_base),
-                    factor: -alpha,
+                    vec: multiply(alpha, x1_base),
+                    factor: alpha,
                     delay: delay,
                 })
-                await Promise.all([
-                    addNewPoints({
-                        p3: {
-                            color: 'gray',
-                            radius: 0.07,
+                await pointStartFn((i) => {
+                    if (i === idx) {
+                        return {
                             opacity: 1,
-                            position: linearComb({
-                                alpha1: -alpha,
-                                vec1: x1_base,
-                                vec2: x2_base,
-                            }),
-                        },
-                    }),
-                ])
+                            radius: 0.09,
+                        }
+                    } else return {}
+                })
+                idx--
             }
 
             await Promise.all([
@@ -173,7 +238,7 @@ export function useMathboxAnim({ scale }) {
                     to: {
                         opacity: 1,
                         p2: linearComb({
-                            alpha1: -5,
+                            alpha1: -4.3,
                             vec1: x1_base,
                             vec2: x2_base,
                         }),
@@ -201,7 +266,6 @@ export function useMathboxAnim({ scale }) {
     }))
 
     return {
-        newPoints: newPoints,
         x1: _x1,
         x2: _x2,
         setv_x1,
@@ -216,5 +280,7 @@ export function useMathboxAnim({ scale }) {
         overlayStyle: overlayStyle,
         setOverlay: setOverlay,
         gridStartRef,
+        setPointsStringsRef,
+        points,
     }
 }
