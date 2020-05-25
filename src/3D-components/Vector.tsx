@@ -5,7 +5,7 @@ import { HTML } from 'drei'
 import { ReactThreeFiber, extend } from 'react-three-fiber'
 import { CustomCylinderBufferGeometry } from './CustomCylinderGeometry'
 import { ORIGIN } from './constants'
-import Point from './Point'
+import { Point } from './Point'
 import { Latex } from '../math-components'
 import { sMultiply } from '../shared'
 
@@ -304,9 +304,10 @@ const Vector: React.RefForwardingComponent<
                 </>
             ) : (
                 <Point
-                    color={color}
+                    color={color.toString()}
                     position={[ORIGIN.x, ORIGIN.y, ORIGIN.z]}
                     opacity={opacity}
+                    pkey={'zero_vector'}
                 />
             )}
             {labelComp}

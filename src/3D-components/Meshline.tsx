@@ -65,12 +65,12 @@ const Meshline: React.FC<MeshlineProps> = ({
     )
 }
 
-export type AlineProps = {
+export type LineProps = {
     p1: [number, number, number]
     p2: [number, number, number]
 } & Omit<MeshlineProps, 'vertices'>
 
-export const Line: React.FC<AlineProps> = ({ p1, p2, ...rest }) => {
+export const Line: React.FC<LineProps> = ({ p1, p2, ...rest }) => {
     const vertices: Vector3[] = []
     vertices.push(new Vector3(...p1))
     vertices.push(new Vector3(...p2))

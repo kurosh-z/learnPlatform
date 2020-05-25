@@ -1,1 +1,0 @@
-export { SinglePoint } from './Point'

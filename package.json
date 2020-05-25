@@ -1,7 +1,7 @@
 {
     "name": "play",
     "version": "1.0.0",
-    "description": "reactTS-Custom",
+    "description": "demo course",
     "main": "index.js",
     "scripts": {
         "bundle": "webpack",
