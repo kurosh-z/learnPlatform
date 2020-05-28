@@ -2,7 +2,7 @@ import React, { useMemo, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { useImmerReducer } from 'use-immer'
 import { a } from 'react-spring'
-import { Grids, ALine, APoints } from '../../3D-components'
+import { Grids, ALine, APoints, Coordinates } from '../../3D-components'
 import {
     mathboxReducer,
     initMathBoxState,
@@ -16,7 +16,7 @@ import { Theme } from '../../theme/types'
 import { alpha } from '../../theme/colors'
 import PlayButton from '../../components/Button/PlayButtton'
 import Latex from '../../math-components/Latex'
-import Coordinates from '../courseComps/Coordinates'
+
 import LinearCombination from '../courseComps/LinearCombination'
 import { useScaleLinear } from '../courseComps/useScaleLinear'
 import { useMathboxAnim } from './useMathboxAnim'
@@ -132,7 +132,7 @@ const MathBox: React.FC = () => {
         // range: [-canvSize.height / 140, canvSize.height / 140],
         range: [-5, 5],
         numTicks: 16,
-        axLength: 11,
+        axLength: 10,
         justPositive: true,
     })
     const {
@@ -148,8 +148,11 @@ const MathBox: React.FC = () => {
         gridStartRef,
         setPointsStringsRef,
         points,
+        setCoordTicks,
+        setCoordinateAxis,
     } = useMathboxAnim({
         scale,
+        tickValues,
     })
     const { playSize, ...playStyles } = playBtn
 
@@ -176,31 +179,6 @@ const MathBox: React.FC = () => {
             lineRef.current.start()
         }
     }, [mathBoxState.pause])
-
-    const mathboxCoordinates = useMemo(() => {
-        return (
-            <Coordinates
-                scale={scale}
-                format={format}
-                tickValues={tickValues}
-                lengths={{
-                    xAxes: scale(11),
-                    yAxes: scale(11),
-                    zAxes: scale(11),
-                }}
-                showAxis={{
-                    xAxes: true,
-                    yAxes: true,
-                    zAxes: false,
-                }}
-                colors={{
-                    xAxes: theme.palette.gray.light,
-                    yAxes: theme.palette.gray.light,
-                    zAxes: theme.palette.gray.light,
-                }}
-            />
-        )
-    }, [])
 
     const mathboxLatex = useMemo(() => {
         return (
@@ -258,6 +236,26 @@ const MathBox: React.FC = () => {
                     <Camera />
                     <OrbitControls dampingFactor={0.9} />
 
+                    <LinearCombination x1={x1} x2={x2} u={u} />
+                    <Coordinates
+                        scale={scale}
+                        format={format}
+                        pause={mathBoxState.pause}
+                        axSetFnRefs={setCoordinateAxis}
+                        tickSetFnRefs={setCoordTicks}
+                        renderAxis={{ xAxes: true, yAxes: true }}
+                        colors={{
+                            xAxes: theme.palette.gray.light,
+                            yAxes: theme.palette.gray.light,
+                        }}
+                        lengths={{ xAxes: scale(0), yAxes: scale(0) }}
+                        tickValues={tickValues}
+                        tickForms={{
+                            xAxes: { opacity: 0.4, length: 0 },
+                            yAxes: { opacity: 1, length: 0 },
+                        }}
+                    />
+
                     <Grids
                         scale={scale}
                         type="xy"
@@ -265,20 +263,21 @@ const MathBox: React.FC = () => {
                         len2={22}
                         pause={mathBoxState.pause}
                         gFuncRef={gridStartRef}
+                        visible={false}
                     />
-                    {mathboxCoordinates}
+
                     <APoints
                         pause={mathBoxState.pause}
                         points={points}
                         setSpringsRef={setPointsStringsRef}
                     />
-                    <LinearCombination x1={x1} x2={x2} u={u} />
 
                     <ALine
                         p1={line.p1}
                         p2={line.p2}
                         opacity={line.opacity}
                         color={'gray'}
+                        visible={line.visible}
                     />
                     <ambientLight
                         castShadow

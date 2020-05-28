@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { ReactThreeFiber } from 'react-three-fiber'
-import Vector, { VectorProps } from './Vector'
+import { Vector, VectorProps } from './Vector'
 import { addVectors } from '../shared'
 
 type VectorOpProps = {

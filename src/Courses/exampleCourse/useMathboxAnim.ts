@@ -1,10 +1,16 @@
-import { useState, useRef, useMemo } from 'react'
+import { useRef, useMemo } from 'react'
 import { useSpring } from 'react-spring'
 import { SpringHandle, SpringStartFn } from '@react-spring/core'
 import { sMultiply as multiply, addVectors } from '../../shared'
 import { VectorProps } from '../courseComps/LinearCombination'
 import { GAnimProps } from '../../3D-components/Grids'
-import { PointsProps, PAnimatedProps } from '../../3D-components'
+import {
+    PointsProps,
+    PAnimatedProps,
+    AnimCoordinatesProps,
+    SetAxes,
+    SetTick,
+} from '../../3D-components'
 import { easeCubicInOut } from 'd3-ease'
 
 const SLOW = { friction: 30, mass: 2, tension: 40 }
@@ -32,7 +38,6 @@ type CalPointsArgs = {
     alpha2?: number
     base1: [number, number, number]
     base2: [number, number, number]
-    reverse?: boolean
 }
 
 function claculatePoints({
@@ -57,11 +62,12 @@ function claculatePoints({
                 vec2: base2,
             })
             points.push({
-                opacity: 0,
+                opacity: 0.78,
                 radius: 0.001,
                 position: pos,
-                color: 'green',
+                color: '#0fba12',
                 pkey: 'p' + idx,
+                visible: false,
             })
             idx++
         }
@@ -88,9 +94,20 @@ function claculatePoints({
     return points
 }
 
-export function useMathboxAnim({ scale }) {
+export function useMathboxAnim({
+    scale,
+    tickValues,
+}: {
+    tickValues: number[]
+    scale: any
+}) {
     const gridStartRef = useRef<SpringStartFn<GAnimProps>>(null)
     const setPointsStringsRef = useRef<SpringStartFn<PAnimatedProps>>(null)
+    const setCoordStringsRef = useRef<SpringStartFn<AnimCoordinatesProps>>(null)
+    const setxTicksRef = useRef<SetTick>(null)
+    const setyTicksRef = useRef<SetTick>(null)
+    const setxAxesRef = useRef<SetAxes>(null)
+    const setyAxesRef = useRef<SetAxes>(null)
 
     const x1_base: VectorProps['vec'] = [scale(2), scale(-2), 0]
     const x2_base: VectorProps['vec'] = [scale(2), scale(3), 0]
@@ -140,12 +157,14 @@ export function useMathboxAnim({ scale }) {
             opacity: number
             p1: VectorProps['vec']
             p2: VectorProps['vec']
+            visible: boolean
         }>
     >(null)
     const [line, setLine] = useSpring<{
         opacity: number
         p1: VectorProps['vec']
         p2: VectorProps['vec']
+        visible: boolean
     }>(() => ({
         ref: lineRef,
         from: {
@@ -160,6 +179,7 @@ export function useMathboxAnim({ scale }) {
                 vec2: x2_base,
             }),
             opacity: 0,
+            visible: false,
         },
     }))
 
@@ -179,74 +199,99 @@ export function useMathboxAnim({ scale }) {
         },
         // config: { friction: 12, mass: 1, tension: 30 },
         to: async (animX1) => {
+            //start functions
             const gridStartFn = gridStartRef.current
             const pointStartFn = setPointsStringsRef.current
-            const delay = 200
-            await Promise.all([
-                gridStartFn({
-                    _endPoint1: 32 / 2,
-                    config: GRID_CONF,
-                    delay,
-                }),
-                gridStartFn({
-                    _endPoint2: -22 / 2,
-                    delay: 400,
-                    config: GRID_CONF,
-                }),
-            ])
-
-            await animX1({
-                to: { origin: x2_base, base_opacity: 0 },
-                delay: 3 * delay,
-                // config: SLOW,
-            })
-            await Promise.all([
-                // animX1({
-                //     vec: multiply(6, x1_base),
-                //     factor: 6,
-                //     delay: delay,
-                //     // config: SLOW,
-                // }),
-                set_u({
-                    opacity: 1,
-                    // config: SLOW,
-                }),
-            ])
-            let idx = points.length - 1
-            for (let alpha = 5; alpha > -5; alpha += -1) {
-                await animX1({
-                    vec: multiply(alpha, x1_base),
-                    factor: alpha,
-                    delay: delay,
-                })
-                await pointStartFn((i) => {
-                    if (i === idx) {
-                        return {
-                            opacity: 1,
-                            radius: 0.09,
-                        }
-                    } else return {}
-                })
-                idx--
+            const axisStart = {
+                xAxes: setxAxesRef.current,
+                yAxes: setyAxesRef.current,
+            }
+            const ticksStart = {
+                xAxes: setxTicksRef.current,
+                yAxes: setyTicksRef.current,
             }
 
-            await Promise.all([
-                animX1({ opacity: 0 }),
-                setv_x2({ to: { opacity: 0, base_opacity: 0 } }),
-                set_u({ to: { opacity: 0 } }),
-                setLine({
-                    to: {
-                        opacity: 1,
-                        p2: linearComb({
-                            alpha1: -4.3,
-                            vec1: x1_base,
-                            vec2: x2_base,
-                        }),
-                    },
-                    config: SLOW,
-                    delay: delay * 3,
-                }),
-            ])
+            const delay = 200
+
+            await axisStart['xAxes']({ vector: [scale(10), 0, 0] })
+            await axisStart['yAxes']({ vector: [0, scale(10), 0] })
+            // await ticksStart['yAxes']((i) => ({
+            //     opacity: 1,
+            //     length: 1,
+            //     config: SLOW,
+            //     delay: delay * i,
+            // }))
+
+            // await Promise.all([
+            //     gridStartFn({
+            //         _endPoint1: 32 / 2,
+            //         visible: true,
+            //         config: GRID_CONF,
+            //         delay,
+            //     }),
+
+            //     gridStartFn({
+            //         _endPoint2: -22 / 2,
+            //         delay: 400,
+            //         config: GRID_CONF,
+            //     }),
+            // ])
+
+            // await animX1({
+            //     to: { origin: x2_base, base_opacity: 0 },
+            //     delay: 3 * delay,
+            //     // config: SLOW,
+            // })
+            // await Promise.all([
+            //     animX1({
+            //         vec: multiply(6, x1_base),
+            //         factor: 6,
+            //         delay: delay,
+            //         config: SLOW,
+            //     }),
+            //     set_u({
+            //         opacity: 1,
+            //         config: SLOW,
+            //     }),
+            // ])
+            // let idx = points.length - 1
+            // for (let alpha = 5; alpha > -5; alpha += -1) {
+            //     await animX1({
+            //         vec: multiply(alpha, x1_base),
+            //         factor: alpha,
+            //         delay: delay,
+            //     })
+            //     await pointStartFn((i) => {
+            //         if (i === idx) {
+            //             return {
+            //                 radius: 0.09,
+            //                 visible: true,
+            //             }
+            //         } else return {}
+            //     })
+            //     idx--
+            // }
+
+            // await Promise.all([
+            //     animX1({ opacity: 0, visible: false }),
+            //     setv_x2({
+            //         to: { opacity: 0, base_opacity: 0, visible: false },
+            //     }),
+            //     set_u({ to: { opacity: 0.5 } }),
+            //     setLine({
+            //         to: {
+            //             visible: true,
+            //             opacity: 1,
+            //             p2: linearComb({
+            //                 alpha1: -4.3,
+            //                 vec1: x1_base,
+            //                 vec2: x2_base,
+            //             }),
+            //         },
+            //         config: SLOW,
+            //         delay: delay * 3,
+            //     }),
+            // ])
         },
     }))
     // playButton:
@@ -282,5 +327,11 @@ export function useMathboxAnim({ scale }) {
         gridStartRef,
         setPointsStringsRef,
         points,
+        setCoordStringsRef,
+        setCoordTicks: {
+            xAxes: setxTicksRef,
+            yAxes: setyTicksRef,
+        },
+        setCoordinateAxis: { xAxes: setxAxesRef, yAxes: setyAxesRef },
     }
 }

@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { HTML } from 'drei'
 import { ReactThreeFiber, extend } from 'react-three-fiber'
+import { useSpring, animated } from 'react-spring'
+import { SpringHandle, SpringStartFn } from '@react-spring/core'
 import { CustomCylinderBufferGeometry } from './CustomCylinderGeometry'
 import { ORIGIN } from './constants'
 import { Point } from './Point'
@@ -36,12 +38,14 @@ const HHEIGHT = 0.1
 const SRADIUS = 0.02
 
 // shaft component:
-interface ShaftProps {
+type ShaftProps = {
     mag: number
     direction: THREE.Vector3 | number[]
     color?: ReactThreeFiber.Color
     opacity?: number
     thicknessFactor: number
+    visibile?: boolean
+    transparent?: boolean
     onPointerDown?: (e) => void
     hover?: (hoverd: boolean) => void
 }
@@ -53,6 +57,8 @@ const Shaft: React.FC<ShaftProps> = ({
     thicknessFactor,
     onPointerDown,
     hover,
+    visibile = true,
+    transparent = false,
 }) => {
     // ref to objects:
 
@@ -81,6 +87,7 @@ const Shaft: React.FC<ShaftProps> = ({
                 hover(false)
             }}
             onUpdate={onUpdate}
+            visible={visibile}
         >
             <customCylinderBufferGeometry
                 attach="geometry"
@@ -99,14 +106,14 @@ const Shaft: React.FC<ShaftProps> = ({
                 attach="material"
                 color={color}
                 opacity={opacity}
-                transparent
+                transparent={transparent}
             />
         </mesh>
     )
 }
 
 // Head component:
-interface HeadProps {
+type HeadProps = {
     position: [number, number, number]
     direction: THREE.Vector3 | [number, number, number]
     color?: ReactThreeFiber.Color
@@ -114,6 +121,8 @@ interface HeadProps {
     thicknessFactor: number
     onPointerDown: (e) => void
     hover: (e) => void
+    visible: boolean
+    transparent: boolean
 }
 const Head: React.FC<HeadProps> = ({
     position,
@@ -123,6 +132,8 @@ const Head: React.FC<HeadProps> = ({
     thicknessFactor,
     onPointerDown,
     hover,
+    visible = true,
+    transparent = false,
 }) => {
     const onUpdate = (self: THREE.Mesh) => {
         const curDir = calCurrentDirection(self)
@@ -149,6 +160,7 @@ const Head: React.FC<HeadProps> = ({
                 hover(false)
             }}
             position={position}
+            visible={visible}
         >
             <customCylinderBufferGeometry
                 attach="geometry"
@@ -167,25 +179,28 @@ const Head: React.FC<HeadProps> = ({
                 attach="material"
                 color={color}
                 opacity={opacity}
-                transparent
+                transparent={transparent}
             />
         </mesh>
     )
 }
 
 // vector component:
-export interface VectorProps {
+export type VectorProps = {
     vector: THREE.Vector3 | [number, number, number]
     origin?: THREE.Vector3 | [number, number, number]
-    thicknessFacor?: number
-    color?: ReactThreeFiber.Color
+    thicknessFactor?: number
+    color?: string
     opacity?: number
     label?: string
     latexParser?: boolean
     labelStyle?: React.CSSProperties
     onPointerDown?: (e) => void
+    visible?: boolean
+    transparent?: boolean
 }
-const Vector: React.RefForwardingComponent<
+
+const VectorI: React.RefForwardingComponent<
     JSX.IntrinsicElements,
     VectorProps
 > = (
@@ -194,11 +209,13 @@ const Vector: React.RefForwardingComponent<
         color,
         origin = ORIGIN,
         opacity = 1,
-        thicknessFacor = 0.12,
+        thicknessFactor = 0.12,
         label,
         labelStyle,
         latexParser = false,
         onPointerDown,
+        visible,
+        transparent = false,
     },
     ref
 ) => {
@@ -224,7 +241,7 @@ const Vector: React.RefForwardingComponent<
     const headPos = new THREE.Vector3()
         .fromArray(_dir)
         .normalize()
-        .multiplyScalar(_mag - thicknessFacor * HHEIGHT)
+        .multiplyScalar(_mag - thicknessFactor * HHEIGHT)
         .toArray() as [number, number, number]
 
     const [hovered, hover] = useState<boolean>(false)
@@ -237,8 +254,9 @@ const Vector: React.RefForwardingComponent<
         if (label && latexParser) {
             return (
                 <HTML
+                    visible={visible}
                     position={sMultiply(
-                        (_mag - 3 * thicknessFacor * HHEIGHT) / 2,
+                        (_mag - 3 * thicknessFactor * HHEIGHT) / 2,
                         _dir
                     )}
                 >
@@ -276,38 +294,44 @@ const Vector: React.RefForwardingComponent<
                 </HTML>
             )
         }
-    }, [headPos, label, latexParser, labelStyle, opacity])
+    }, [headPos, label, latexParser, labelStyle, opacity, visible])
 
     // if magnitude of the vector is less than the headsize just return a point at origin
     return (
         <group ref={ref} position={origin}>
-            {_mag > thicknessFacor * HHEIGHT ? (
+            {_mag >= thicknessFactor * HHEIGHT ? (
                 <>
                     <Shaft
-                        mag={_mag - thicknessFacor * HHEIGHT} // we have to change the lenght a little bit to make room for head!
+                        mag={_mag - thicknessFactor * HHEIGHT} // we have to change the lenght a little bit to make room for head!
                         direction={_dir}
                         color={color}
                         opacity={opacity}
                         onPointerDown={onPointerDown}
-                        thicknessFactor={thicknessFacor}
+                        thicknessFactor={thicknessFactor}
                         hover={hover}
+                        visibile={visible}
+                        transparent={transparent}
                     />
                     <Head
                         position={headPos}
                         direction={_dir}
                         color={color}
                         opacity={opacity}
-                        thicknessFactor={thicknessFacor}
+                        thicknessFactor={thicknessFactor}
                         onPointerDown={onPointerDown}
                         hover={hover}
+                        visible={visible}
+                        transparent={transparent}
                     />
                 </>
             ) : (
                 <Point
-                    color={color.toString()}
+                    color={color}
                     position={[ORIGIN.x, ORIGIN.y, ORIGIN.z]}
                     opacity={opacity}
+                    transparent={transparent}
                     pkey={'zero_vector'}
+                    visible={visible}
                 />
             )}
             {labelComp}
@@ -315,4 +339,102 @@ const Vector: React.RefForwardingComponent<
     )
 }
 
-export default React.forwardRef(Vector)
+export const Vector = React.forwardRef(VectorI)
+
+type VectorCompProps = Omit<VectorProps, 'labelStyle' | 'latexParser'> & {
+    label_transform?: string
+}
+
+const VectorComp: React.FC<VectorCompProps> = ({
+    label,
+    vector,
+    origin,
+    color,
+    opacity,
+    thicknessFactor,
+    label_transform,
+    transparent,
+    visible,
+}) => {
+    const labelStyle: React.CSSProperties = {
+        position: 'absolute',
+        transform: label_transform,
+        opacity: opacity,
+        willChange: 'opacity, transform',
+    }
+
+    return (
+        <Vector
+            vector={vector}
+            origin={origin}
+            color={color}
+            opacity={opacity}
+            thicknessFactor={thicknessFactor}
+            label={label ? String.raw`\vec{${label}}` : null}
+            labelStyle={labelStyle}
+            latexParser
+            transparent={transparent}
+            visible={visible}
+        />
+    )
+}
+
+const AVectorComp = animated(VectorComp)
+
+export type AnimatedVecProps = Partial<
+    Pick<
+        VectorCompProps,
+        | 'vector'
+        | 'origin'
+        | 'color'
+        | 'label'
+        | 'thicknessFactor'
+        | 'opacity'
+        | 'label_transform'
+        | 'visible'
+    >
+>
+// & {
+//     label_transform: string
+// }
+export type AvectorProps = {
+    from: AnimatedVecProps
+    setSpringRef?: React.MutableRefObject<SpringStartFn<AnimatedVecProps>>
+    pause: boolean
+} & Omit<VectorCompProps, keyof AnimatedVecProps>
+
+export const AVector: React.FC<AvectorProps> = ({
+    pause,
+    setSpringRef,
+    from,
+    ...rest
+}) => {
+    const spRef = useRef<SpringHandle<AnimatedVecProps>>(null)
+    const [spring, setSpring] = useSpring<AnimatedVecProps>(() => ({
+        ref: spRef,
+        from: {
+            vector: from.vector,
+            origin: from['origin'] ? from.origin : ORIGIN,
+            opacity: 'opacity' in from ? from.opacity : 1,
+            color: from['color'] ? from.color : 'blue',
+            thicknessFactor: from['thicknessFactor'] ? from.thicknessFactor : 1,
+            label: from['label'] ? from.label : '',
+            label_transform: from['label_transform']
+                ? from.label_transform
+                : 'translate(0px,0px)',
+            visible: from['visible'],
+        },
+    }))
+
+    useEffect(() => {
+        if (setSpringRef) {
+            setSpringRef.current = setSpring
+        }
+    }, [])
+
+    useEffect(() => {
+        if (pause && spRef.current) spRef.current.pause()
+    }, [pause])
+
+    return <AVectorComp {...spring} {...rest} />
+}

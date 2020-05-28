@@ -8,7 +8,7 @@ import { Line2 } from 'three/examples/jsm/lines/Line2.js'
 import { ReactThreeFiber, useThree, extend } from 'react-three-fiber'
 import { SpringHandle, SpringStartFn } from '@react-spring/core'
 import { useSpring, animated } from 'react-spring'
-import { Line } from './Meshline'
+// import { Line } from './Meshline'
 // extending the line2 to be used in react-fiber
 extend({ LineMaterial, LineGeometry, Line2 })
 declare global {
@@ -32,12 +32,14 @@ type LineSetProps = {
     size: { width: number; height: number }
     color: string
     opacity: number
+    visibile?: boolean
 }
 export const LineSet: React.FC<LineSetProps> = ({
     pointsArray,
     size,
     opacity,
     color,
+    visibile = true,
 }) => {
     return (
         <>
@@ -54,7 +56,7 @@ export const LineSet: React.FC<LineSetProps> = ({
                 // )
 
                 return (
-                    <line2 key={idx}>
+                    <line2 key={idx} visible={visibile}>
                         <lineGeometry
                             attach="geometry"
                             onUpdate={(self: LineGeometry) => {
@@ -89,6 +91,7 @@ type HVlines = {
     size: { width: number; height: number }
     color?: ReactThreeFiber.Color
     opacity?: number
+    visibile?: boolean
 }
 
 const Vlines: React.FC<HVlines> = ({
@@ -99,6 +102,7 @@ const Vlines: React.FC<HVlines> = ({
     size,
     color = '#9d9e9e',
     opacity = 1,
+    visibile,
 }) => {
     const pointsArray: number[][] = []
     const dist = 1
@@ -119,6 +123,7 @@ const Vlines: React.FC<HVlines> = ({
             size={size}
             color={color}
             opacity={opacity}
+            visibile={visibile}
         />
     )
 }
@@ -130,6 +135,7 @@ const Hlines: React.FC<HVlines> = ({
     size,
     color = 'gray',
     opacity = 1,
+    visibile,
 }) => {
     const pointsArray: number[][] = []
     const dist = 1
@@ -150,6 +156,7 @@ const Hlines: React.FC<HVlines> = ({
             size={size}
             color={color}
             opacity={opacity}
+            visibile={visibile}
         />
     )
 }
@@ -162,12 +169,14 @@ interface GridProps {
     type?: 'xy' | 'xz' | 'yz'
     len1?: number
     len2?: number
+    visible: boolean
     scale: ScaleLinear<number, number>
     pause: boolean
     gFuncRef: React.MutableRefObject<
         SpringStartFn<{
             _endPoint1: number
             _endPoint2: number
+            visible: boolean
         }>
     >
 }
@@ -175,6 +184,7 @@ interface GridProps {
 export type GAnimProps = {
     _endPoint1: number
     _endPoint2: number
+    visible: boolean
 }
 const Grids: React.FC<GridProps> = ({
     type = 'xy',
@@ -183,16 +193,16 @@ const Grids: React.FC<GridProps> = ({
     scale,
     pause = true,
     gFuncRef,
+    visible = true,
 }) => {
     const { size } = useThree()
 
     const gSpringRef = useRef<SpringHandle<GAnimProps>>(null)
     const [gprops, setGrid] = useSpring<GAnimProps>(() => ({
         ref: gSpringRef,
-        from: {
-            _endPoint1: -len1 / 2,
-            _endPoint2: len2 / 2,
-        },
+        _endPoint1: -len1 / 2,
+        _endPoint2: len2 / 2,
+        visible: visible,
     }))
     useEffect(() => {
         gFuncRef.current = setGrid
@@ -212,6 +222,7 @@ const Grids: React.FC<GridProps> = ({
                 size={size}
                 scale={scale}
                 color={'#8a8a8a'}
+                visibile={gprops.visible}
             />
             <Avlines
                 startPoint={len2 / 2}
@@ -220,6 +231,7 @@ const Grids: React.FC<GridProps> = ({
                 size={size}
                 scale={scale}
                 color={'#9d9e9e'}
+                visibile={gprops.visible}
             />
         </>
     )

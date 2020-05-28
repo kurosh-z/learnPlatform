@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { animated, SpringValue } from 'react-spring'
+import { animated } from 'react-spring'
 import { Vector, VectorOp } from '../../3D-components'
 import { format as d3format } from 'd3-format'
 
@@ -15,6 +15,7 @@ export type VectorProps = {
     thickness: number
     factor: number
     label_transform: string
+    visible: boolean
 }
 
 const VectorComp: React.FC<VectorProps> = ({
@@ -60,7 +61,7 @@ const VectorComp: React.FC<VectorProps> = ({
                     vector={base}
                     color={color}
                     opacity={base_opacity}
-                    thicknessFacor={1.2 * thickness}
+                    thicknessFactor={1.2 * thickness}
                 />
             )}
         </>
@@ -85,11 +86,12 @@ const LinearCombination: React.FC<LinearCombinationProps> = ({ x1, x2, u }) => {
                 opacity={x1.opacity}
                 thickness={'thickness' in x1 ? x1['thickness'] : 1.5}
                 label_transform={x1.label_transform}
-                showBase={x1.showBase}
+                showBase={true}
                 factor={x1.factor}
                 base={x1.base}
                 base_opacity={x1.base_opacity}
                 origin={x1.origin}
+                visible={x1.visible}
             />
             <Avector
                 name={'x_2'}
@@ -99,11 +101,12 @@ const LinearCombination: React.FC<LinearCombinationProps> = ({ x1, x2, u }) => {
                 base_opacity={x2.base_opacity}
                 thickness={'thickness' in x2 ? x2['thickness'] : 1.5}
                 label_transform={x2.label_transform}
-                showBase={x2.showBase}
+                showBase={true}
                 factor={x2.factor}
                 base={x2.base}
+                visible={x2.visible}
             />
-
+            {/* 
             <AvectorOp
                 vector1={x1.vec}
                 vector2={x2.vec}
@@ -114,7 +117,7 @@ const LinearCombination: React.FC<LinearCombinationProps> = ({ x1, x2, u }) => {
                 label={String.raw`\vec{u}`}
                 label_transform={u.label_transform}
                 latexParser
-            />
+            /> */}
         </>
     )
 }

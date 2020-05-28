@@ -29,6 +29,7 @@ type MeshlineProps = {
     resolution?: Vector2
     far?: number
     near?: number
+    visible?: boolean
 }
 
 const Meshline: React.FC<MeshlineProps> = ({
@@ -41,11 +42,12 @@ const Meshline: React.FC<MeshlineProps> = ({
     resolution = new Vector2(window.innerWidth, window.innerHeight),
     far,
     near,
+    visible = true,
 }) => {
     const { camera } = useThree()
 
     return (
-        <mesh raycast={MeshLineRaycast} frustumCulled={false}>
+        <mesh raycast={MeshLineRaycast} visible={visible}>
             <meshLine attach="geometry" vertices={vertices} />
             <meshLineMaterial
                 attach="material"
