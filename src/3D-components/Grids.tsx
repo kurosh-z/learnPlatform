@@ -164,6 +164,13 @@ const Hlines: React.FC<HVlines> = ({
 const Ahlines = animated(Hlines)
 const Avlines = animated(Vlines)
 
+export type GAnimProps = {
+    _endPoint1: number
+    _endPoint2: number
+    visible: boolean
+}
+
+export type SetGrids = SpringStartFn<GAnimProps>
 // Grids
 interface GridProps {
     type?: 'xy' | 'xz' | 'yz'
@@ -172,20 +179,9 @@ interface GridProps {
     visible: boolean
     scale: ScaleLinear<number, number>
     pause: boolean
-    gFuncRef: React.MutableRefObject<
-        SpringStartFn<{
-            _endPoint1: number
-            _endPoint2: number
-            visible: boolean
-        }>
-    >
+    gFuncRef: React.MutableRefObject<SetGrids>
 }
 
-export type GAnimProps = {
-    _endPoint1: number
-    _endPoint2: number
-    visible: boolean
-}
 const Grids: React.FC<GridProps> = ({
     type = 'xy',
     len1 = 20,
@@ -196,7 +192,7 @@ const Grids: React.FC<GridProps> = ({
     visible = true,
 }) => {
     const { size } = useThree()
-
+    console.log(size)
     const gSpringRef = useRef<SpringHandle<GAnimProps>>(null)
     const [gprops, setGrid] = useSpring<GAnimProps>(() => ({
         ref: gSpringRef,

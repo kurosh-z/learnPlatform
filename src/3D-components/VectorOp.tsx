@@ -1,42 +1,39 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect } from 'react'
 import { ReactThreeFiber } from 'react-three-fiber'
-import { Vector, VectorProps } from './Vector'
+import { animated } from 'react-spring'
+import { SpringStartFn, SpringValues } from '@react-spring/core'
+import { AvectorProps, AVectorComp, AnimatedVecProps } from './Vector'
 import { addVectors } from '../shared'
 
+export type AnimatedVectorOpProps = Omit<AnimatedVecProps, 'vector'>
+export type SetVectorOp = SpringStartFn<Omit<AnimatedVecProps, 'vector'>>
 type VectorOpProps = {
     op: 'add'
-    vector1: ReactThreeFiber.Vector3
-    vector2: ReactThreeFiber.Vector3
-    label_transform?: string
-} & Omit<VectorProps, 'vector'>
+    vec1: ReactThreeFiber.Vector3
+    vec2: ReactThreeFiber.Vector3
+    from: AnimatedVecProps
+    setSpringRef: React.MutableRefObject<SetVectorOp>
+    pause: boolean
+} & Omit<AvectorProps, 'from'>
 
 const VectorOp: React.FC<VectorOpProps> = ({
-    vector1,
-    vector2,
+    vec1,
+    vec2,
     op,
-    label_transform,
+    children,
     ...rest
 }) => {
-    let labelStyle: React.CSSProperties = {}
-    if (label_transform) {
-        labelStyle = {
-            position: 'absolute',
-            transform: label_transform,
-            opacity: 'opacity' in rest ? rest['opacity'] : 1,
-        }
+    if (children) {
+        throw new Error('expected no children in VectorOp Component!')
     }
-
     const vector = useMemo(() => {
-        if (op === 'add') {
-            return addVectors(vector1, vector2)
-        }
-    }, [vector1, vector2, op])
+        if (op === 'add' && vec1) {
+            console.log(vec1, vec2)
+            return addVectors(vec1, vec2)
+        } else return [0, 2, 2]
+    }, [vec1, vec2, op])
 
-    return (
-        <>
-            <Vector vector={vector} {...rest} labelStyle={labelStyle} />
-        </>
-    )
+    return <AVectorComp vector={vector} {...rest} />
 }
 
-export default VectorOp
+export default animated(VectorOp)
