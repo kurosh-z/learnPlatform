@@ -10,6 +10,8 @@ export type SinglePoint = {
     color?: string
     opacity?: number
     pkey: string
+    visible?: boolean
+    transparent?: boolean
 }
 type CreatePointsArgs = { [keys: string]: SinglePoint }
 
@@ -34,14 +36,17 @@ export const Point: React.FC<SinglePoint> = ({
     color = 'blue',
     opacity = 0.5,
     pkey,
+    visible = true,
+    transparent = false,
 }) => {
     return (
-        <mesh position={position} name={pkey}>
+        <mesh position={position} name={pkey} visible={visible}>
             <sphereGeometry attach="geometry" args={[radius, 20, 20]} />
             <meshBasicMaterial
                 attach="material"
                 color={color}
                 opacity={opacity}
+                transparent={transparent}
             />
         </mesh>
     )
@@ -84,7 +89,7 @@ export const Points: React.FC<{
 
 export type PAnimatedProps = Pick<
     SinglePoint,
-    'opacity' | 'position' | 'radius' | 'color'
+    'opacity' | 'position' | 'radius' | 'color' | 'visible'
 >
 
 export type APointProps = {
@@ -135,6 +140,7 @@ export const APoints: React.FC<PointsProps> = ({
             color = 'blue',
             opacity = 0,
             radius = 0,
+            visible = true,
         } = points[idx]
 
         const from: PAnimatedProps = {
@@ -142,6 +148,7 @@ export const APoints: React.FC<PointsProps> = ({
             color,
             opacity,
             radius,
+            visible,
         }
 
         if (idx === 0) return { from, ref: spRef }
@@ -162,7 +169,12 @@ export const APoints: React.FC<PointsProps> = ({
         <>
             {springs.map((animProps, idx) => {
                 return (
-                    <Aspoint {...animProps} pkey={points[idx].pkey} key={idx} />
+                    <Aspoint
+                        {...animProps}
+                        pkey={points[idx].pkey}
+                        key={idx}
+                        transparent={true}
+                    />
                 )
             })}
         </>

@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { HTML } from 'drei'
 import { ReactThreeFiber, extend } from 'react-three-fiber'
+import { useSpring, animated } from 'react-spring'
+import { SpringHandle, SpringStartFn, SpringValues } from '@react-spring/core'
 import { CustomCylinderBufferGeometry } from './CustomCylinderGeometry'
 import { ORIGIN } from './constants'
 import { Point } from './Point'
 import { Latex } from '../math-components'
-import { sMultiply } from '../shared'
+import { sMultiply, addVectors } from '../shared'
 
 // extend the class to use it in react!
 extend({ CustomCylinderBufferGeometry })
@@ -36,12 +38,14 @@ const HHEIGHT = 0.1
 const SRADIUS = 0.02
 
 // shaft component:
-interface ShaftProps {
+type ShaftProps = {
     mag: number
     direction: THREE.Vector3 | number[]
     color?: ReactThreeFiber.Color
     opacity?: number
     thicknessFactor: number
+    visibile?: boolean
+    transparent?: boolean
     onPointerDown?: (e) => void
     hover?: (hoverd: boolean) => void
 }
@@ -53,6 +57,8 @@ const Shaft: React.FC<ShaftProps> = ({
     thicknessFactor,
     onPointerDown,
     hover,
+    visibile = true,
+    transparent = false,
 }) => {
     // ref to objects:
 
@@ -74,13 +80,14 @@ const Shaft: React.FC<ShaftProps> = ({
             onPointerDown={onPointerDown}
             onPointerOver={(e) => {
                 e.stopPropagation()
-                hover(true)
+                if (hover) hover(true)
             }}
             onPointerOut={(e) => {
                 // e.stopPropagation();
-                hover(false)
+                if (hover) hover(false)
             }}
             onUpdate={onUpdate}
+            visible={visibile}
         >
             <customCylinderBufferGeometry
                 attach="geometry"
@@ -99,14 +106,14 @@ const Shaft: React.FC<ShaftProps> = ({
                 attach="material"
                 color={color}
                 opacity={opacity}
-                transparent
+                transparent={transparent}
             />
         </mesh>
     )
 }
 
 // Head component:
-interface HeadProps {
+type HeadProps = {
     position: [number, number, number]
     direction: THREE.Vector3 | [number, number, number]
     color?: ReactThreeFiber.Color
@@ -114,6 +121,8 @@ interface HeadProps {
     thicknessFactor: number
     onPointerDown: (e) => void
     hover: (e) => void
+    visible: boolean
+    transparent: boolean
 }
 const Head: React.FC<HeadProps> = ({
     position,
@@ -123,6 +132,8 @@ const Head: React.FC<HeadProps> = ({
     thicknessFactor,
     onPointerDown,
     hover,
+    visible = true,
+    transparent = false,
 }) => {
     const onUpdate = (self: THREE.Mesh) => {
         const curDir = calCurrentDirection(self)
@@ -142,13 +153,14 @@ const Head: React.FC<HeadProps> = ({
             onPointerDown={onPointerDown}
             onPointerOver={(e) => {
                 e.stopPropagation()
-                hover(true)
+                if (hover) hover(true)
             }}
             onPointerOut={(e) => {
                 // e.stopPropagation();
-                hover(false)
+                if (hover) hover(false)
             }}
             position={position}
+            visible={visible}
         >
             <customCylinderBufferGeometry
                 attach="geometry"
@@ -167,25 +179,95 @@ const Head: React.FC<HeadProps> = ({
                 attach="material"
                 color={color}
                 opacity={opacity}
-                transparent
+                transparent={transparent}
             />
         </mesh>
     )
 }
 
+type VlableProps = {
+    position: HeadProps['position']
+    label: string
+    labelID: string
+    latexParser: boolean
+    labelStyle: React.CSSProperties
+    label2ndStyle: React.CSSProperties
+    label_transform: string
+    opacity: number
+    visible: boolean
+}
+const Vlable: React.FC<VlableProps> = ({
+    position,
+    label,
+    latexParser,
+    labelStyle,
+    label2ndStyle,
+    label_transform,
+    opacity,
+    visible,
+    labelID,
+}) => {
+    if (!label) return <HTML />
+    if (latexParser && labelID && label) {
+        return (
+            <HTML position={position}>
+                <Latex
+                    math_formula={label}
+                    font_size={1.4}
+                    style={labelStyle}
+                    svgTransform={label_transform}
+                    // style={{
+                    //     ...labelStyle,
+                    //     visibility: visible ? 'visible' : 'hidden', // to make sure the label it's not goint to be visible if vector
+                    //     // itself is not visible
+                    // }}
+                >
+                    <Latex.Anim id={labelID} style={label2ndStyle} />
+                </Latex>
+            </HTML>
+        )
+    } else if (label && latexParser === false) {
+        return (
+            <HTML position={position}>
+                <span
+                    style={
+                        labelStyle
+                            ? labelStyle
+                            : {
+                                  padding: '0 .6rem 0 .6rem',
+                                  margin: '-1rem auto auto auto',
+                                  fontFamily: 'KaTex_Math',
+                                  fontSize: '1.4rem',
+                                  fontStyle: 'italic',
+                                  opacity: opacity,
+                                  visibility: visible ? 'visible' : 'hidden',
+                              }
+                    }
+                >
+                    {label}
+                </span>
+            </HTML>
+        )
+    }
+}
 // vector component:
-export interface VectorProps {
+export type VectorProps = {
     vector: THREE.Vector3 | [number, number, number]
     origin?: THREE.Vector3 | [number, number, number]
-    thicknessFacor?: number
-    color?: ReactThreeFiber.Color
+    thicknessFactor?: number
+    color?: string
     opacity?: number
     label?: string
+    labelID?: string
     latexParser?: boolean
     labelStyle?: React.CSSProperties
+    label2ndStyle?: React.CSSProperties
     onPointerDown?: (e) => void
+    visible?: boolean
+    transparent?: boolean
 }
-const Vector: React.RefForwardingComponent<
+
+const VectorI: React.RefForwardingComponent<
     JSX.IntrinsicElements,
     VectorProps
 > = (
@@ -194,17 +276,18 @@ const Vector: React.RefForwardingComponent<
         color,
         origin = ORIGIN,
         opacity = 1,
-        thicknessFacor = 0.12,
+        thicknessFactor = 0.12,
         label,
         labelStyle,
+        label2ndStyle,
+        labelID,
         latexParser = false,
         onPointerDown,
+        visible,
+        transparent = false,
     },
     ref
 ) => {
-    // NOTE: just for testing
-    //   const [clicked, toggle] = useState<boolean>(false);
-
     const { _mag, _dir } = useMemo(() => {
         const _vector =
             vector instanceof THREE.Vector3
@@ -216,42 +299,39 @@ const Vector: React.RefForwardingComponent<
         return { _mag, _dir }
     }, [vector])
 
-    // const [{ newDir, mag }, set] = useSpring(() => ({
-    //     newDir: _dir,
-    //     mag: _mag,
-    // }))
     // calculate the proper location of head based on direction and magnitude
     const headPos = new THREE.Vector3()
         .fromArray(_dir)
         .normalize()
-        .multiplyScalar(_mag - thicknessFacor * HHEIGHT)
+        .multiplyScalar(_mag - thicknessFactor * HHEIGHT)
         .toArray() as [number, number, number]
 
     const [hovered, hover] = useState<boolean>(false)
     useEffect(() => {
         document.body.style.cursor = hovered ? 'pointer' : 'auto'
     }, [hovered])
-
-    // console.log('vector')
-    const labelComp = useMemo(() => {
+    const vecLabel = useMemo(() => {
         if (label && latexParser) {
             return (
                 <HTML
                     position={sMultiply(
-                        (_mag - 3 * thicknessFacor * HHEIGHT) / 2,
+                        (_mag - 3 * thicknessFactor * HHEIGHT) / 2,
                         _dir
                     )}
                 >
                     <Latex
                         math_formula={label}
                         font_size={1.4}
-                        style={labelStyle}
+                        svgTransform={labelStyle.transform}
+                        style={{ ...labelStyle }}
                         // style={{
-                        //     position: 'absolute',
-                        //     // transform: 'translate(-2.5rem, 2.5rem)',
-                        //     opacity: opacity,
+                        //     ...labelStyle,
+                        //     visibility: visible ? 'visible' : 'hidden', // to make sure the label it's not goint to be visible if vector
+                        //     // itself is not visible
                         // }}
-                    />
+                    >
+                        <Latex.Anim id={labelID} style={label2ndStyle} />
+                    </Latex>
                 </HTML>
             )
         } else if (label && latexParser === false) {
@@ -276,43 +356,289 @@ const Vector: React.RefForwardingComponent<
                 </HTML>
             )
         }
-    }, [headPos, label, latexParser, labelStyle, opacity])
-
-    // if magnitude of the vector is less than the headsize just return a point at origin
+    }, [label, labelID, labelStyle, label2ndStyle, opacity])
     return (
         <group ref={ref} position={origin}>
-            {_mag > thicknessFacor * HHEIGHT ? (
-                <>
-                    <Shaft
-                        mag={_mag - thicknessFacor * HHEIGHT} // we have to change the lenght a little bit to make room for head!
-                        direction={_dir}
-                        color={color}
-                        opacity={opacity}
-                        onPointerDown={onPointerDown}
-                        thicknessFactor={thicknessFacor}
-                        hover={hover}
-                    />
-                    <Head
-                        position={headPos}
-                        direction={_dir}
-                        color={color}
-                        opacity={opacity}
-                        thicknessFactor={thicknessFacor}
-                        onPointerDown={onPointerDown}
-                        hover={hover}
-                    />
-                </>
-            ) : (
-                <Point
-                    color={color.toString()}
-                    position={[ORIGIN.x, ORIGIN.y, ORIGIN.z]}
+            <Head
+                position={headPos}
+                direction={_dir}
+                color={color}
+                opacity={opacity}
+                thicknessFactor={thicknessFactor}
+                onPointerDown={onPointerDown}
+                hover={hover}
+                visible={visible && _mag >= thicknessFactor * HHEIGHT}
+                transparent={transparent}
+            />
+            <Shaft
+                mag={_mag - thicknessFactor * HHEIGHT} // we have to change the lenght a little bit to make room for head!
+                direction={_dir}
+                color={color}
+                opacity={opacity}
+                onPointerDown={onPointerDown}
+                thicknessFactor={thicknessFactor}
+                hover={hover}
+                visibile={visible && _mag >= thicknessFactor * HHEIGHT}
+                transparent={transparent}
+            />
+            <Point
+                color={color}
+                position={[ORIGIN.x, ORIGIN.y, ORIGIN.z]}
+                opacity={opacity}
+                transparent={transparent}
+                pkey={'zero_vector'}
+                visible={visible && _mag < thicknessFactor * HHEIGHT}
+            />
+            {vecLabel}
+            {/* {label && (
+                <Vlable
+                    position={
+                        Math.abs(_mag - 0.01) > 0
+                            ? sMultiply(_mag / 3, _dir)
+                            : [0, 0, 0]
+                    }
+                    label={label}
+                    labelID={labelID}
+                    labelStyle={labelStyle}
+                    label2ndStyle={label2ndStyle}
+                    latexParser={latexParser}
+                    visible={visible}
                     opacity={opacity}
-                    pkey={'zero_vector'}
                 />
-            )}
-            {labelComp}
+            )} */}
         </group>
     )
 }
 
-export default React.forwardRef(Vector)
+export const Vector = React.forwardRef(VectorI)
+
+function calculateLabel(
+    label: string,
+    label_factor: number,
+    labelID: string,
+    format: (a: number) => string
+): string {
+    if (label === undefined || label === null) {
+        return label
+    }
+    if (label_factor === undefined || label_factor === null)
+        return String.raw`\vec{${label}}`
+    else {
+        const _label_factor = format(label_factor)
+        return String.raw`\anim<${labelID}>{${_label_factor}}\vec{${label}}`
+    }
+}
+
+export type VectorCompProps = Omit<
+    VectorProps,
+    'labelStyle' | 'latexParser' | 'label2ndStyle'
+> & {
+    label_transform?: string
+    label2ndStylefn?: (
+        args: Pick<
+            VectorCompProps,
+            'opacity' | 'label' | 'label_factor' | 'label_opacity'
+        >
+    ) => React.CSSProperties
+    label_factor?: number //optional labling a scaler factor which a vector changes with
+    factor_format?: (
+        // optional formating fucntion for the factor
+        n:
+            | number
+            | {
+                  valueOf(): number
+              }
+    ) => string
+    label_opacity?: number
+    pointForZero?: boolean
+}
+
+export const VectorComp: React.FC<VectorCompProps> = ({
+    label,
+    vector,
+    origin,
+    color,
+    opacity,
+    thicknessFactor,
+    label_transform,
+    label_factor,
+    factor_format,
+    labelID,
+    label2ndStylefn,
+    label_opacity = 1,
+    transparent = true,
+    visible,
+    pointForZero = true,
+}) => {
+    const labelStyle: React.CSSProperties = {
+        position: 'absolute',
+        overflow: 'visible',
+        // transform: label_transform,
+        opacity: label_opacity,
+        willChange: 'opacity, transform',
+    }
+    const _format = useMemo(() => {
+        return factor_format ? factor_format : (n) => n
+    }, [factor_format])
+
+    const _label = calculateLabel(label, label_factor, labelID, _format)
+
+    const label2ndStyle = label2ndStylefn
+        ? label2ndStylefn({
+              label,
+              label_factor,
+              label_opacity,
+              opacity,
+          })
+        : null
+
+    const { _mag, _dir } = useMemo(() => {
+        const _vector =
+            vector instanceof THREE.Vector3
+                ? vector.clone()
+                : new THREE.Vector3(vector[0], vector[1], vector[2])
+
+        const _mag = _vector.length()
+        const _dir = _vector.normalize().toArray() as [number, number, number]
+        return { _mag, _dir }
+    }, [vector])
+
+    // calculate the proper location of head based on direction and magnitude
+    const headPos = new THREE.Vector3()
+        .fromArray(_dir)
+        .normalize()
+        .multiplyScalar(_mag - thicknessFactor * HHEIGHT)
+        .toArray() as [number, number, number]
+    return (
+        <group
+            //  ref={ref}
+            position={origin}
+        >
+            <Head
+                position={headPos}
+                direction={_dir}
+                color={color}
+                opacity={opacity}
+                thicknessFactor={thicknessFactor}
+                // onPointerDown={onPointerDown}
+                // hover={hover}
+                visible={visible && _mag >= thicknessFactor * HHEIGHT}
+                transparent={transparent}
+            />
+            <Shaft
+                mag={_mag - thicknessFactor * HHEIGHT} // we have to change the lenght a little bit to make room for head!
+                direction={_dir}
+                color={color}
+                opacity={opacity}
+                // onPointerDown={onPointerDown}
+                thicknessFactor={thicknessFactor}
+                // hover={hover}
+                visibile={visible && _mag >= thicknessFactor * HHEIGHT}
+                transparent={transparent}
+            />
+            {pointForZero && (
+                <Point
+                    color={color}
+                    position={[ORIGIN.x, ORIGIN.y, ORIGIN.z]}
+                    opacity={opacity}
+                    transparent={transparent}
+                    pkey={'zero_vector'}
+                    visible={visible && _mag < thicknessFactor * HHEIGHT}
+                />
+            )}
+
+            <Vlable
+                position={sMultiply(_mag / 3, _dir)}
+                label={_label}
+                labelID={labelID}
+                labelStyle={labelStyle}
+                label2ndStyle={label2ndStyle}
+                latexParser={true}
+                visible={visible}
+                opacity={opacity}
+                label_transform={label_transform}
+            />
+        </group>
+        // <Vector
+        //     vector={vector}
+        //     origin={origin}
+        //     color={color}
+        //     opacity={opacity}
+        //     thicknessFactor={thicknessFactor}
+        //     label={_label}
+        //     labelID={labelID}
+        //     labelStyle={labelStyle}
+        //     label2ndStyle={label2ndStyle}
+        //     latexParser
+        //     transparent={transparent}
+        //     visible={visible}
+        // />
+    )
+}
+
+export const AVectorComp = animated(VectorComp)
+
+export type AnimatedVecProps = Partial<
+    Pick<
+        VectorCompProps,
+        | 'vector'
+        | 'origin'
+        | 'color'
+        | 'label_factor'
+        | 'thicknessFactor'
+        | 'opacity'
+        | 'label_transform'
+        | 'label_opacity'
+        | 'visible'
+    >
+>
+
+export type SetVector = SpringStartFn<AnimatedVecProps>
+export type AvectorProps = {
+    from: AnimatedVecProps
+    setSpringRef?: React.MutableRefObject<SpringStartFn<AnimatedVecProps>>
+    pause: boolean
+    springRef?: React.MutableRefObject<SpringValues<AnimatedVecProps>>
+} & Omit<VectorCompProps, keyof AnimatedVecProps>
+
+export const AVector: React.FC<AvectorProps> = ({
+    pause,
+    setSpringRef,
+    springRef,
+    from,
+    ...rest
+}) => {
+    const spRef = useRef<SpringHandle<AnimatedVecProps>>(null)
+    const [spring, setSpring] = useSpring<AnimatedVecProps>(() => ({
+        ref: spRef,
+        from: {
+            vector: from.vector,
+            origin: from['origin'] ? from.origin : ORIGIN.toArray(),
+            opacity: 'opacity' in from ? from.opacity : 1,
+            color: from['color'] ? from.color : 'blue',
+            thicknessFactor: from['thicknessFactor'] ? from.thicknessFactor : 1,
+            label_factor: from['label_factor'],
+            label_transform: from['label_transform']
+                ? from.label_transform
+                : 'translate(0rem,0rem)',
+            label_opacity: from.label_opacity,
+            visible: from['visible'],
+        },
+    }))
+    if (springRef) {
+        springRef.current = spring
+    }
+    useEffect(() => {
+        if (setSpringRef) {
+            if (setSpringRef) {
+                setSpringRef.current = setSpring
+            }
+        }
+    }, [])
+
+    useEffect(() => {
+        if (pause && spRef.current) spRef.current.pause()
+    }, [pause])
+
+    return <AVectorComp {...spring} {...rest} />
+}
