@@ -2,7 +2,7 @@ import { useRef, useMemo, useEffect, useState, useCallback } from 'react'
 import { useSpring } from 'react-spring'
 import { SpringStartFn, SpringConfig } from '@react-spring/core'
 import { sMultiply, addVectors } from '../../shared'
-import { SetGrids } from '../../3D-components/Grids'
+import { SetGridFn } from '../../3D-components/Grids'
 import { SetProgressbar } from './Progressbar'
 import {
     PointsProps,
@@ -13,6 +13,7 @@ import {
     SetTick,
     SetVector,
     AnimatedVecProps,
+    SetMline,
 } from '../../3D-components'
 import { easeCubicInOut } from 'd3-ease'
 
@@ -83,11 +84,11 @@ type Section = {
 }
 const mplayer = async (sections: Section[], setProgress: SetProgressbar) => {
     for (const section of sections) {
-        console.log('...playing section', section.number, section.title)
+        // console.log('...playing section', section.number, section.title)
         const subs = section.subs
         const num_subs = subs.length
         for (const sub of subs) {
-            console.log('...playing sub', sub.number, sub.title)
+            // console.log('...playing sub', sub.number, sub.title)
             await flush(sub.queue)
             setProgress((i) => {
                 if (i === section.number - 1) {
@@ -188,7 +189,7 @@ export function useMathboxAnim({
     const x1base_startRef = useRef<SetVector>(null)
     const x2base_startRef = useRef<SetVector>(null)
     const u_startRef = useRef<SetVector>(null)
-    const gridStartRef = useRef<SetGrids>(null)
+    const gridStartRef = useRef<SetGridFn>(null)
     const setPointsStringsRef = useRef<SpringStartFn<PAnimatedProps>>(null)
     const setCoordStringsRef = useRef<SpringStartFn<AnimCoordinatesProps>>(null)
     const setxTicksRef = useRef<SetTick>(null)
@@ -196,6 +197,7 @@ export function useMathboxAnim({
     const setxAxesRef = useRef<SetAxes>(null)
     const setyAxesRef = useRef<SetAxes>(null)
     const setProgressbarRef = useRef<SetProgressbar>(null)
+    const setMlineRef = useRef<SetMline>(null)
 
     const x1_base: [number, number, number] = [scale(2), scale(-3), 0]
     const x2_base: [number, number, number] = [scale(3), scale(2), 0]
@@ -241,7 +243,18 @@ export function useMathboxAnim({
         label_transform: 'translate(0px, -2px)',
     }
 
-    const startCoordnates = useCallback(async () => {
+    const mline_from = {
+        color: 'gray',
+        dashArray: 0,
+        dashRatio: 0,
+        p1: linearComb({ vec1: x1_base, vec2: x2_base, alpha1: 4.2 }),
+        p2: linearComb({ vec1: x1_base, vec2: x2_base, alpha1: 4.2 }),
+        opacity: 1,
+        visible: false,
+        width: 0.05,
+    }
+
+    const animate = useCallback(async () => {
         const delay = 200 * 0
         const gridStartFn = gridStartRef.current
         const axisStart = {
@@ -257,6 +270,7 @@ export function useMathboxAnim({
         const x1bStart = x1base_startRef.current
         const uStart = u_startRef.current
         const pointsStart = setPointsStringsRef.current
+        const lineStart = setMlineRef.current
 
         const sub01_coordinates: Subsection = {
             title: 'coordinates',
@@ -278,14 +292,6 @@ export function useMathboxAnim({
                     } as SingleAnim<AnimatedAxesProps>,
                 ],
 
-                [
-                    {
-                        set: gridStartFn,
-                        from: { visible: false },
-                        to: { visible: true },
-                        meta: 'set grids visible',
-                    },
-                ],
                 [
                     {
                         set: axisStart['xAxes'],
@@ -336,15 +342,21 @@ export function useMathboxAnim({
                     },
                     {
                         set: gridStartFn as SpringStartFn<object>,
-                        from: { _endPoint1: -32 / 2 },
-                        to: { _endPoint1: 32 / 2 },
+                        from: {
+                            hdraw: false,
+                            vdraw: false,
+                        },
+                        to: {
+                            hdraw: true,
+                            vdraw: false,
+                        },
                         settings: { config: GRID_CONF, delay: 3 * delay },
                         meta: 'set horizontal grids',
                     },
                     {
                         set: gridStartFn as SpringStartFn<object>,
-                        from: { _endPoint2: 22 / 2 },
-                        to: { _endPoint2: -22 / 2 },
+                        from: { vdraw: false, hdraw: true },
+                        to: { vdraw: true, hdraw: true },
                         settings: { config: GRID_CONF, delay: 4 * delay },
                         meta: 'set vertical grids',
                     },
@@ -515,6 +527,7 @@ export function useMathboxAnim({
         let idx = points.length - 1
         let i = 0
         let currv1 = x1_base
+        let currx1factor = 1
         let curruv = linearComb({ vec1: x1_base, vec2: x2_base })
 
         for (let alpha = 4; alpha > -4; alpha += -1) {
@@ -528,9 +541,9 @@ export function useMathboxAnim({
                         vector: currv1,
                         label_transform:
                             i === 0
-                                ? x1_from.label_transform
+                                ? 'translate(10px, -20px)'
                                 : `translate${x1labeltrans[i - 1]}`,
-                        label_factor: i === 0 ? 1 : alpha,
+                        label_factor: currx1factor,
                     },
                     to: {
                         vector: v1,
@@ -583,199 +596,96 @@ export function useMathboxAnim({
             }
             section1.subs.push(subanim)
             currv1 = v1
+            currx1factor = alpha
             curruv = uv
             idx--
             i++
         }
 
-        mplayer([section1], setProgressbarRef.current)
-    }, [])
-
-    const startFirstLine = useCallback(async () => {
-        const x1Start = x1_startRef.current
-        const uStart = u_startRef.current
-        const pointsStart = setPointsStringsRef.current
-        const delay = 200
-        const ulabeltrans = [
-            '(-8px, 25px)',
-            '(-10px, 10px)',
-            '(-15px, 0px)',
-            '(0px, 0px)',
-            '(0px, -16px)',
-            '(-35px, -45px)',
-            '(-45px, -60px)',
-            '(-55px, -70px)',
-        ]
-        const x1labeltrans = [
-            '(25px, 12px)',
-            '(20px, 10px)',
-            '(15px, 0px)',
-            '(-5px, -30px)',
-            '(-10px, -35px)',
-            '(-20px, -50px)',
-            '(-25px, -70px)',
-            '(-30px, -80px)',
-        ]
-        let idx = points.length - 1
-        let i = 0
-        for (let alpha = 4; alpha > -4; alpha += -1) {
-            const v1 = sMultiply(alpha, x1_base)
-            const uv = linearComb({ vec1: x2_base, vec2: v1 })
-            await Promise.all([
-                x1Start({
-                    vector: v1,
-                    label_factor: alpha,
-                    label_transform: `translate${x1labeltrans[i]}`,
-                    // delay: delay,
-                }),
-                uStart({
-                    vector: uv,
-                    label_transform: `translate${ulabeltrans[i]}`,
-                }),
-            ])
-            await pointsStart((i) => {
-                if (i === idx) {
-                    return {
-                        radius: 0.09,
-                    }
-                } else return {}
-            })
-            idx--
-            i++
+        const sub12_setLine: Subsection = {
+            title: 'line throught points',
+            number: 12,
+            meta: 'drawing a line throught points generate in lc',
+            queue: [
+                [
+                    {
+                        set: lineStart,
+                        from: { visible: false },
+                        to: { visible: true },
+                        meta: 'setting mline visible',
+                    },
+                    {
+                        set: x2Start,
+                        from: { opacity: 1, label_opacity: 1 },
+                        to: { opacity: 0, label_opacity: 0 },
+                        settings: { config: FAST },
+                        meta: 'set x2 opacity to zero',
+                    },
+                    {
+                        set: x1Start,
+                        from: { opacity: 1, label_opacity: 1 },
+                        to: { opacity: 0, label_opacity: 0 },
+                        settings: { config: FAST, delay: 200 },
+                        meta: 'set x1 opacity to zero',
+                    },
+                    {
+                        set: uStart,
+                        from: { opacity: 1, label_opacity: 1 },
+                        to: { opacity: 0, label_opacity: 0 },
+                        settings: { config: FAST, delay: 400 },
+                        meta: 'set u opacity to zero',
+                    },
+                ],
+                [
+                    {
+                        set: x2Start,
+                        from: { visible: true },
+                        to: { visible: false },
+                        meta: 'hide x2',
+                    },
+                    {
+                        set: x1Start,
+                        from: { visible: true },
+                        to: { visible: false },
+                        meta: 'hide x1',
+                    },
+                    {
+                        set: uStart,
+                        from: { visible: true },
+                        to: { visible: false },
+                        meta: 'hide u',
+                    },
+                ],
+                [
+                    {
+                        set: lineStart,
+                        from: { p2: mline_from.p2 },
+                        to: {
+                            p2: linearComb({
+                                vec1: x1_base,
+                                vec2: x2_base,
+                                alpha1: -3.1,
+                            }),
+                        },
+                        settings: { config: SLOW },
+                        meta: 'drawing a mline thorought lc points',
+                    },
+                ],
+            ],
         }
+
+        section1.subs.push(sub12_setLine)
+        mplayer([section1], setProgressbarRef.current)
     }, [])
 
     const [started, setStarted] = useState(false)
 
     useEffect(() => {
         if (!started && x1_startRef.current) {
-            x1_startRef.current({
-                to: async () => {
-                    await startCoordnates()
-                    // await startLinearComb()
-                    // await startFirstLine()
-                },
-            })
-
+            animate()
             setStarted(true)
         }
     }, [pause])
-
-    // const [_x1, setv_x1] = useSpring<VectorProps>(() => ({
-    //     ref: x1Ref,
-    //     from: {
-    //         base: x1_base,
-    //         showBase: true,
-    //         vec: x1_base,
-    //         origin: [0, 0, 0],
-    //         color: '#4287f5',
-    //         opacity: 1,
-    //         base_opacity: 1,
-    //         factor: 1,
-    //         label_transform: 'translate(.2rem, -1.4rem)',
-    //     },
-    //     // config: { friction: 12, mass: 1, tension: 30 },
-    // to: async (animX1) => {
-    //     //start functions
-    //     const gridStartFn = gridStartRef.current
-    //     const pointStartFn = setPointsStringsRef.current
-    //     const axisStart = {
-    //         xAxes: setxAxesRef.current,
-    //         yAxes: setyAxesRef.current,
-    //     }
-    //     const ticksStart = {
-    //         xAxes: setxTicksRef.current,
-    //         yAxes: setyTicksRef.current,
-    //     }
-
-    //         const delay = 200
-
-    // await Promise.all([
-    //     axisStart['xAxes']({ vector: [scale(10), 0, 0] }),
-    //     axisStart['yAxes']({ vector: [0, scale(10), 0] }),
-    //     ticksStart['yAxes']((i) => ({
-    //         opacity: 1,
-    //         length: 0.2,
-    //         config: SLOW,
-    //         delay: (delay / 20) * i,
-    //     })),
-    //     ticksStart['xAxes']((i) => ({
-    //         opacity: 1,
-    //         length: 0.2,
-    //         config: SLOW,
-    //         delay: (delay / 20) * i,
-    //     })),
-    //     gridStartFn({
-    //         _endPoint1: 32 / 2,
-    //         visible: true,
-    //         config: GRID_CONF,
-    //         delay,
-    //     }),
-
-    //             gridStartFn({
-    //                 _endPoint2: -22 / 2,
-    //                 delay: 400,
-    //                 config: GRID_CONF,
-    //             }),
-    //         ])
-
-    //         // await animX1({
-    //         //     to: { origin: x2_base, base_opacity: 0 },
-    //         //     delay: 3 * delay,
-    //         //     // config: SLOW,
-    //         // })
-    //         // await Promise.all([
-    //         //     animX1({
-    //         //         vec: sMultiply(6, x1_base),
-    //         //         factor: 6,
-    //         //         delay: delay,
-    //         //         config: SLOW,
-    //         //     }),
-    //         //     set_u({
-    //         //         opacity: 1,
-    //         //         config: SLOW,
-    //         //     }),
-    //         // ])
-    // let idx = points.length - 1
-    // for (let alpha = 5; alpha > -5; alpha += -1) {
-    //     await animX1({
-    //         vec: sMultiply(alpha, x1_base),
-    //         factor: alpha,
-    //         delay: delay,
-    //     })
-    //     await pointStartFn((i) => {
-    //         if (i === idx) {
-    //             return {
-    //                 radius: 0.09,
-    //                 visible: true,
-    //             }
-    //         } else return {}
-    //     })
-    //     idx--
-    // }
-
-    //         // await Promise.all([
-    //         //     animX1({ opacity: 0, visible: false }),
-    //         //     setv_x2({
-    //         //         to: { opacity: 0, base_opacity: 0, visible: false },
-    //         //     }),
-    //         //     set_u({ to: { opacity: 0.5 } }),
-    //         //     setLine({
-    //         //         to: {
-    //         //             visible: true,
-    //         //             opacity: 1,
-    //         //             p2: linearComb({
-    //         //                 alpha1: -4.3,
-    //         //                 vec1: x1_base,
-    //         //                 vec2: x2_base,
-    //         //             }),
-    //         //         },
-    //         //         config: SLOW,
-    //         //         delay: delay * 3,
-    //         //     }),
-    //         // ])
-    //     },
-    // }))
 
     // overlay
     const [overlayStyle, setOverlay] = useSpring(() => ({
@@ -800,5 +710,7 @@ export function useMathboxAnim({
         x2: { x2_startRef, x2base_startRef, x2_from, x2b_from },
         u: { u_startRef, u_from },
         setProgressbarRef,
+        mline_from,
+        setMlineRef,
     }
 }

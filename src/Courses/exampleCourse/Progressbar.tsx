@@ -140,7 +140,7 @@ export const Progressbar: React.FC<ProgressbarProps> = ({
                     className="mplayer__playbtn"
                     size={psize}
                     style={playbtnStyle}
-                    onClick={() => {
+                    onClick={(ev) => {
                         mathboxDispatch({ type: TOGGLE_PAUSE })
                     }}
                 />

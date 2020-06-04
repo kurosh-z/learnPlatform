@@ -5,8 +5,8 @@ import * as THREE from 'three'
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial'
 import { Line2 } from 'three/examples/jsm/lines/Line2.js'
-import { ReactThreeFiber, useThree, extend } from 'react-three-fiber'
-import { SpringHandle, SpringStartFn } from '@react-spring/core'
+import { ReactThreeFiber, useThree, extend, Camera } from 'react-three-fiber'
+import { SpringHandle, SpringStartFn, SpringConfig } from '@react-spring/core'
 import { useSpring, animated } from 'react-spring'
 // import { Line } from './Meshline'
 // extending the line2 to be used in react-fiber
@@ -26,6 +26,28 @@ declare global {
         }
     }
 }
+const visibleAtZDepth = (depth: number, camera: Camera) => {
+    // compensate for cameras not positioned at z=0
+    const cameraOffset = camera.position.z
+    if (depth < cameraOffset) depth -= cameraOffset
+    else depth += cameraOffset
+
+    // vertical fov in radians
+    const vFOV = (camera.fov * Math.PI) / 180
+
+    // Math.abs to ensure the result is always positive
+    const visible_height = 2 * Math.tan(vFOV / 2) * Math.abs(depth)
+    const visible_width = visible_height * camera.aspect
+    return { w: visible_width, h: visible_height }
+}
+
+// const visibleWidthAtZDepth = (
+//     depth: number,
+//     camera: THREE.PerspectiveCamera
+// ) => {
+//     const height = visibleHeightAtZDepth(depth, camera)
+//     return height * camera.aspect
+// }
 
 type LineSetProps = {
     pointsArray: number[][]
@@ -41,6 +63,7 @@ export const LineSet: React.FC<LineSetProps> = ({
     color,
     visibile = true,
 }) => {
+    const { camera } = useThree()
     return (
         <>
             {pointsArray.map((linePoints, idx) => {
@@ -84,9 +107,10 @@ export const LineSet: React.FC<LineSetProps> = ({
 }
 
 type HVlines = {
-    startPoint: number
-    endPoint: number
-    gwidth: number
+    hstartPoint: number
+    hendPoint: number
+    vstartPoint: number
+    vendPoint: number
     scale: ScaleLinear<number, number>
     size: { width: number; height: number }
     color?: ReactThreeFiber.Color
@@ -95,9 +119,10 @@ type HVlines = {
 }
 
 const Vlines: React.FC<HVlines> = ({
-    gwidth, // width of the grid (not lines)
-    startPoint, // starting point of the line
-    endPoint,
+    hstartPoint,
+    hendPoint,
+    vstartPoint,
+    vendPoint,
     scale,
     size,
     color = '#9d9e9e',
@@ -105,15 +130,20 @@ const Vlines: React.FC<HVlines> = ({
     visibile,
 }) => {
     const pointsArray: number[][] = []
-    const dist = 1
-    const halfWidth = gwidth / 2
+
     for (
-        let i = scale(-halfWidth + dist);
-        i < scale(halfWidth);
-        i += scale(dist)
+        let i = hstartPoint + scale(1);
+        i <= hendPoint - scale(1);
+        i += scale(1)
     ) {
-        // prettier-ignore
-        const linePoints2:number[] = [i, scale(startPoint), 0.001, i, scale(endPoint), 0.001];
+        const linePoints2: number[] = [
+            i,
+            vstartPoint,
+            0.001,
+            i,
+            vendPoint,
+            0.001,
+        ]
         pointsArray.push(linePoints2)
     }
 
@@ -128,25 +158,25 @@ const Vlines: React.FC<HVlines> = ({
     )
 }
 const Hlines: React.FC<HVlines> = ({
-    startPoint, // starting point on prependicular axes to draw lines
-    endPoint,
-    gwidth, // width of the grid width
+    hstartPoint,
+    hendPoint,
+    vstartPoint,
+    vendPoint,
     scale,
     size,
-    color = 'gray',
+    color = '#9d9e9e',
     opacity = 1,
     visibile,
 }) => {
     const pointsArray: number[][] = []
-    const dist = 1
-    const halfWidth = gwidth / 2
+
     for (
-        let j = scale(-halfWidth + dist);
-        j < scale(halfWidth);
-        j += scale(dist)
+        let j = vendPoint + scale(1);
+        j <= vstartPoint - scale(1);
+        j += scale(1)
     ) {
         // prettier-ignore
-        const linePoints2:number[] = [scale(startPoint), j, 0.001,scale(endPoint), j, 0.001];
+        const linePoints2:number[] = [hstartPoint, j, 0.001,hendPoint, j, 0.001];
         pointsArray.push(linePoints2)
     }
 
@@ -164,45 +194,121 @@ const Hlines: React.FC<HVlines> = ({
 const Ahlines = animated(Hlines)
 const Avlines = animated(Vlines)
 
-export type GAnimProps = {
-    _endPoint1: number
-    _endPoint2: number
+export type GAnimProps = { hdraw: boolean; vdraw: boolean }
+
+type SpringArgs = {
+    horz_end_point: number
+    vert_end_point: number
     visible: boolean
 }
-
-export type SetGrids = SpringStartFn<GAnimProps>
+export type SetGridFn = (args: {
+    to: GAnimProps
+    config: SpringConfig
+    delay: number
+}) => void
 // Grids
 interface GridProps {
     type?: 'xy' | 'xz' | 'yz'
-    len1?: number
-    len2?: number
+    width?: number
+    height?: number
     visible: boolean
     scale: ScaleLinear<number, number>
     pause: boolean
-    gFuncRef: React.MutableRefObject<SetGrids>
+    gFuncRef: React.MutableRefObject<SetGridFn>
 }
 
 const Grids: React.FC<GridProps> = ({
     type = 'xy',
-    len1 = 20,
-    len2 = 20,
+    width = 890,
+    height = 20,
     scale,
     pause = true,
     gFuncRef,
     visible = true,
 }) => {
     const { size } = useThree()
-    console.log(size)
-    const gSpringRef = useRef<SpringHandle<GAnimProps>>(null)
-    const [gprops, setGrid] = useSpring<GAnimProps>(() => ({
+    const {
+        horz_start_point,
+        horz_end_point,
+        vert_start_point,
+        vert_end_point,
+    } = useMemo(() => {
+        const _width = (width * window.innerWidth) / window.innerHeight / 1.7628
+        const halfWidth = scale(_width / 2)
+        const DIST = scale(1) // distance btw. ticks
+        const MARGIN = 2 * scale(1)
+        const num_horz_ticks = Math.round((halfWidth - MARGIN) / DIST)
+        const horz_start_point = -DIST * num_horz_ticks - scale(1) // begin .5 to the margin!
+        const horz_end_point = -1 * horz_start_point
+
+        const halfHeight = scale(height / 2)
+        const num_vert_ticks = Math.round((halfHeight - MARGIN) / DIST)
+        const vert_start_point = DIST * num_vert_ticks + scale(1)
+        const vert_end_point = -1 * vert_start_point
+
+        return {
+            horz_start_point,
+            horz_end_point,
+            vert_start_point,
+            vert_end_point,
+        }
+    }, [width, height, window.innerHeight / window.innerWidth])
+
+    const gSpringRef = useRef<SpringHandle<SpringArgs>>(null)
+    const [gspring, setGspring] = useSpring<SpringArgs>(() => ({
         ref: gSpringRef,
-        _endPoint1: -len1 / 2,
-        _endPoint2: len2 / 2,
+        horz_end_point: horz_start_point,
+        vert_end_point: vert_start_point,
         visible: visible,
     }))
+
     useEffect(() => {
-        gFuncRef.current = setGrid
-    }, [])
+        const setGridFn: SetGridFn = async ({ to, config, delay }) => {
+            if (to.hdraw || to.vdraw) {
+                await setGspring({
+                    visible: true,
+                    delay: delay / 2,
+                    default: { immediate: true },
+                })
+                await setGspring({
+                    to: {
+                        horz_end_point: to.hdraw
+                            ? horz_end_point
+                            : horz_start_point,
+                        vert_end_point: to.vdraw
+                            ? vert_end_point
+                            : vert_start_point,
+                    },
+                    config: config,
+                    delay: delay / 2,
+                })
+            } else {
+                await setGspring({
+                    to: {
+                        horz_end_point: horz_start_point,
+                        vert_end_point: vert_start_point,
+                    },
+                    config: config,
+                    delay: delay,
+                })
+                await setGspring({
+                    visible: true,
+                    default: { immediate: true },
+                })
+            }
+        }
+        gFuncRef.current = setGridFn
+
+        // if the aspect ratio (windowWidth/windowHeight) changes camera updates scene but the aspect ratio of
+        //  (length of horizontal girds / length of vertical girds ) should be changing accordingly
+        if (gspring.visible.animation.to) {
+            setGspring({
+                horz_end_point: horz_end_point,
+                vert_end_point: vert_end_point,
+                default: { immediate: true },
+            })
+        }
+    }, [horz_end_point, horz_start_point, vert_end_point, vert_start_point])
     useEffect(() => {
         if (pause) {
             gSpringRef.current.pause()
@@ -212,22 +318,24 @@ const Grids: React.FC<GridProps> = ({
     return (
         <>
             <Ahlines
-                startPoint={-len1 / 2}
-                endPoint={gprops._endPoint1}
-                gwidth={len2}
+                hstartPoint={horz_start_point}
+                hendPoint={gspring.horz_end_point}
+                vstartPoint={vert_start_point}
+                vendPoint={vert_end_point}
                 size={size}
                 scale={scale}
                 color={'#8a8a8a'}
-                visibile={gprops.visible}
+                visibile={gspring.visible}
             />
             <Avlines
-                startPoint={len2 / 2}
-                endPoint={gprops._endPoint2}
-                gwidth={len1}
+                hstartPoint={horz_start_point}
+                hendPoint={horz_end_point}
+                vstartPoint={vert_start_point}
+                vendPoint={gspring.vert_end_point}
                 size={size}
                 scale={scale}
                 color={'#9d9e9e'}
-                visibile={gprops.visible}
+                visibile={gspring.visible}
             />
         </>
     )
