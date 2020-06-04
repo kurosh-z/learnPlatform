@@ -6,7 +6,7 @@ import { css as emoCSS } from '@emotion/core'
 import { useTheme } from 'emotion-theming'
 import { Theme } from '../../theme/types'
 import { alpha } from '../../theme/colors'
-import PlayButton from '../../components/button/PlayButtton'
+import PlayButton from '../../components/button/PlayButton'
 import { MathBoxActions, MathBoxState, TOGGLE_PAUSE } from './mathBoxReducer'
 
 const AplayBtn = a(PlayButton)
@@ -149,18 +149,11 @@ export const Progressbar: React.FC<ProgressbarProps> = ({
                         {springs.map((prStyle, idx) => {
                             return (
                                 <a.li className="section" key={idx}>
-                                    {/* <a.span className="section__title">
-                                        {sections[idx]['title']}
-                                    </a.span> */}
                                     <Title
                                         title={sections[idx]['title']}
                                         color={prStyle.titleColor}
                                     />
                                     <Sprogress width={prStyle.width} />
-                                    {/* // <a.span
-                                    //     className="section_progress"
-                                    //     style={prgoressStyle}
-                                    // ></a.span> */}
                                 </a.li>
                             )
                         })}
