@@ -155,7 +155,7 @@ const Latex: React.FC<LatexProps> & LatexAnim = ({
                     // transform={svgTransform}
                     style={{
                         ...style,
-                        backgroundColor: 'transparent',
+                        // backgroundColor: 'transparent',
                     }}
                 >
                     <g style={{ transform: svgTransform }}>

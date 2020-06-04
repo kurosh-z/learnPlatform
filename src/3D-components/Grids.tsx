@@ -310,6 +310,7 @@ const Grids: React.FC<GridProps> = ({
         }
     }, [horz_end_point, horz_start_point, vert_end_point, vert_start_point])
     useEffect(() => {
+        // setGspring({ default: { pause } })
         if (pause) {
             gSpringRef.current.pause()
         }

@@ -86,15 +86,16 @@ const useMathboxStyles = (theme: Theme) => {
                 },
                 '.mathbox__svg': {
                     backgroundColor: alpha(theme.palette.white.base, 0.5),
+                    borderRadius: theme.radii.sm,
                 },
                 '.mathbox__overlay': {
                     position: 'absolute',
                     borderRadius: theme.radii.md,
-                    top: '50%',
+                    // top: '50%',
                     left: '50%',
-                    transform: 'translate(-50%, -50%)',
+                    transform: 'translate(-50%, 0%)',
                     width: '100%',
-                    height: '100%',
+                    height: 'calc(100% - 2.8rem)',
                     backgroundColor: alpha(theme.palette.white.base, 0.7),
                     zIndex: theme.zIndices.overlay,
                     willChange: 'background-color',
@@ -130,35 +131,7 @@ const MathBox: React.FC = () => {
         pause: mathBoxState.pause,
     })
 
-    // useEffect(() => {
-    //     // the pause state is always lag behind the actual pausing state of app
-    //     // that's why we use it's oposite to manage other things like ovarlay
-    //     setOverlay({
-    //         display: mathBoxState.pause ? 'none' : 'block',
-    //         default: { immediate: true },
-    //     })
-    //     setOverlay({
-    //         opacity: mathBoxState.pause ? 0 : 1,
-    //     })
-    // }, [mathBoxState.pause])
-
-    // useEffect(() => {
-    //     if (mathBoxState.pause) {
-    //         // x1Ref.current.pause()
-    //         // x2Ref.current.pause()
-
-    //         lineRef.current.pause()
-    //     } else {
-    //         // x1Ref.current.start()
-    //         // x2Ref.current.start()
-    //         x1_startRef.current({ vector: [scale(4), scale(-6), 0] })
-
-    //         lineRef.current.start()
-    //     }
-    // }, [mathBoxState.pause])
-
     const mathboxLatex = useMemo(() => {
-        return <></>
         return (
             <Latex
                 style={{
@@ -168,7 +141,7 @@ const MathBox: React.FC = () => {
                     left: 10,
                     zIndex: 1,
                 }}
-                font_size={1.7}
+                font_size={1.3}
                 className={'mathbox__svg'}
                 math_formula={String.raw`
                             \begin{bmatrix}

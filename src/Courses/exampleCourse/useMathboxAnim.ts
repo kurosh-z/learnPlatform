@@ -689,11 +689,18 @@ export function useMathboxAnim({
 
     // overlay
     const [overlayStyle, setOverlay] = useSpring(() => ({
-        // opacity: 1,
-        // display: 'block',
-        display: 'none',
+        opacity: 1,
+        display: 'block',
     }))
-
+    useEffect(() => {
+        setOverlay({
+            display: started ? 'none' : 'block',
+            default: { immediate: true },
+        })
+        setOverlay({
+            opacity: started ? 0 : 1,
+        })
+    }, [started])
     return {
         overlayStyle: overlayStyle,
         setOverlay: setOverlay,
