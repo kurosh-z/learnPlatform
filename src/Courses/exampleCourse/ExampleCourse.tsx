@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react'
+import React, { useMemo, useLayoutEffect } from 'react'
 import './../course.css'
 import { useTheme } from 'emotion-theming'
 import { css as emoCss } from '@emotion/core'
@@ -6,10 +6,11 @@ import { Theme } from '../../theme/types'
 import NavPanel from '../../shared/NavPanel'
 import Mathbox from './MathBox'
 import ExHeader from './ExHeader'
+import { useUiDispatch, IS_COURSE_PAGE } from '../../app_states'
 
 const ExampleCourse: React.FC<{}> = () => {
     const theme = useTheme<Theme>()
-
+    const uiDispatch = useUiDispatch()
     const coursepage = useMemo(
         () =>
             emoCss({
@@ -19,7 +20,9 @@ const ExampleCourse: React.FC<{}> = () => {
             }),
         [theme]
     )
-
+    useLayoutEffect(() => {
+        uiDispatch({ type: IS_COURSE_PAGE, payload: true })
+    }, [])
     return (
         <div className="coursepage" css={coursepage}>
             <NavPanel

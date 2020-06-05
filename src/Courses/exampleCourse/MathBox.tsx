@@ -2,26 +2,19 @@ import React, { useMemo, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { useImmerReducer } from 'use-immer'
 import { a } from 'react-spring'
-import { Grids, ALine, APoints, Coordinates } from '../../3D-components'
-import {
-    mathboxReducer,
-    initMathBoxState,
-    TOGGLE_PAUSE,
-} from './mathBoxReducer'
+import { Grids, Mline, APoints, Coordinates } from '../../3D-components'
+import { mathboxReducer, initMathBoxState } from './mathBoxReducer'
 import { Canvas, useThree, useFrame } from 'react-three-fiber'
 import { OrbitControls, PerspectiveCamera } from 'drei'
 import { css as emoCss } from '@emotion/core'
 import { useTheme } from 'emotion-theming'
 import { Theme } from '../../theme/types'
 import { alpha } from '../../theme/colors'
-import { PlayButton } from '../../components'
 import Latex from '../../math-components/Latex'
-
+import { Progressbar } from './Progressbar'
 import LinearCombination from '../courseComps/LinearCombination'
 import { useScaleLinear } from '../courseComps/useScaleLinear'
 import { useMathboxAnim } from './useMathboxAnim'
-
-const AplayButton = a(PlayButton)
 
 const TestCamera: React.FC = () => {
     const camRef = useRef(null)
@@ -49,7 +42,7 @@ const TestCamera: React.FC = () => {
     )
 }
 
-const Camera: React.FC<{ children?: React.ReactChildren }> = ({ children }) => {
+const Camera: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     const cam = useRef<THREE.PerspectiveCamera>()
     // useFrame((state) => {
     //     cam.current.lookAt(0, 0, 0)
@@ -76,35 +69,29 @@ const useMathboxStyles = (theme: Theme) => {
     const mathbox = useMemo(
         () =>
             emoCss({
+                // display: 'flex',
+                // flexDirection: 'column',
                 border: `1px solid ${theme.palette.yellow.dark}`,
                 borderRadius: theme.radii.md,
-                width: '90vw',
-                height: '70vh',
-                margin: '2rem 5vw auto auto',
+                width: '95vw',
+                height: '90vh',
+                margin: '2rem auto auto auto',
                 position: 'relative',
                 '.mathbox__canvaswrapper': {
                     backgroundColor: 'transparent',
-                    width: '60vw',
                 },
                 '.mathbox__svg': {
                     backgroundColor: alpha(theme.palette.white.base, 0.5),
-                },
-                '.mathbox__playbtn': {
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                    zIndex: theme.zIndices.tooltip,
-                    willChange: 'top, left',
+                    borderRadius: theme.radii.sm,
                 },
                 '.mathbox__overlay': {
                     position: 'absolute',
                     borderRadius: theme.radii.md,
-                    top: '50%',
+                    // top: '50%',
                     left: '50%',
-                    transform: 'translate(-50%, -50%)',
+                    transform: 'translate(-50%, 0%)',
                     width: '100%',
-                    height: '100%',
+                    height: 'calc(100% - 2.8rem)',
                     backgroundColor: alpha(theme.palette.white.base, 0.7),
                     zIndex: theme.zIndices.overlay,
                     willChange: 'background-color',
@@ -119,14 +106,13 @@ const useMathboxStyles = (theme: Theme) => {
 const MathBox: React.FC = () => {
     const theme = useTheme<Theme>()
     const mathboxStyles = useMathboxStyles(theme)
-
     const [mathBoxState, mathBoxDispatch] = useImmerReducer(
         mathboxReducer,
         initMathBoxState
     )
 
     // canvas size
-    // const [canvSize, setCanvSize] = useState({ width: 900, height: 800 })
+    // const [canvSize, setCanvSize] = useState({ width: 17, height: 10 })
     const { scale, format, tickValues } = useScaleLinear({
         domain: [-10, 10],
         // range: [-canvSize.height / 140, canvSize.height / 140],
@@ -135,50 +121,11 @@ const MathBox: React.FC = () => {
         axLength: 10,
         justPositive: true,
     })
-    const {
-        x1,
-        x1Ref,
-        x2,
-        x2Ref,
-        u,
-        line,
-        lineRef,
-        overlayStyle,
-        playBtn,
-        gridStartRef,
-        setPointsStringsRef,
-        points,
-        setCoordTicks,
-        setCoordinateAxis,
-    } = useMathboxAnim({
+    const anim = useMathboxAnim({
         scale,
         tickValues,
+        pause: mathBoxState.pause,
     })
-    const { playSize, ...playStyles } = playBtn
-
-    // useEffect(() => {
-    //     // the pause state is always lag behind the actual pausing state of app
-    //     // that's why we use it's oposite to manage other things like ovarlay
-    //     setOverlay({
-    //         display: mathBoxState.pause ? 'none' : 'block',
-    //         default: { immediate: true },
-    //     })
-    //     setOverlay({
-    //         opacity: mathBoxState.pause ? 0 : 1,
-    //     })
-    // }, [mathBoxState.pause])
-
-    useEffect(() => {
-        if (mathBoxState.pause) {
-            x1Ref.current.pause()
-            x2Ref.current.pause()
-            lineRef.current.pause()
-        } else {
-            x1Ref.current.start()
-            x2Ref.current.start()
-            lineRef.current.start()
-        }
-    }, [mathBoxState.pause])
 
     const mathboxLatex = useMemo(() => {
         return (
@@ -190,7 +137,7 @@ const MathBox: React.FC = () => {
                     left: 10,
                     zIndex: 1,
                 }}
-                font_size={1.7}
+                font_size={1.3}
                 className={'mathbox__svg'}
                 math_formula={String.raw`
                             \begin{bmatrix}
@@ -218,15 +165,7 @@ const MathBox: React.FC = () => {
 
     return (
         <div className="mathbox" css={mathboxStyles}>
-            <a.div className="mathbox__overlay" style={overlayStyle} />
-            <AplayButton
-                className="mathbox__playbtn"
-                size={playSize}
-                style={playStyles}
-                onClick={() => {
-                    mathBoxDispatch({ type: TOGGLE_PAUSE })
-                }}
-            />
+            <a.div className="mathbox__overlay" style={anim.overlayStyle} />
 
             {mathBoxState.canvVisibility && (
                 <Canvas
@@ -236,49 +175,71 @@ const MathBox: React.FC = () => {
                     <Camera />
                     <OrbitControls dampingFactor={0.9} />
 
-                    <LinearCombination x1={x1} x2={x2} u={u} />
-                    <Coordinates
-                        scale={scale}
-                        format={format}
-                        pause={mathBoxState.pause}
-                        axSetFnRefs={setCoordinateAxis}
-                        tickSetFnRefs={setCoordTicks}
-                        renderAxis={{ xAxes: true, yAxes: true }}
-                        colors={{
-                            xAxes: theme.palette.gray.light,
-                            yAxes: theme.palette.gray.light,
-                        }}
-                        lengths={{ xAxes: scale(0), yAxes: scale(0) }}
-                        tickValues={tickValues}
-                        tickForms={{
-                            xAxes: { opacity: 0.4, length: 0 },
-                            yAxes: { opacity: 1, length: 0 },
-                        }}
-                    />
+                    <group>
+                        <LinearCombination
+                            x1={anim.x1.x1_from}
+                            x2={anim.x2.x2_from}
+                            x1_base={anim.x1.x1b_from}
+                            x2_base={anim.x2.x2b_from}
+                            u={anim.u.u_from}
+                            setX1Ref={anim.x1.x1_startRef}
+                            setX2Ref={anim.x2.x2_startRef}
+                            setURef={anim.u.u_startRef}
+                            setX1_baseRef={anim.x1.x1base_startRef}
+                            setX2_baseRef={anim.x2.x2base_startRef}
+                            pause={mathBoxState.pause}
+                        />
+                        <Coordinates
+                            scale={scale}
+                            format={format}
+                            pause={mathBoxState.pause}
+                            axSetFnRefs={anim.setCoordinateAxis}
+                            opacity={{ xAxes: 1, yAxes: 1 }}
+                            axisVisiblity={{ xAxes: false, yAxes: false }}
+                            tickSetFnRefs={anim.setCoordTicks}
+                            renderAxis={{ xAxes: true, yAxes: true }}
+                            colors={{
+                                xAxes: theme.palette.gray.light,
+                                yAxes: theme.palette.gray.light,
+                            }}
+                            lengths={{ xAxes: scale(0), yAxes: scale(0) }}
+                            tickValues={tickValues}
+                            tickForms={{
+                                xAxes: {
+                                    opacity: 0,
+                                    length: 0,
+                                    visible: true,
+                                },
+                                yAxes: {
+                                    opacity: 0,
+                                    length: 0,
+                                    visible: true,
+                                },
+                            }}
+                        />
 
-                    <Grids
-                        scale={scale}
-                        type="xy"
-                        len1={32}
-                        len2={22}
-                        pause={mathBoxState.pause}
-                        gFuncRef={gridStartRef}
-                        visible={false}
-                    />
+                        <Grids
+                            scale={scale}
+                            type="xy"
+                            width={43}
+                            height={24}
+                            pause={mathBoxState.pause}
+                            gFuncRef={anim.gridStartRef}
+                            visible={false}
+                        />
 
-                    <APoints
-                        pause={mathBoxState.pause}
-                        points={points}
-                        setSpringsRef={setPointsStringsRef}
-                    />
+                        <APoints
+                            pause={mathBoxState.pause}
+                            points={anim.points}
+                            setSpringsRef={anim.setPointsStringsRef}
+                        />
+                        <Mline
+                            pause={mathBoxState.pause}
+                            setSpringRef={anim.setMlineRef}
+                            from={anim.mline_from}
+                        />
+                    </group>
 
-                    <ALine
-                        p1={line.p1}
-                        p2={line.p2}
-                        opacity={line.opacity}
-                        color={'gray'}
-                        visible={line.visible}
-                    />
                     <ambientLight
                         castShadow
                         intensity={1}
@@ -288,7 +249,17 @@ const MathBox: React.FC = () => {
             )}
 
             {true && mathboxLatex}
-            <div style={{ height: 200, width: '100vw' }} />
+            <Progressbar
+                sections={[
+                    { title: '2D Span' },
+                    { title: 'Practice' },
+                    { title: '3D Span' },
+                    { title: 'Pracitce' },
+                ]}
+                mathboxDispatch={mathBoxDispatch}
+                mathboxState={mathBoxState}
+                setSpringsRef={anim.setProgressbarRef}
+            />
         </div>
     )
 }
