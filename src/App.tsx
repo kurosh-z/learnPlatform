@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useLayoutEffect } from 'react'
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom'
-import { IS_MOBILE, SET_ASPECT_RATIO, SET_SIZE } from './app_states/reducers/ui'
+import { IS_MOBILE } from './app_states/reducers/ui'
 import { useUiDispatch } from './app_states/stateContext'
 // import ExampleCourse from './Courses/exampleCourse/ExampleCourse'
 // import HomePage from './homepage/HomePage'

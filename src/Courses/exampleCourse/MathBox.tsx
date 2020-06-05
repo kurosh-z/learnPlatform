@@ -3,11 +3,7 @@ import * as THREE from 'three'
 import { useImmerReducer } from 'use-immer'
 import { a } from 'react-spring'
 import { Grids, Mline, APoints, Coordinates } from '../../3D-components'
-import {
-    mathboxReducer,
-    initMathBoxState,
-    TOGGLE_PAUSE,
-} from './mathBoxReducer'
+import { mathboxReducer, initMathBoxState } from './mathBoxReducer'
 import { Canvas, useThree, useFrame } from 'react-three-fiber'
 import { OrbitControls, PerspectiveCamera } from 'drei'
 import { css as emoCss } from '@emotion/core'

@@ -1,12 +1,11 @@
 import React, { useMemo, useEffect, useRef } from 'react'
 import { useSprings, useSpring, a } from 'react-spring'
 import { SpringStartFn, SpringHandle } from '@react-spring/core'
-
 import { css as emoCSS } from '@emotion/core'
 import { useTheme } from 'emotion-theming'
 import { Theme } from '../../theme/types'
 import { alpha } from '../../theme/colors'
-import PlayButton from '../../components/button/PlayButton'
+import { PlayButton } from '../../components'
 import { MathBoxActions, MathBoxState, TOGGLE_PAUSE } from './mathBoxReducer'
 
 const AplayBtn = a(PlayButton)
@@ -140,7 +139,7 @@ export const Progressbar: React.FC<ProgressbarProps> = ({
                     className="mplayer__playbtn"
                     size={psize}
                     style={playbtnStyle}
-                    onClick={(ev) => {
+                    onClick={() => {
                         mathboxDispatch({ type: TOGGLE_PAUSE })
                     }}
                 />
@@ -173,5 +172,5 @@ const Title = a(({ title, color }) => {
 })
 
 const Sprogress = a(({ width }) => {
-    return <a.span className="section_progress" style={{ width }} />
+    return <span className="section_progress" style={{ width }} />
 })
