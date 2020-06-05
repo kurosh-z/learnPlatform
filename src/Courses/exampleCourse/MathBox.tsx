@@ -14,7 +14,7 @@ import { css as emoCss } from '@emotion/core'
 import { useTheme } from 'emotion-theming'
 import { Theme } from '../../theme/types'
 import { alpha } from '../../theme/colors'
-import PlayButton from '../../components/Button/PlayButtton'
+import { PlayButton } from '../../components'
 import Latex from '../../math-components/Latex'
 
 import LinearCombination from '../courseComps/LinearCombination'

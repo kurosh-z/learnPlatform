@@ -7,7 +7,7 @@ trigger:
 - azure-pipelines
 variables:
   BUILD: 'build'
-  CONFIG: 'config'
+  CONFIG: 'configs'
 
 pool:
   vmImage: 'ubuntu-latest'
