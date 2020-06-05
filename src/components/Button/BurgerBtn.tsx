@@ -44,6 +44,9 @@ const BurgerBtn: React.FC<BurgerProps> = ({ color, text, burgerCB }) => {
                     position: 'absolute',
                     height: '2px',
                     width: '15px',
+                    // transform: 'translate(50%, -50%)',
+                    // top: '50%',
+                    // right: '50%',
                     borderRadius: '5px',
                     backgroundColor: color ? color : theme.palette.white.light,
                     transitionDuration: '.01s',
@@ -94,7 +97,7 @@ const BurgerBtn: React.FC<BurgerProps> = ({ color, text, burgerCB }) => {
 
                 '.burger__text': {
                     display: 'block',
-                    // maxWidth: '150px',
+                    maxWidth: '150px',
                     overflow: 'hidden',
                     color: color ? color : theme.palette.white.base,
                     fontSize: theme.typography.fontSizes[1],

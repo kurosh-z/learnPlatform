@@ -4,8 +4,8 @@ import { HTML } from 'drei'
 import { ScaleLinear } from 'd3-scale'
 import { useSprings, animated } from 'react-spring'
 import { SpringHandle, SpringStartFn } from '@react-spring/core'
-import { AVector, AnimatedVecProps } from './Vector'
-import { PI } from './constants'
+import { Vector, AVector, AnimatedVecProps } from './Vector'
+import { ORIGIN, PI } from './constants'
 
 // axes tick component
 const calTicksRotation: (
@@ -47,8 +47,8 @@ type TickProps = {
     opacity?: number
     transparent?: boolean
     color?: string
-    tickValue: number
-    showTickValue: boolean
+    tickValues: number[]
+    showTickValues: boolean
     axesThickness?: number // asexThickness to change tick's length accordingly!
     format: (
         n:
@@ -60,12 +60,14 @@ type TickProps = {
     scale: ScaleLinear<number, number>
     visible?: boolean
 }
+// TODO: find a way to calculates margins and position of tick values base on 2d plane (xy ...) and one for general 3d view
+
 const AxesTick: React.FC<TickProps> = ({
     axes,
     thickness = 0.005,
     length = 0.15,
-    tickValue,
-    showTickValue,
+    tickValues,
+    showTickValues,
     axesThickness = 1,
     color = 'black',
     opacity = 1,
@@ -80,41 +82,55 @@ const AxesTick: React.FC<TickProps> = ({
     const _visible = length === 0 ? false : visible
     return (
         <group>
-            <mesh
-                position={calTickPosition(axes, scale(tickValue))}
-                rotation={tickrotation}
-                visible={_visible}
-            >
-                <cylinderBufferGeometry
-                    attach="geometry"
-                    args={[thickness, thickness, _length * axesThickness, 20]}
-                />
-                <meshBasicMaterial
-                    attach="material"
-                    color={color}
-                    opacity={opacity}
-                    transparent={transparent}
-                />
-            </mesh>
+            {tickValues.map((val, idx) => {
+                return (
+                    <group key={idx}>
+                        <mesh
+                            position={calTickPosition(axes, scale(val))}
+                            rotation={tickrotation}
+                            visible={_visible}
+                        >
+                            <cylinderBufferGeometry
+                                attach="geometry"
+                                args={[
+                                    thickness,
+                                    thickness,
+                                    _length * axesThickness,
+                                    20,
+                                ]}
+                            />
+                            <meshBasicMaterial
+                                attach="material"
+                                color={color}
+                                opacity={opacity}
+                                transparent={transparent}
+                            />
+                        </mesh>
 
-            {showTickValue && (
-                <HTML position={calTickPosition(axes, scale(tickValue))}>
-                    <span
-                        className="axes__tick"
-                        style={{
-                            fontFamily: 'KaTex_Main',
-                            opacity: opacity,
-                            fontSize: '.8rem',
-                            margin: '.4rem .1rem auto .1rem',
-                            position: 'absolute',
-                            left: axes === 'xAxes' ? '-.3rem' : '-1.2rem',
-                            top: axes === 'yAxes' ? '-1rem' : 0,
-                        }}
-                    >
-                        {format(tickValue)}
-                    </span>
-                </HTML>
-            )}
+                        {showTickValues && (
+                            <HTML position={calTickPosition(axes, scale(val))}>
+                                <span
+                                    className="axes__tick"
+                                    style={{
+                                        fontFamily: 'KaTex_Main',
+                                        opacity: opacity,
+                                        fontSize: '.8rem',
+                                        margin: '.4rem .1rem auto .1rem',
+                                        position: 'absolute',
+                                        left:
+                                            axes === 'xAxes'
+                                                ? '-.3rem'
+                                                : '-1.2rem',
+                                        top: axes === 'yAxes' ? '-1rem' : 0,
+                                    }}
+                                >
+                                    {format(val)}
+                                </span>
+                            </HTML>
+                        )}
+                    </group>
+                )
+            })}
         </group>
     )
 }
@@ -136,9 +152,7 @@ type AaxesTickProps = {
     from: AnimatedTickProps
     pause: boolean
     setSpringsRef?: React.MutableRefObject<SpringStartFn<AnimatedTickProps>>
-} & Omit<TickProps, keyof AnimatedTickProps | 'tickValue'> & {
-        tickValues: number[]
-    }
+} & Omit<TickProps, keyof AnimatedTickProps>
 
 export const AaxesTick: React.FC<AaxesTickProps> = ({
     from,
@@ -163,17 +177,25 @@ export const AaxesTick: React.FC<AaxesTickProps> = ({
 
     const [springs, setSprings] = useSprings(tickValues.length, (i) => ({
         ref: spRf,
-        from: {
-            color,
-            opacity,
-            thickness,
-            length,
-            axesThickness,
-            visible,
-        } as AnimatedTickProps,
+        length: 0.1,
+        opacity: 1,
+
+        // from: {
+        //     color,
+        //     opacity,
+        //     thickness,
+        //     length,
+        //     axesThickness,
+        //     visible,
+        // },
     }))
     useEffect(() => {
         setSpringsRef.current = setSprings
+        setSprings((i) => ({
+            length: 1,
+            delay: 240 * i,
+            config: { friction: 30, mass: 2, tension: 40 },
+        }))
     }, [pause])
 
     useEffect(() => {
@@ -188,7 +210,7 @@ export const AaxesTick: React.FC<AaxesTickProps> = ({
                 return (
                     <AnimTicks
                         key={idx}
-                        tickValue={tickValues[idx]}
+                        tickValues={tickValues}
                         {...animprops}
                         {...rest}
                     />
@@ -200,7 +222,7 @@ export const AaxesTick: React.FC<AaxesTickProps> = ({
 
 // Axes component:
 
-type AxesProps = {
+interface AxesProps {
     axes: 'xAxes' | 'yAxes' | 'zAxes'
     length?: number
     color?: string
@@ -221,12 +243,80 @@ type AxesProps = {
               }
     ) => string
 }
-export type AnimatedAxesProps = AnimatedVecProps
-export type SetAxes = SpringStartFn<AnimatedAxesProps>
-export type SetTick = SpringStartFn<AnimatedAxesProps>
+
+export const Axes: React.FC<AxesProps> = ({
+    axes,
+    color,
+    opacity = 1,
+    transparent = false, //TODO: impleement transparancy in all subcomponents!
+    origin = ORIGIN,
+    thicknessFactor = 0.8,
+    scale,
+    length,
+    tickValues,
+    showTickValues = false,
+    showlabel = true,
+    format,
+    visible = true,
+}) => {
+    return (
+        <group>
+            <Vector
+                vector={calAxesVector(
+                    axes,
+                    length ? length : scale(tickValues.slice(-1)[0])
+                )}
+                color={color ? color : defaultcolors[axes]}
+                origin={origin}
+                thicknessFactor={thicknessFactor}
+                opacity={opacity}
+                visible={visible}
+            />
+            {tickValues && (
+                <AxesTick
+                    tickValues={tickValues}
+                    axes={axes}
+                    scale={scale}
+                    format={format}
+                    axesThickness={thicknessFactor}
+                    showTickValues={showTickValues}
+                    opacity={opacity}
+                    visible={visible}
+                />
+            )}
+            {showlabel && (
+                <HTML
+                    position={calAxesVector(
+                        axes,
+                        length ? length : scale(tickValues.slice(-1)[0])
+                    )}
+                    visible={visible}
+                >
+                    <div
+                        style={{
+                            padding: '0 .2rem 0 .3rem',
+                            margin: '-1rem auto auto auto',
+                            fontFamily: 'KaTex_Math',
+                            fontSize: '1.3rem',
+                            fontStyle: 'italic',
+                            position: 'absolute',
+                            opacity: opacity,
+                            // backgroundColor: 'yellow',
+                        }}
+                    >
+                        {axes.charAt(0)}
+                    </div>
+                </HTML>
+            )}
+        </group>
+    )
+}
+
+export type SetAxes = SpringStartFn<Partial<AnimatedVecProps>>
+export type SetTick = SpringStartFn<Partial<AnimatedTickProps>>
 type AaxesProps = {
     tickFrom: AnimatedTickProps
-    axesFrom: AnimatedAxesProps
+    axesFrom: AnimatedVecProps
     pause: boolean
     setAxesRef?: React.MutableRefObject<SetAxes>
     setTickRef?: React.MutableRefObject<SetTick>
@@ -280,7 +370,6 @@ export const Aaxes: React.FC<AaxesProps> = ({
                 }}
                 pause={pause}
                 setSpringRef={vecStarFnRef}
-                pointForZero={false}
             />
 
             {tickValues && (
@@ -303,7 +392,7 @@ export const Aaxes: React.FC<AaxesProps> = ({
                     axes={axes}
                     scale={scale}
                     format={format}
-                    showTickValue={showTickValues}
+                    showTickValues={showTickValues}
                     pause={pause}
                     setSpringsRef={tickStarFnRef}
                 />

@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-namespace */
-import React, { useRef, useEffect } from 'react'
-import { animated, useSpring } from 'react-spring'
-import { SpringStartFn, SpringHandle } from '@react-spring/core'
-
+import React from 'react'
+import { animated } from 'react-spring'
 import { extend, ReactThreeFiber, useThree } from 'react-three-fiber'
 import { Vector3, Vector2 } from 'three'
 import { MeshLine, MeshLineMaterial, MeshLineRaycast } from 'threejs-meshline'
@@ -34,7 +32,7 @@ type MeshlineProps = {
     visible?: boolean
 }
 
-export const Meshline: React.FC<MeshlineProps> = ({
+const Meshline: React.FC<MeshlineProps> = ({
     vertices,
     width = 0.05,
     color = '#2a2c33',
@@ -83,64 +81,4 @@ export const Line: React.FC<LineProps> = ({ p1, p2, ...rest }) => {
 }
 
 export const ALine = animated(Line)
-
-export type AnimatedMlineProps = Pick<
-    LineProps,
-    | 'color'
-    | 'dashArray'
-    | 'dashRatio'
-    | 'p1'
-    | 'p2'
-    | 'opacity'
-    | 'visible'
-    | 'width'
->
-export type SetMline = SpringStartFn<AnimatedMlineProps>
-type MlineProps = Omit<LineProps, keyof AnimatedMlineProps> & {
-    from: AnimatedMlineProps
-    pause: boolean
-    setSpringRef: React.MutableRefObject<SetMline>
-}
-export const Mline: React.FC<MlineProps> = ({
-    from,
-    pause,
-    setSpringRef,
-    ...rest
-}) => {
-    const {
-        color = 'black',
-        dashArray = 0,
-        dashRatio = 0,
-        p1,
-        p2,
-        opacity = 1,
-        visible = true,
-        width = 0.05,
-    } = from
-
-    const spRef = useRef<SpringHandle<AnimatedMlineProps>>(null)
-    const [spring, setSpring] = useSpring<AnimatedMlineProps>(() => ({
-        ref: spRef,
-        from: {
-            color,
-            dashArray,
-            dashRatio,
-            p1,
-            p2,
-            opacity,
-            visible,
-            width,
-        },
-    }))
-
-    useEffect(() => {
-        if (pause && spRef.current) {
-            spRef.current.pause()
-        }
-    }, [pause])
-    useEffect(() => {
-        setSpringRef.current = setSpring
-    }, [])
-
-    return <ALine {...spring} {...rest} />
-}
+export default Meshline
