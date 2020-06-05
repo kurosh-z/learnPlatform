@@ -124,7 +124,9 @@ const NavPanel: React.FC<NavPanelProps> = ({
                     top: 0,
                     flexDirection: 'row',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
+                    justifyContent: uiState.isCoursePage
+                        ? 'flex-end'
+                        : 'space-between',
                     width: '100vw',
                     height: '80px',
                     // borderBottom: `2px solid ${theme.seperator.default}`,
@@ -179,7 +181,7 @@ const NavPanel: React.FC<NavPanelProps> = ({
                     },
                 },
             }),
-        [theme]
+        [theme, uiState.isCoursePage]
     )
 
     return (
@@ -190,12 +192,14 @@ const NavPanel: React.FC<NavPanelProps> = ({
                     backgroundColor: navBackColor,
                 }}
             >
-                <a href="#" className="header__logoContainer">
-                    <img
-                        className="header__logo"
-                        src="https://drive.google.com/uc?id=18ghVt5qnGDcZ8srU6_RojYE2YQpt5SE4"
-                    />
-                </a>
+                {!uiState.isCoursePage && (
+                    <a href="#" className="header__logoContainer">
+                        <img
+                            className="header__logo"
+                            src="https://drive.google.com/uc?id=18ghVt5qnGDcZ8srU6_RojYE2YQpt5SE4"
+                        />
+                    </a>
+                )}
 
                 <nav className="header__nav">
                     <a.a
@@ -219,13 +223,15 @@ const NavPanel: React.FC<NavPanelProps> = ({
                         }}
                         color={textColor}
                     />
-                    <Button
-                        borderRad="xl"
-                        size={uiState.isMobile ? 'sm' : 'lg'}
-                        className="nav__btn"
-                    >
-                        log in
-                    </Button>
+                    {!uiState.isCoursePage && (
+                        <Button
+                            borderRad="xl"
+                            size={uiState.isMobile ? 'sm' : 'lg'}
+                            className="nav__btn"
+                        >
+                            log in
+                        </Button>
+                    )}
                 </nav>
             </a.header>
             <SidePanel />

@@ -3,7 +3,7 @@
  *********************************/
 const entry = {
     app: './src/index',
-    latex_parser: './src/math-components/parser/index',
+    // latex_parser: './src/math-components/parser/index',
 }
 /*********************************
  * Resolve

@@ -42,6 +42,7 @@ export type LatexProps = {
     y?: number
     svgWidth?: number
     svgHeight?: number
+    svgTransform?: string
     style?: React.CSSProperties
     font_size?: number
     className?: string
@@ -58,6 +59,7 @@ const Latex: React.FC<LatexProps> & LatexAnim = ({
     font_size = 1,
     svgWidth,
     svgHeight,
+    svgTransform,
     style,
     className,
     latexId,
@@ -138,7 +140,7 @@ const Latex: React.FC<LatexProps> & LatexAnim = ({
             }),
         [font_size]
     )
-    // console.log(parserOutput);
+
     return (
         <>
             {!inline && (
@@ -150,19 +152,25 @@ const Latex: React.FC<LatexProps> & LatexAnim = ({
                     xmlnsXlink="http://www.w3.org/1999/xlink"
                     width={svgWidth ? svgWidth : width + 20 * fontFactor}
                     height={svgHeight ? svgHeight : height + 20 * fontFactor}
-                    style={style}
+                    // transform={svgTransform}
+                    style={{
+                        ...style,
+                        // backgroundColor: 'transparent',
+                    }}
                 >
-                    <g
-                        className={'latex'}
-                        css={mathcss.css}
-                        transform={`translate(${x + 10 * fontFactor} ${
-                            y - top + 10 * fontFactor
-                        })`}
-                    >
-                        <ParserComp
-                            parserOut={parserOutput}
-                            childrenProps={childrenProps}
-                        />
+                    <g style={{ transform: svgTransform }}>
+                        <g
+                            className={'latex'}
+                            css={mathcss.css}
+                            transform={`translate(${x + 10 * fontFactor} ${
+                                y - top + 10 * fontFactor
+                            })`}
+                        >
+                            <ParserComp
+                                parserOut={parserOutput}
+                                childrenProps={childrenProps}
+                            />
+                        </g>
                     </g>
                 </svg>
             )}
@@ -188,7 +196,6 @@ const Latex: React.FC<LatexProps> & LatexAnim = ({
                                 parserOut={parserOutput}
                                 childrenProps={childrenProps}
                             />
-                            >
                         </g>
                     </svg>
                 </span>
