@@ -6,7 +6,12 @@ import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial'
 import { Line2 } from 'three/examples/jsm/lines/Line2.js'
 import { ReactThreeFiber, useThree, extend, Camera } from 'react-three-fiber'
-import { SpringHandle, SpringStartFn, SpringConfig } from '@react-spring/core'
+import {
+    SpringHandle,
+    SpringStartFn,
+    SpringConfig,
+    AnimationProps,
+} from '@react-spring/core'
 import { useSpring, animated } from 'react-spring'
 // import { Line } from './Meshline'
 // extending the line2 to be used in react-fiber
@@ -26,27 +31,19 @@ declare global {
         }
     }
 }
-const visibleAtZDepth = (depth: number, camera: Camera) => {
-    // compensate for cameras not positioned at z=0
-    const cameraOffset = camera.position.z
-    if (depth < cameraOffset) depth -= cameraOffset
-    else depth += cameraOffset
+// const visibleAtZDepth = (depth: number, camera: Camera) => {
+//     // compensate for cameras not positioned at z=0
+//     const cameraOffset = camera.position.z
+//     if (depth < cameraOffset) depth -= cameraOffset
+//     else depth += cameraOffset
 
-    // vertical fov in radians
-    const vFOV = (camera.fov * Math.PI) / 180
+//     // vertical fov in radians
+//     const vFOV = (camera.fov * Math.PI) / 180
 
-    // Math.abs to ensure the result is always positive
-    const visible_height = 2 * Math.tan(vFOV / 2) * Math.abs(depth)
-    const visible_width = visible_height * camera.aspect
-    return { w: visible_width, h: visible_height }
-}
-
-// const visibleWidthAtZDepth = (
-//     depth: number,
-//     camera: THREE.PerspectiveCamera
-// ) => {
-//     const height = visibleHeightAtZDepth(depth, camera)
-//     return height * camera.aspect
+//     // Math.abs to ensure the result is always positive
+//     const visible_height = 2 * Math.tan(vFOV / 2) * Math.abs(depth)
+//     const visible_width = visible_height * camera.aspect
+//     return { w: visible_width, h: visible_height }
 // }
 
 type LineSetProps = {
@@ -203,9 +200,12 @@ type SpringArgs = {
 }
 export type SetGridFn = (args: {
     to: GAnimProps
-    config: SpringConfig
-    delay: number
-}) => void
+    from?: GAnimProps
+    config?: SpringConfig
+    delay?: number
+    default?: AnimationProps['default']
+}) => Promise<object>
+
 // Grids
 interface GridProps {
     type?: 'xy' | 'xz' | 'yz'
@@ -263,27 +263,44 @@ const Grids: React.FC<GridProps> = ({
     }))
 
     useEffect(() => {
-        const setGridFn: SetGridFn = async ({ to, config, delay }) => {
+        const setGridFn: SetGridFn = async ({ to, from, config, delay }) => {
             if (to.hdraw || to.vdraw) {
-                await setGspring({
+                setGspring({
                     visible: true,
-                    delay: delay / 2,
+
                     default: { immediate: true },
                 })
-                await setGspring({
-                    to: {
-                        horz_end_point: to.hdraw
-                            ? horz_end_point
-                            : horz_start_point,
-                        vert_end_point: to.vdraw
-                            ? vert_end_point
-                            : vert_start_point,
-                    },
-                    config: config,
-                    delay: delay / 2,
-                })
+                let res1, res2
+                if (to.hdraw) {
+                    res1 = setGspring({
+                        to: {
+                            horz_end_point: horz_end_point,
+                        },
+                        delay: delay,
+                        config: config,
+                    })
+                }
+
+                if (to.vdraw) {
+                    res2 = setGspring({
+                        to: { vert_end_point: vert_end_point },
+                        delay: delay,
+                        config: config,
+                    })
+                }
+
+                return [res1, res2]
             } else {
                 await setGspring({
+                    from: {
+                        horz_end_point: from.hdraw
+                            ? horz_end_point
+                            : horz_start_point,
+                        vert_end_point: from.vdraw
+                            ? vert_end_point
+                            : vert_start_point,
+                        visible: true,
+                    },
                     to: {
                         horz_end_point: horz_start_point,
                         vert_end_point: vert_start_point,
@@ -291,10 +308,11 @@ const Grids: React.FC<GridProps> = ({
                     config: config,
                     delay: delay,
                 })
-                await setGspring({
-                    visible: true,
+                const res1 = await setGspring({
+                    visible: false,
                     default: { immediate: true },
                 })
+                return res1
             }
         }
         gFuncRef.current = setGridFn

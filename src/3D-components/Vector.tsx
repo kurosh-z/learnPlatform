@@ -2,14 +2,14 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { HTML } from 'drei'
-import { ReactThreeFiber, extend } from 'react-three-fiber'
+import { ReactThreeFiber, extend, useFrame } from 'react-three-fiber'
 import { useSpring, animated } from 'react-spring'
 import { SpringHandle, SpringStartFn, SpringValues } from '@react-spring/core'
 import { CustomCylinderBufferGeometry } from './CustomCylinderGeometry'
 import { ORIGIN } from './constants'
 import { Point } from './Point'
 import { Latex } from '../math-components'
-import { sMultiply, addVectors } from '../shared'
+import { sMultiply } from '../shared'
 
 // extend the class to use it in react!
 extend({ CustomCylinderBufferGeometry })
@@ -61,22 +61,55 @@ const Shaft: React.FC<ShaftProps> = ({
     transparent = false,
 }) => {
     // ref to objects:
-
-    const onUpdate = (self: THREE.Mesh) => {
-        const curDir = calCurrentDirection(self)
-        const _dir =
-            direction instanceof THREE.Vector3
-                ? direction.clone().normalize()
-                : new THREE.Vector3().fromArray(direction).normalize()
-        const quaternion = new THREE.Quaternion()
-        quaternion.setFromUnitVectors(curDir, _dir)
-        self.applyQuaternion(quaternion)
-        self.updateMatrixWorld()
-        self.scale.set(1, mag, 1)
-    }
+    const ref = useRef<THREE.Mesh>(null)
+    useFrame(() => {
+        const shaft = ref.current
+        if (shaft) {
+            const curDir = calCurrentDirection(shaft)
+            const _dir =
+                direction instanceof THREE.Vector3
+                    ? direction.clone().normalize()
+                    : new THREE.Vector3().fromArray(direction).normalize()
+            const quaternion = new THREE.Quaternion()
+            quaternion.setFromUnitVectors(curDir, _dir)
+            shaft.applyQuaternion(quaternion)
+            shaft.updateMatrixWorld()
+            shaft.scale.set(1, mag, 1)
+        }
+    })
+    // const onUpdate = (self: THREE.Mesh) => {
+    //     const curDir = calCurrentDirection(self)
+    //     const _dir =
+    //         direction instanceof THREE.Vector3
+    //             ? direction.clone().normalize()
+    //             : new THREE.Vector3().fromArray(direction).normalize()
+    //     const quaternion = new THREE.Quaternion()
+    //     quaternion.setFromUnitVectors(curDir, _dir)
+    //     self.applyQuaternion(quaternion)
+    //     self.updateMatrixWorld()
+    //     self.scale.set(1, mag, 1)
+    // }
 
     return (
         <mesh
+            ref={ref}
+            // onBeforeRender={() => {
+            //     const shaft = ref.current
+            //     if (shaft) {
+            //         const curDir = calCurrentDirection(shaft)
+            //         const _dir =
+            //             direction instanceof THREE.Vector3
+            //                 ? direction.clone().normalize()
+            //                 : new THREE.Vector3()
+            //                       .fromArray(direction)
+            //                       .normalize()
+            //         const quaternion = new THREE.Quaternion()
+            //         quaternion.setFromUnitVectors(curDir, _dir)
+            //         shaft.applyQuaternion(quaternion)
+            //         shaft.updateMatrixWorld()
+            //         shaft.scale.set(1, mag, 1)
+            //     }
+            // }}
             onPointerDown={onPointerDown}
             onPointerOver={(e) => {
                 e.stopPropagation()
@@ -86,7 +119,7 @@ const Shaft: React.FC<ShaftProps> = ({
                 // e.stopPropagation();
                 if (hover) hover(false)
             }}
-            onUpdate={onUpdate}
+            // onUpdate={onUpdate}
             visible={visibile}
         >
             <customCylinderBufferGeometry

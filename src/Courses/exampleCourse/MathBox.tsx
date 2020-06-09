@@ -195,7 +195,7 @@ const MathBox: React.FC = () => {
                             pause={mathBoxState.pause}
                             axSetFnRefs={anim.setCoordinateAxis}
                             opacity={{ xAxes: 1, yAxes: 1 }}
-                            axisVisiblity={{ xAxes: false, yAxes: false }}
+                            axisVisiblity={{ xAxes: true, yAxes: true }}
                             tickSetFnRefs={anim.setCoordTicks}
                             renderAxis={{ xAxes: true, yAxes: true }}
                             colors={{
