@@ -452,6 +452,7 @@ function claculatePoints({
 
     return points
 }
+const STORAGE = {}
 
 export function useMathboxAnim({
     scale,
@@ -534,19 +535,18 @@ export function useMathboxAnim({
 
     const currProgress = useRef({ sec: 0, sub: 0, con: 0, sobj: 0, sanim: 0 })
 
-    const section0 = useMemo(() => {
+    const createCoordinatesAnims = useCallback(() => {
         const delay = 200
-
         // Defining single animation objects
-        const anim_xAxes = new Sanim<AnimatedVecProps>({
+        STORAGE['anim_xAxes'] = new Sanim<AnimatedVecProps>({
             set: setxAxesRef,
             from: { visible: false, vector: [0, 0, 0] },
         })
-        const anim_yAxes = new Sanim<AnimatedVecProps>({
+        STORAGE['anim_yAxes'] = new Sanim<AnimatedVecProps>({
             set: setyAxesRef,
             from: { visible: false, vector: [0, 0, 0] },
         })
-        const anim_xTicks = new Sanim<AnimatedTickProps>({
+        STORAGE['anim_xTicks'] = new Sanim<AnimatedTickProps>({
             set: setxTicksRef,
             from: (i: number) => ({
                 opacity: 0,
@@ -555,7 +555,7 @@ export function useMathboxAnim({
                 delay: (delay / 4) * i,
             }),
         })
-        const anim_yTicks = new Sanim<AnimatedTickProps>({
+        STORAGE['anim_yTicks'] = new Sanim<AnimatedTickProps>({
             set: setyTicksRef,
             from: (i: number) => ({
                 opacity: 0,
@@ -564,7 +564,7 @@ export function useMathboxAnim({
                 delay: (delay / 4) * i,
             }),
         })
-        const anim_grids = new Sanim({
+        STORAGE['anim_grids'] = new Sanim({
             set: gridStartRef as SanimSet<{
                 hdraw: boolean
                 vdraw: boolean
@@ -574,402 +574,600 @@ export function useMathboxAnim({
                 vdraw: false,
             },
         })
-        const anim_x1 = new Sanim<AnimatedVecProps>({
-            set: x1_startRef,
-            from: x1_from,
-        })
-        const anim_x1b = new Sanim({
-            set: x1base_startRef,
-            from: x1b_from,
-        })
-        const anim_x2 = new Sanim({
-            set: x2_startRef,
-            from: x2_from,
-        })
-        const anim_u = new Sanim({
-            set: u_startRef,
-            from: u_from,
-        })
-        const anim_points = new Sanim({
-            set: setPointsStringsRef,
-            from: () => ({}),
-        })
-        const anim_line = new Sanim({
-            set: setMlineRef,
-            from: {},
-        })
+    }, [])
 
-        // Defining sub0:'starting a 2d coordinates system'
-        const sub0 = new Subsection({
-            title: 'coordinates',
-            subNumber: 0,
-            secNumber: 0,
-            meta: 'starting a 2d coordinates system',
-        })
+    const createbasisAnims = useCallback(
+        ({
+            _x1_from,
+            _x1b_from,
+            _x2_from,
+            _u_from,
+        }: {
+            _x1_from: AnimatedVecProps
+            _x1b_from: AnimatedVecProps
+            _x2_from: AnimatedVecProps
+            _u_from: AnimatedVecProps
+        }) => {
+            // Defining single animation objects
 
-        sub0.add({
-            anim: anim_xAxes,
-            props: {
-                to: { visible: true },
-                meta: 'make xaxes visible',
-            },
-        })
-            .add({
-                anim: anim_yAxes,
+            STORAGE['anim_x1'] = new Sanim<AnimatedVecProps>({
+                set: x1_startRef,
+                from: _x1_from,
+            })
+            STORAGE['anim_x1b'] = new Sanim({
+                set: x1base_startRef,
+                from: _x1b_from,
+            })
+            STORAGE['anim_x2'] = new Sanim({
+                set: x2_startRef,
+                from: _x2_from,
+            })
+            STORAGE['anim_u'] = new Sanim({
+                set: u_startRef,
+                from: _u_from,
+            })
+            STORAGE['anim_points'] = new Sanim({
+                set: setPointsStringsRef,
+                from: () => ({}),
+            })
+            STORAGE['anim_line'] = new Sanim({
+                set: setMlineRef,
+                from: {},
+            })
+        },
+        []
+    )
+
+    const create_sub_2dCoordinates = useCallback(
+        (secNum: number, subNum: number) => {
+            const delay = 200
+            // Defining sub0:'starting a 2d coordinates system'
+            const sub = new Subsection({
+                title: 'coordinates',
+                subNumber: subNum,
+                secNumber: secNum,
+                meta: 'starting a 2d coordinates system',
+            })
+
+            sub.add({
+                anim: STORAGE['anim_xAxes'],
                 props: {
                     to: { visible: true },
-                    meta: 'make yaxes visible',
+                    meta: 'make xaxes visible',
                 },
             })
-            .nextCon()
-            .add({
+                .add({
+                    anim: STORAGE['anim_yAxes'],
+                    props: {
+                        to: { visible: true },
+                        meta: 'make yaxes visible',
+                    },
+                })
+                .nextCon()
+                .add({
+                    anim: STORAGE['anim_xAxes'],
+                    props: {
+                        to: { vector: [scale(10), 0, 0] },
+                        settings: { config: FAST },
+                        meta: 'starting off x axis',
+                    },
+                })
+                .add({
+                    anim: STORAGE['anim_yAxes'],
+                    props: {
+                        to: { vector: [0, scale(10), 0] },
+                        settings: { config: FAST },
+                        meta: 'starting off y axis',
+                    },
+                })
+                .add({
+                    anim: STORAGE['anim_xTicks'],
+                    props: {
+                        to: (i: number) => ({
+                            opacity: 1,
+                            length: 0.2,
+                            config: SLOW,
+                            delay: (delay / 4) * i,
+                        }),
+                        meta: 'starting off x ticks',
+                    },
+                })
+                .add({
+                    anim: STORAGE['anim_yTicks'],
+                    props: {
+                        to: (i: number) => ({
+                            opacity: 1,
+                            length: 0.2,
+                            config: SLOW,
+                            delay: (delay / 4) * i,
+                        }),
+                        meta: 'starting off y ticks',
+                    },
+                })
+                .add({
+                    anim: STORAGE['anim_grids'],
+                    props: {
+                        to: { vdraw: true, hdraw: true },
+                        settings: {
+                            config: GRID_CONF,
+                            delay: 2 * delay,
+                        },
+                        meta: 'set horizontal grids',
+                    },
+                })
+                .add({
+                    anim: STORAGE['anim_grids'],
+                    props: {
+                        to: { hdraw: true },
+                        settings: { config: GRID_CONF, delay: 4 * delay },
+                        meta: 'set vertical grids',
+                    },
+                })
+
+            return sub
+        },
+        []
+    )
+
+    const create2dSpan = useCallback(
+        ({
+            base1,
+            base2,
+            secNum,
+        }: {
+            base1: [number, number, number]
+            base2: [number, number, number]
+            secNum: number
+        }) => {
+            const delay = 200
+
+            // Defining single animation objects
+            const anim_xAxes = new Sanim<AnimatedVecProps>({
+                set: setxAxesRef,
+                from: { visible: false, vector: [0, 0, 0] },
+            })
+            const anim_yAxes = new Sanim<AnimatedVecProps>({
+                set: setyAxesRef,
+                from: { visible: false, vector: [0, 0, 0] },
+            })
+            const anim_xTicks = new Sanim<AnimatedTickProps>({
+                set: setxTicksRef,
+                from: (i: number) => ({
+                    opacity: 0,
+                    length: 0,
+                    config: FAST,
+                    delay: (delay / 4) * i,
+                }),
+            })
+            const anim_yTicks = new Sanim<AnimatedTickProps>({
+                set: setyTicksRef,
+                from: (i: number) => ({
+                    opacity: 0,
+                    length: 0,
+                    config: FAST,
+                    delay: (delay / 4) * i,
+                }),
+            })
+            const anim_grids = new Sanim({
+                set: gridStartRef as SanimSet<{
+                    hdraw: boolean
+                    vdraw: boolean
+                }>,
+                from: {
+                    hdraw: false,
+                    vdraw: false,
+                },
+            })
+            const anim_x1 = new Sanim<AnimatedVecProps>({
+                set: x1_startRef,
+                from: x1_from,
+            })
+            const anim_x1b = new Sanim({
+                set: x1base_startRef,
+                from: x1b_from,
+            })
+            const anim_x2 = new Sanim({
+                set: x2_startRef,
+                from: x2_from,
+            })
+            const anim_u = new Sanim({
+                set: u_startRef,
+                from: u_from,
+            })
+            const anim_points = new Sanim({
+                set: setPointsStringsRef,
+                from: () => ({}),
+            })
+            const anim_line = new Sanim({
+                set: setMlineRef,
+                from: {},
+            })
+
+            // Defining sub0:'starting a 2d coordinates system'
+            const sub0 = new Subsection({
+                title: 'coordinates',
+                subNumber: 0,
+                secNumber: 0,
+                meta: 'starting a 2d coordinates system',
+            })
+
+            sub0.add({
                 anim: anim_xAxes,
                 props: {
-                    to: { vector: [scale(10), 0, 0] },
-                    settings: { config: FAST },
-                    meta: 'starting off x axis',
+                    to: { visible: true },
+                    meta: 'make xaxes visible',
                 },
             })
-            .add({
-                anim: anim_yAxes,
-                props: {
-                    to: { vector: [0, scale(10), 0] },
-                    settings: { config: FAST },
-                    meta: 'starting off y axis',
-                },
-            })
-            .add({
-                anim: anim_xTicks,
-                props: {
-                    to: (i: number) => ({
-                        opacity: 1,
-                        length: 0.2,
-                        config: SLOW,
-                        delay: (delay / 4) * i,
-                    }),
-                    meta: 'starting off x ticks',
-                },
-            })
-            .add({
-                anim: anim_yTicks,
-                props: {
-                    to: (i: number) => ({
-                        opacity: 1,
-                        length: 0.2,
-                        config: SLOW,
-                        delay: (delay / 4) * i,
-                    }),
-                    meta: 'starting off y ticks',
-                },
-            })
-
-            .add({
-                anim: anim_grids,
-                props: {
-                    to: { vdraw: true },
-                    settings: {
-                        config: GRID_CONF,
-                        delay: 2 * delay,
+                .add({
+                    anim: anim_yAxes,
+                    props: {
+                        to: { visible: true },
+                        meta: 'make yaxes visible',
                     },
-                    meta: 'set horizontal grids',
-                },
-            })
-            .add({
-                anim: anim_grids,
-                props: {
-                    to: { hdraw: true },
-                    settings: { config: GRID_CONF, delay: 4 * delay },
-                    meta: 'set vertical grids',
-                },
-            })
-
-        // Defining Sub01:'starting off a 2D span'
-        const sub01 = new Subsection({
-            title: 'starting basis',
-            secNumber: 0,
-            subNumber: 1,
-            meta: 'starting off a 2D span',
-        })
-
-        sub01
-            .add<AnimatedVecProps>({
-                anim: anim_x1,
-                props: {
-                    to: { visible: true },
-                    meta: 'set x1 visible',
-                },
-            })
-            .nextCon()
-            .add<AnimatedVecProps>({
-                anim: anim_x1,
-                props: {
-                    to: { opacity: 1, label_opacity: 1 },
-                    settings: { config: cubic_in_out(4) },
-                    meta: 'starting off x1',
-                },
-            })
-            .nextCon()
-            .add<AnimatedVecProps>({
-                anim: anim_x2,
-                props: {
-                    to: { visible: true },
-                    meta: 'set x2 visible',
-                },
-            })
-            .nextCon()
-            .add<AnimatedVecProps>({
-                anim: anim_x2,
-                props: {
-                    to: { opacity: 1, label_opacity: 1 },
-                    settings: { config: cubic_in_out(4) },
-                    meta: 'starting off x2',
-                },
-            })
-            .nextCon()
-            .add<AnimatedVecProps>({
-                anim: anim_x1b,
-                props: {
-                    to: { visible: true },
-                    meta: 'set x1b visible',
-                },
-            })
-            .nextCon()
-            .add<AnimatedVecProps>({
-                anim: anim_x1b,
-                props: {
-                    to: { opacity: 0.7 },
-                    settings: { config: cubic_in_out(4) },
-                    meta: 'show x1 base ',
-                },
-            })
-            .add<AnimatedVecProps>({
-                anim: anim_x1,
-                props: {
-                    to: {
-                        origin: x2_base,
-                        label_transform: 'translate(10px, -20px)',
+                })
+                .nextCon()
+                .add({
+                    anim: anim_xAxes,
+                    props: {
+                        to: { vector: [scale(10), 0, 0] },
+                        settings: { config: FAST },
+                        meta: 'starting off x axis',
                     },
-                    settings: { config: cubic_in_out(4) },
-                    meta: " move x1's origin",
-                },
-            })
-            .add<AnimatedVecProps>({
-                anim: anim_x1b,
-                props: {
-                    to: { opacity: 0 },
-                    settings: { config: cubic_in_out(6) },
-                    meta: 'set opacity of x1 base to zero',
-                },
-            })
-            .nextCon()
-            .add<AnimatedVecProps>({
-                anim: anim_x1b,
-                props: {
-                    to: { visible: false },
-                    meta: 'set x1b unvisible',
-                },
-            })
-            .nextCon()
-            .add<AnimatedVecProps>({
-                anim: anim_u,
-                props: {
-                    to: { visible: true },
-                    meta: 'set u visible',
-                },
-            })
-            .nextCon()
-            .add<AnimatedVecProps>({
-                anim: anim_u,
-                props: {
-                    to: {
-                        vector: linearComb({ vec1: x1_base, vec2: x2_base }),
-                        label_opacity: 1,
+                })
+                .add({
+                    anim: anim_yAxes,
+                    props: {
+                        to: { vector: [0, scale(10), 0] },
+                        settings: { config: FAST },
+                        meta: 'starting off y axis',
                     },
-                    settings: { config: SLOW },
-                    meta: 'show vector u',
-                },
+                })
+                .add({
+                    anim: anim_xTicks,
+                    props: {
+                        to: (i: number) => ({
+                            opacity: 1,
+                            length: 0.2,
+                            config: SLOW,
+                            delay: (delay / 4) * i,
+                        }),
+                        meta: 'starting off x ticks',
+                    },
+                })
+                .add({
+                    anim: anim_yTicks,
+                    props: {
+                        to: (i: number) => ({
+                            opacity: 1,
+                            length: 0.2,
+                            config: SLOW,
+                            delay: (delay / 4) * i,
+                        }),
+                        meta: 'starting off y ticks',
+                    },
+                })
+                .add({
+                    anim: anim_grids,
+                    props: {
+                        to: { vdraw: true, hdraw: true },
+                        settings: {
+                            config: GRID_CONF,
+                            delay: 2 * delay,
+                        },
+                        meta: 'set horizontal grids',
+                    },
+                })
+                .add({
+                    anim: anim_grids,
+                    props: {
+                        to: { hdraw: true },
+                        settings: { config: GRID_CONF, delay: 4 * delay },
+                        meta: 'set vertical grids',
+                    },
+                })
+
+            // Defining Sub01:'starting off a 2D span'
+            const sub01 = new Subsection({
+                title: 'starting basis',
+                secNumber: 0,
+                subNumber: 1,
+                meta: 'starting off a 2D span',
             })
 
-        // Defining Sub02:' 2D span: linear combination of alpha*x1+x2'
-        const sub02 = new Subsection({
-            title: '2D span of alpha*x1+x2',
-            secNumber: 0,
-            subNumber: 2,
-            meta: '2D span: linear combination of alpha*x1+x2',
-        })
-
-        const ulabeltrans = [
-            '(-8px, 25px)',
-            '(-10px, 10px)',
-            '(-15px, 0px)',
-            '(0px, 0px)',
-            '(0px, -16px)',
-            '(-35px, -45px)',
-            '(-45px, -60px)',
-            '(-55px, -70px)',
-        ]
-        const x1labeltrans = [
-            '(25px, 12px)',
-            '(20px, 10px)',
-            '(15px, 0px)',
-            '(-5px, -30px)',
-            '(-10px, -35px)',
-            '(-20px, -50px)',
-            '(-25px, -70px)',
-            '(-30px, -80px)',
-        ]
-        let idx = points.length - 1
-        let i = 0
-
-        for (let alpha = 4; alpha > -4; alpha += -1) {
-            const v1 = sMultiply(alpha, x1_base)
-            const uv = linearComb({ vec1: x2_base, vec2: v1 })
-            if (i !== 0) {
-                sub02.nextCon()
-            }
-            sub02
+            sub01
+                .add<AnimatedVecProps>({
+                    anim: anim_x1,
+                    props: {
+                        to: { visible: true },
+                        meta: 'set x1 visible',
+                    },
+                })
+                .nextCon()
+                .add<AnimatedVecProps>({
+                    anim: anim_x1,
+                    props: {
+                        to: { opacity: 1, label_opacity: 1 },
+                        settings: { config: cubic_in_out(4) },
+                        meta: 'starting off x1',
+                    },
+                })
+                .nextCon()
+                .add<AnimatedVecProps>({
+                    anim: anim_x2,
+                    props: {
+                        to: { visible: true },
+                        meta: 'set x2 visible',
+                    },
+                })
+                .nextCon()
+                .add<AnimatedVecProps>({
+                    anim: anim_x2,
+                    props: {
+                        to: { opacity: 1, label_opacity: 1 },
+                        settings: { config: cubic_in_out(4) },
+                        meta: 'starting off x2',
+                    },
+                })
+                .nextCon()
+                .add<AnimatedVecProps>({
+                    anim: anim_x1b,
+                    props: {
+                        to: { visible: true },
+                        meta: 'set x1b visible',
+                    },
+                })
+                .nextCon()
+                .add<AnimatedVecProps>({
+                    anim: anim_x1b,
+                    props: {
+                        to: { opacity: 0.7 },
+                        settings: { config: cubic_in_out(4) },
+                        meta: 'show x1 base ',
+                    },
+                })
                 .add<AnimatedVecProps>({
                     anim: anim_x1,
                     props: {
                         to: {
-                            vector: v1,
-                            label_factor: alpha,
-                            label_transform: `translate${x1labeltrans[i]}`,
+                            origin: x2_base,
+                            label_transform: 'translate(10px, -20px)',
                         },
-                        settings: { config: FAST, delay: i === 0 ? 5000 : 0 },
-                        meta: `set x1 to ${alpha} * x1`,
+                        settings: { config: cubic_in_out(4) },
+                        meta: " move x1's origin",
                     },
                 })
+                .add<AnimatedVecProps>({
+                    anim: anim_x1b,
+                    props: {
+                        to: { opacity: 0 },
+                        settings: { config: cubic_in_out(6) },
+                        meta: 'set opacity of x1 base to zero',
+                    },
+                })
+                .nextCon()
+                .add<AnimatedVecProps>({
+                    anim: anim_x1b,
+                    props: {
+                        to: { visible: false },
+                        meta: 'set x1b unvisible',
+                    },
+                })
+                .nextCon()
+                .add<AnimatedVecProps>({
+                    anim: anim_u,
+                    props: {
+                        to: { visible: true },
+                        meta: 'set u visible',
+                    },
+                })
+                .nextCon()
                 .add<AnimatedVecProps>({
                     anim: anim_u,
                     props: {
                         to: {
-                            vector: uv,
-                            label_transform: `translate${ulabeltrans[i]}`,
+                            vector: linearComb({
+                                vec1: x1_base,
+                                vec2: x2_base,
+                            }),
+                            label_opacity: 1,
                         },
-                        settings: { config: FAST, delay: i === 0 ? 5000 : 0 },
-                        meta: `set u to ${alpha}*x1 + x2`,
+                        settings: { config: SLOW },
+                        meta: 'show vector u',
+                    },
+                })
+
+            // Defining Sub02:' 2D span: linear combination of alpha*x1+x2'
+            const sub02 = new Subsection({
+                title: '2D span of alpha*x1+x2',
+                secNumber: 0,
+                subNumber: 2,
+                meta: '2D span: linear combination of alpha*x1+x2',
+            })
+
+            const ulabeltrans = [
+                '(-8px, 25px)',
+                '(-10px, 10px)',
+                '(-15px, 0px)',
+                '(0px, 0px)',
+                '(0px, -16px)',
+                '(-35px, -45px)',
+                '(-45px, -60px)',
+                '(-55px, -70px)',
+            ]
+            const x1labeltrans = [
+                '(25px, 12px)',
+                '(20px, 10px)',
+                '(15px, 0px)',
+                '(-5px, -30px)',
+                '(-10px, -35px)',
+                '(-20px, -50px)',
+                '(-25px, -70px)',
+                '(-30px, -80px)',
+            ]
+            let idx = points.length - 1
+            let i = 0
+
+            for (let alpha = 4; alpha > -4; alpha += -1) {
+                const v1 = sMultiply(alpha, x1_base)
+                const uv = linearComb({ vec1: x2_base, vec2: v1 })
+                if (i !== 0) {
+                    sub02.nextCon()
+                }
+                sub02
+                    .add<AnimatedVecProps>({
+                        anim: anim_x1,
+                        props: {
+                            to: {
+                                vector: v1,
+                                label_factor: alpha,
+                                label_transform: `translate${x1labeltrans[i]}`,
+                            },
+                            settings: {
+                                config: FAST,
+                                delay: i === 0 ? 5000 : 0,
+                            },
+                            meta: `set x1 to ${alpha} * x1`,
+                        },
+                    })
+                    .add<AnimatedVecProps>({
+                        anim: anim_u,
+                        props: {
+                            to: {
+                                vector: uv,
+                                label_transform: `translate${ulabeltrans[i]}`,
+                            },
+                            settings: {
+                                config: FAST,
+                                delay: i === 0 ? 5000 : 0,
+                            },
+                            meta: `set u to ${alpha}*x1 + x2`,
+                        },
+                    })
+                    .nextCon()
+                    .add<Function>({
+                        anim: anim_points,
+                        props: {
+                            to: ((idx) => (i) => {
+                                if (i === idx) {
+                                    return {
+                                        from: { radius: 0.0001 },
+                                        to: { radius: 0.09 },
+                                        config: cubic_in_out(0.4),
+                                    }
+                                } else return {}
+                            })(idx),
+                            from: ((idx) => (i) => {
+                                if (i === idx) {
+                                    return {
+                                        from: { radius: 0.09 },
+                                        to: { radius: 0.0001 },
+                                    }
+                                } else return {}
+                            })(idx),
+                            meta: `set ${i}st point on ${alpha}*x1 + x2`,
+                        },
+                    })
+
+                idx--
+                i++
+            }
+            sub02
+                .add({
+                    anim: anim_x2,
+                    props: {
+                        to: { opacity: 0, label_opacity: 0 },
+                        settings: {
+                            config: cubic_in_out(2),
+                            delay: 4 * delay,
+                        },
+                        meta: 'set opacity of x2 to zero',
+                    },
+                })
+                .add({
+                    anim: anim_x1,
+                    props: {
+                        to: { opacity: 0, label_opacity: 0 },
+                        settings: {
+                            config: cubic_in_out(2),
+                            delay: 9 * delay,
+                        },
+                        meta: 'set opacity of x1 to zero',
+                    },
+                })
+                .add({
+                    anim: anim_u,
+                    props: {
+                        to: { opacity: 0, label_opacity: 0 },
+                        settings: {
+                            config: cubic_in_out(2),
+                            delay: 14 * delay,
+                        },
+                        meta: 'set opacity of u to zero',
                     },
                 })
                 .nextCon()
-                .add<Function>({
-                    anim: anim_points,
+                .add({
+                    anim: anim_x2,
                     props: {
-                        to: ((idx) => (i) => {
-                            if (i === idx) {
-                                return {
-                                    from: { radius: 0.0001 },
-                                    to: { radius: 0.09 },
-                                    config: cubic_in_out(0.4),
-                                }
-                            } else return {}
-                        })(idx),
-                        from: ((idx) => (i) => {
-                            if (i === idx) {
-                                return {
-                                    from: { radius: 0.09 },
-                                    to: { radius: 0.0001 },
-                                }
-                            } else return {}
-                        })(idx),
-                        meta: `set ${i}st point on ${alpha}*x1 + x2`,
+                        to: { visible: false },
+                        meta: 'set x2 unvisible',
+                    },
+                })
+                .add({
+                    anim: anim_x1,
+                    props: {
+                        to: { visible: false },
+                        meta: 'set x1 unvisible',
+                    },
+                })
+                .add({
+                    anim: anim_u,
+                    props: {
+                        to: { visible: false },
+                        meta: 'set u unvisible',
+                    },
+                })
+                .nextCon()
+                .add({
+                    anim: anim_line,
+                    props: {
+                        to: {
+                            visible: true,
+                        },
+
+                        meta: 'set line visible',
+                    },
+                })
+                .nextCon()
+                .add({
+                    anim: anim_line,
+                    props: {
+                        to: {
+                            p2: linearComb({
+                                vec1: x1_base,
+                                vec2: x2_base,
+                                alpha1: -3.1,
+                            }),
+                        },
+                        settings: { config: SLOW },
+                        meta: 'drawing a mline thorought lc points',
                     },
                 })
 
-            idx--
-            i++
-        }
-        sub02
-            .add({
-                anim: anim_x2,
-                props: {
-                    to: { opacity: 0, label_opacity: 0 },
-                    settings: {
-                        config: cubic_in_out(2),
-                        delay: 4 * delay,
-                    },
-                    meta: 'set opacity of x2 to zero',
-                },
-            })
-            .add({
-                anim: anim_x1,
-                props: {
-                    to: { opacity: 0, label_opacity: 0 },
-                    settings: {
-                        config: cubic_in_out(2),
-                        delay: 9 * delay,
-                    },
-                    meta: 'set opacity of x1 to zero',
-                },
-            })
-            .add({
-                anim: anim_u,
-                props: {
-                    to: { opacity: 0, label_opacity: 0 },
-                    settings: {
-                        config: cubic_in_out(2),
-                        delay: 14 * delay,
-                    },
-                    meta: 'set opacity of u to zero',
-                },
-            })
-            .nextCon()
-            .add({
-                anim: anim_x2,
-                props: {
-                    to: { visible: false },
-                    meta: 'set x2 unvisible',
-                },
-            })
-            .add({
-                anim: anim_x1,
-                props: {
-                    to: { visible: false },
-                    meta: 'set x1 unvisible',
-                },
-            })
-            .add({
-                anim: anim_u,
-                props: {
-                    to: { visible: false },
-                    meta: 'set u unvisible',
-                },
-            })
-            .nextCon()
-            .add({
-                anim: anim_line,
-                props: {
-                    to: {
-                        visible: true,
-                    },
-
-                    meta: 'set line visible',
-                },
-            })
-            .nextCon()
-            .add({
-                anim: anim_line,
-                props: {
-                    to: {
-                        p2: linearComb({
-                            vec1: x1_base,
-                            vec2: x2_base,
-                            alpha1: -3.1,
-                        }),
-                    },
-                    settings: { config: SLOW },
-                    meta: 'drawing a mline thorought lc points',
-                },
+            const section0 = new Section({
+                title: '2D Span',
+                secNumber: 0,
+                meta: 'linear combination of basis x1 & x2',
+                subs: [sub0, sub01, sub02],
             })
 
-        const section0 = new Section({
-            title: '2D Span',
-            secNumber: 0,
-            meta: 'linear combination of basis x1 & x2',
-            subs: [sub0, sub01, sub02],
-        })
-
-        return section0
+            return section0
+        },
+        []
+    )
+    const section0 = useMemo(() => {
+        const sec0 = create2dSpan()
+        return sec0
     }, [])
 
     const animate = useCallback(async () => {
@@ -983,7 +1181,7 @@ export function useMathboxAnim({
     const [started, setStarted] = useState(false)
 
     useEffect(() => {
-        if (!started && x1_startRef.current) {
+        if (!started) {
             animate()
             setStarted(true)
         }

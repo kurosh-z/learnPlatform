@@ -84,6 +84,7 @@
         "react-router-dom": "^5.1.2",
         "react-spring": "npm:@react-spring/web@9.0.0-rc.3",
         "react-three-fiber": "^4.0.16",
+        "react-use-gesture": "^7.0.15",
         "three": "^0.113.2",
         "three.meshline": "^1.2.0",
         "threejs-meshline": "^2.0.11",

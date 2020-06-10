@@ -1,17 +1,24 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, ReactNode } from 'react'
 import * as THREE from 'three'
-import { useThree } from 'react-three-fiber'
+import { useThree, ReactThreeFiber } from 'react-three-fiber'
 import { SpringHandle, SpringStartFn } from '@react-spring/core'
 import { useSpring, useSprings, a } from 'react-spring'
+import { useDrag, useHover } from 'react-use-gesture'
 
 export type SinglePoint = {
     position?: [number, number, number]
     radius?: number
     color?: string
     opacity?: number
-    pkey: string
     visible?: boolean
     transparent?: boolean
+    onClick?: ReactThreeFiber.Events['onClick']
+    onPointerUp?: ReactThreeFiber.Events['onPointerUp']
+    onPointerDown?: ReactThreeFiber.Events['onPointerDown']
+    onPointerOver?: ReactThreeFiber.Events['onPointerOver']
+    onPointerOut?: ReactThreeFiber.Events['onPointerOut']
+    onPointerMove?: ReactThreeFiber.Events['onPointerMove']
+    onWheel?: ReactThreeFiber.Events['onWheel']
 }
 type CreatePointsArgs = { [keys: string]: SinglePoint }
 
@@ -35,12 +42,13 @@ export const Point: React.FC<SinglePoint> = ({
     radius = 0.09,
     color = 'blue',
     opacity = 0.5,
-    pkey,
     visible = true,
-    transparent = false,
+    transparent = true,
+    children,
+    ...events
 }) => {
     return (
-        <mesh position={position} name={pkey} visible={visible}>
+        <mesh position={position} visible={visible} {...events}>
             <sphereGeometry attach="geometry" args={[radius, 20, 20]} />
             <meshBasicMaterial
                 attach="material"
@@ -51,7 +59,8 @@ export const Point: React.FC<SinglePoint> = ({
         </mesh>
     )
 }
-const Aspoint = a(Point)
+
+export const Aspoint = a(Point)
 
 export const Points: React.FC<{
     points?: CreatePointsArgs
@@ -76,7 +85,6 @@ export const Points: React.FC<{
                     return (
                         <Point
                             key={idx}
-                            pkey={point.pkey}
                             position={point.position}
                             color={point.color}
                             radius={point.radius}
@@ -91,19 +99,28 @@ export type PAnimatedProps = Pick<
     SinglePoint,
     'opacity' | 'position' | 'radius' | 'color' | 'visible'
 >
+export type SetPoint = SpringStartFn<PAnimatedProps>
 
 export type APointProps = {
     from: PAnimatedProps
+    setSpringRef: React.MutableRefObject<SetPoint>
     pause: boolean
-    pkey: string
 }
 // TODO: add setSrpringFunc to props
-export const APoint: React.FC<APointProps> = ({ from, pkey, pause }) => {
+export const APoint: React.FC<APointProps> = ({
+    from,
+    setSpringRef,
+    pause,
+}) => {
     const spRef = useRef<SpringHandle<PAnimatedProps>>(null)
     const [sprops, setSprops] = useSpring<PAnimatedProps>(() => ({
         ref: spRef,
         from: from,
     }))
+
+    useEffect(() => {
+        setSpringRef.current = setSprops
+    }, [])
 
     useEffect(() => {
         if (pause) {
@@ -113,7 +130,6 @@ export const APoint: React.FC<APointProps> = ({ from, pkey, pause }) => {
 
     return (
         <Aspoint
-            pkey={pkey}
             color={sprops.color}
             radius={sprops.radius}
             opacity={sprops.opacity}
@@ -168,14 +184,7 @@ export const APoints: React.FC<PointsProps> = ({
     return (
         <>
             {springs.map((animProps, idx) => {
-                return (
-                    <Aspoint
-                        {...animProps}
-                        pkey={points[idx].pkey}
-                        key={idx}
-                        transparent={true}
-                    />
-                )
+                return <Aspoint {...animProps} key={idx} transparent={true} />
             })}
         </>
     )

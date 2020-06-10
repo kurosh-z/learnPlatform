@@ -267,7 +267,6 @@ const Grids: React.FC<GridProps> = ({
             if (to.hdraw || to.vdraw) {
                 setGspring({
                     visible: true,
-
                     default: { immediate: true },
                 })
                 let res1, res2

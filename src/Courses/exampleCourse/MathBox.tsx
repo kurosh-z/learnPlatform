@@ -2,8 +2,18 @@ import React, { useMemo, useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { useImmerReducer } from 'use-immer'
 import { a } from 'react-spring'
-import { Grids, Mline, APoints, Coordinates } from '../../3D-components'
-import { mathboxReducer, initMathBoxState } from './mathBoxReducer'
+import {
+    Grids,
+    Mline,
+    APoints,
+    Coordinates,
+    PulsingPoint,
+} from '../../3D-components'
+import {
+    mathboxReducer,
+    initMathBoxState,
+    TOGGLE_PAUSE,
+} from './mathBoxReducer'
 import { Canvas, useThree, useFrame } from 'react-three-fiber'
 import { OrbitControls, PerspectiveCamera } from 'drei'
 import { css as emoCss } from '@emotion/core'
@@ -36,7 +46,7 @@ const TestCamera: React.FC = () => {
                 makeDefault={false}
                 up={[0, 1, 0]}
                 fov={60}
-                position={[0, 0, -5]}
+                position={[0, 0, 1]}
             ></PerspectiveCamera>
         </>
     )
@@ -162,10 +172,11 @@ const MathBox: React.FC = () => {
             </Latex>
         )
     }, [])
+    const pref = useRef(null)
 
     return (
-        <div className="mathbox" css={mathboxStyles}>
-            <a.div className="mathbox__overlay" style={anim.overlayStyle} />
+        <div className="mathbox" id={'mathbox'} css={mathboxStyles}>
+            {/* <a.div className="mathbox__overlay" style={anim.overlayStyle} /> */}
 
             {mathBoxState.canvVisibility && (
                 <Canvas
@@ -173,7 +184,7 @@ const MathBox: React.FC = () => {
                     pixelRatio={window.devicePixelRatio}
                 >
                     <Camera />
-                    <OrbitControls dampingFactor={0.9} />
+                    {/* <OrbitControls dampingFactor={0.9} /> */}
 
                     <group>
                         <LinearCombination
@@ -237,6 +248,12 @@ const MathBox: React.FC = () => {
                             pause={mathBoxState.pause}
                             setSpringRef={anim.setMlineRef}
                             from={anim.mline_from}
+                        />
+                        <PulsingPoint
+                            from={{ position: anim.x1.x1_from.vector }}
+                            setSrpingRef={pref}
+                            scale={scale}
+                            pause={mathBoxState.pause}
                         />
                     </group>
 
