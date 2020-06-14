@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react'
 import { AVector, AnimatedVecProps, SetVector } from '../../3D-components'
-import { addVectors } from '../../shared'
 import { format as d3format } from 'd3-format'
 
 type LinearCombinationProps = {

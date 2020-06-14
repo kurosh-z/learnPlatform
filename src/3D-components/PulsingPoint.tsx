@@ -1,32 +1,48 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { useSpring, animated } from 'react-spring'
-import { SpringHandle, SpringConfig } from '@react-spring/core'
+import {
+    SpringHandle,
+    SpringConfig,
+    SpringDefaultProps,
+} from '@react-spring/core'
 import { useThree } from 'react-three-fiber'
+import { HTML } from 'drei'
 import { Vector3 } from 'three'
 import { useDrag } from 'react-use-gesture'
 import { Aspoint } from './Point'
 import { Events } from './types'
+import { PopupMenu } from '../Courses/exampleCourse/PopupMenu'
+
+const AHTML = animated(HTML)
 
 const mouse = new Vector3()
 export type AnimatedPulsingPointProps = {
     coreR?: number
     pulsingR?: number
     color?: string
-    position: [number, number, number]
     opacity?: number
+    position?: [number, number, number]
 }
+export type PulPointDragCallback = (pos: [number, number, number]) => void
+export type PulPointSetConfirmedCallback = (
+    pos: [number, number, number]
+) => void
 
-declare type SetPulsingPoint = (props: {
+export type SetPulsingPoint = (props: {
     to: AnimatedPulsingPointProps
     from?: AnimatedPulsingPointProps
     config: SpringConfig
-}) => Promise<object>
+    default: SpringDefaultProps
+}) => Promise<any>
 
-type PulsingPointProps = {
+export type PulsingPointProps = {
     from: AnimatedPulsingPointProps
     pause?: boolean
     setSrpingRef: React.MutableRefObject<SetPulsingPoint>
-    dragCallBack?: (pos: [number, number, number]) => void
+    dragCallbackRef: React.MutableRefObject<PulPointDragCallback>
+    setConfirmedCallbackRef: React.MutableRefObject<
+        PulPointSetConfirmedCallback
+    >
     scale: (a: number) => number
 }
 
@@ -75,13 +91,14 @@ export const PulsingPoint: React.FC<PulsingPointProps> = ({
     setSrpingRef,
     pause,
     scale,
-    dragCallBack,
+    dragCallbackRef,
+    setConfirmedCallbackRef,
 }) => {
     const {
         color = 'red',
         opacity = 1,
         coreR = 0.05,
-        pulsingR = 0.12,
+        pulsingR = 0.15,
         position,
     } = from
 
@@ -105,19 +122,32 @@ export const PulsingPoint: React.FC<PulsingPointProps> = ({
             position,
         },
     }))
+    const [blink, setBlink] = useState(true)
+    const [hovered, hover] = useState(false)
+    const [popup_opened, setPopup] = useState(false)
+
+    const { _width, _height } = useMemo(() => {
+        const ratio = window.innerWidth / window.innerHeight
+        // width of canvas in 3d world
+        const _width = scale((43 * ratio) / 1.7628)
+        const _height = scale(24)
+        return { _width, _height }
+    }, [window.innerWidth / window.innerHeight])
 
     useEffect(() => {
-        const setSpringFunc: SetPulsingPoint = async ({ to, from, config }) => {
+        const setSpringFunc: SetPulsingPoint = async (props) => {
+            const { config, to, from } = props
+
             const res0 = Promise.all([
                 setCore({
                     to: {
                         color: to.color,
                         coreR: to.coreR,
-                        position: to.position,
                         opacity: to.opacity,
                     },
                     from: from,
                     config,
+                    default: props.default,
                 }),
                 setPulse({
                     to: {
@@ -126,6 +156,19 @@ export const PulsingPoint: React.FC<PulsingPointProps> = ({
                     },
                     from: from,
                     config,
+                    default: props.default,
+                }),
+                setPulse({
+                    from: {
+                        opacity: 0.5,
+                        pulsingR: coreR,
+                    },
+                    to: {
+                        opacity: 0.01,
+                        pulsingR,
+                    },
+                    loop: true,
+                    config: { friction: 20, mass: 2, tension: 60 },
                 }),
             ])
 
@@ -134,22 +177,21 @@ export const PulsingPoint: React.FC<PulsingPointProps> = ({
         setSrpingRef.current = setSpringFunc
     }, [])
 
-    const [blink, setBlink] = useState(true)
-
     useEffect(() => {
-        if (pause === false)
+        if (pause === false) {
             setPulse({
                 from: {
-                    opacity: 0,
+                    opacity: 0.5,
                     pulsingR: coreR,
                 },
                 to: {
-                    opacity: 0.5,
+                    opacity: blink ? 0.03 : 0.15,
                     pulsingR,
                 },
                 loop: blink,
-                config: { friction: 20, mass: 2, tension: 60 },
+                config: { friction: 16, mass: 2, tension: 60 },
             })
+        }
     }, [pause, blink])
 
     useEffect(() => {
@@ -158,6 +200,10 @@ export const PulsingPoint: React.FC<PulsingPointProps> = ({
             pulseRef.current.pause()
         }
     }, [pause])
+
+    useEffect(() => {
+        document.body.style.cursor = hovered ? 'grab' : 'auto'
+    }, [hovered])
 
     const { size } = useThree()
     const bind = useDrag(({ down, xy }) => {
@@ -170,27 +216,52 @@ export const PulsingPoint: React.FC<PulsingPointProps> = ({
         mouse.x = (2 * (xy[0] - left)) / size.width - 1
         mouse.y = -(2 * (xy[1] - top)) / size.height + 1
         mouse.z = 0
-        const _width = scale(
-            (43 * window.innerWidth) / window.innerHeight / 1.7628
-        ) // width of canvas in camera world
-        const _height = scale(24)
+
         const _pos: [number, number, number] = [
             (_width / 2) * mouse.x,
             (_height / 2) * mouse.y,
             0,
         ]
+
+        const _factors = [_pos[0] > 0 ? 1 : -1, _pos[1] > 0 ? 1 : -1]
+        _pos[0] =
+            _factors[0] * Math.min(Math.abs(_pos[0]), _width / 2 - scale(2))
+        _pos[1] =
+            _factors[1] * Math.min(Math.abs(_pos[1]), _height / 2 - scale(2))
+        document.body.style.cursor = down
+            ? 'grabbing'
+            : hovered
+            ? 'grab'
+            : 'auto'
         if (down) {
             setBlink(false)
-            if (dragCallBack) {
-                dragCallBack(_pos)
+            if (dragCallbackRef.current) {
+                dragCallbackRef.current(_pos)
             }
+
             setCore({
                 position: _pos,
                 config: { friction: 23, mass: 1, tension: 170 },
             })
+            if (!popup_opened) {
+                setPopup(() => true)
+            }
         }
     })
 
+    // as user click on set this function will be called
+    // set confirmedCallbackRef comes from animation
+    const setConfirmationHandler = useCallback(() => {
+        if (setConfirmedCallbackRef.current) {
+            const lastPos = coreSpring.position.animation.toValues as [
+                number,
+                number,
+                number
+            ]
+            setConfirmedCallbackRef.current(lastPos)
+        }
+        setPopup(() => false)
+    }, [])
     return (
         <>
             <Aspoint
@@ -207,7 +278,19 @@ export const PulsingPoint: React.FC<PulsingPointProps> = ({
                 pulseOpacity={pulseSpring.opacity}
                 position={coreSpring.position}
                 onPointerDown={bind()['onMouseDown']}
+                onPointerOver={() => {
+                    hover(true)
+                }}
+                onPointerOut={() => {
+                    hover(false)
+                }}
             />
+            <HTML position={[_width / 2 - scale(4), _height / 2 - scale(1), 0]}>
+                <PopupMenu
+                    opened={popup_opened}
+                    setCallback={setConfirmationHandler}
+                />
+            </HTML>
         </>
     )
 }

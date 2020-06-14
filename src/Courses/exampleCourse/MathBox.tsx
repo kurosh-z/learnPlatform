@@ -125,7 +125,6 @@ const MathBox: React.FC = () => {
     // const [canvSize, setCanvSize] = useState({ width: 17, height: 10 })
     const { scale, format, tickValues } = useScaleLinear({
         domain: [-10, 10],
-        // range: [-canvSize.height / 140, canvSize.height / 140],
         range: [-5, 5],
         numTicks: 16,
         axLength: 10,
@@ -133,7 +132,6 @@ const MathBox: React.FC = () => {
     })
     const anim = useMathboxAnim({
         scale,
-        tickValues,
         pause: mathBoxState.pause,
     })
 
@@ -172,7 +170,6 @@ const MathBox: React.FC = () => {
             </Latex>
         )
     }, [])
-    const pref = useRef(null)
 
     return (
         <div className="mathbox" id={'mathbox'} css={mathboxStyles}>
@@ -215,7 +212,7 @@ const MathBox: React.FC = () => {
                             }}
                             lengths={{ xAxes: scale(0), yAxes: scale(0) }}
                             tickValues={tickValues}
-                            tickForms={{
+                            ticksFrom={{
                                 xAxes: {
                                     opacity: 0,
                                     length: 0,
@@ -242,7 +239,7 @@ const MathBox: React.FC = () => {
                         <APoints
                             pause={mathBoxState.pause}
                             points={anim.points}
-                            setSpringsRef={anim.setPointsStringsRef}
+                            setSpringsRef={anim.setPointsRef}
                         />
                         <Mline
                             pause={mathBoxState.pause}
@@ -250,8 +247,17 @@ const MathBox: React.FC = () => {
                             from={anim.mline_from}
                         />
                         <PulsingPoint
-                            from={{ position: anim.x1.x1_from.vector }}
-                            setSrpingRef={pref}
+                            from={{
+                                position: anim.x1.x1_from.vector as [
+                                    number,
+                                    number,
+                                    number
+                                ],
+                                opacity: 0,
+                            }}
+                            setSrpingRef={anim.setPulsingPointRef}
+                            setConfirmedCallbackRef={anim.userBasisConfirmedRef}
+                            dragCallbackRef={anim.pulsingDragCallbackRef}
                             scale={scale}
                             pause={mathBoxState.pause}
                         />

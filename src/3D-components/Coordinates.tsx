@@ -1,7 +1,5 @@
-import React, { useEffect, useRef } from 'react'
+import React from 'react'
 import { ScaleLinear } from 'd3-scale'
-import { SpringHandle, SpringStartFn } from '@react-spring/core'
-import { useSpring, a } from 'react-spring'
 import {
     Aaxes,
     calAxesVector,
@@ -50,7 +48,7 @@ type CoordinatesProps = {
     pause: boolean
     axSetFnRefs: SetCoordinateAxis
     tickSetFnRefs: SetCoordinateTicks
-    tickForms?: {
+    ticksFrom?: {
         xAxes?: AnimatedTickProps
         yAxes?: AnimatedTickProps
         zAxes?: AnimatedTickProps
@@ -70,7 +68,7 @@ export const Coordinates: React.FC<CoordinatesProps> = ({
     pause,
     axSetFnRefs = {},
     tickSetFnRefs = {},
-    tickForms = {},
+    ticksFrom = {},
     axisVisiblity = {},
 }) => {
     return (
@@ -103,7 +101,7 @@ export const Coordinates: React.FC<CoordinatesProps> = ({
                                 ? axisVisiblity['xAxes']
                                 : true,
                     }}
-                    tickFrom={'xAxes' in tickForms ? tickForms['xAxes'] : {}}
+                    tickFrom={'xAxes' in ticksFrom ? ticksFrom['xAxes'] : {}}
                     pause={pause}
                     setTickRef={
                         'xAxes' in tickSetFnRefs ? tickSetFnRefs['xAxes'] : null
@@ -141,7 +139,7 @@ export const Coordinates: React.FC<CoordinatesProps> = ({
                                 ? axisVisiblity['yAxes']
                                 : true,
                     }}
-                    tickFrom={'yAxes' in tickForms ? tickForms['yAxes'] : {}}
+                    tickFrom={'yAxes' in ticksFrom ? ticksFrom['yAxes'] : {}}
                     pause={pause}
                     setTickRef={
                         'yAxes' in tickSetFnRefs ? tickSetFnRefs['yAxes'] : null
@@ -179,7 +177,7 @@ export const Coordinates: React.FC<CoordinatesProps> = ({
                                 ? axisVisiblity['zAxes']
                                 : true,
                     }}
-                    tickFrom={'zAxes' in tickForms ? tickForms['zAxes'] : {}}
+                    tickFrom={'zAxes' in ticksFrom ? ticksFrom['zAxes'] : {}}
                     pause={pause}
                     setTickRef={
                         'zAxes' in tickSetFnRefs ? tickSetFnRefs['zAxes'] : null
@@ -191,82 +189,4 @@ export const Coordinates: React.FC<CoordinatesProps> = ({
             )}
         </>
     )
-}
-
-const AnimCoor = a(Coordinates)
-
-export type AnimCoordinatesProps = {
-    tickValues: number[]
-    showX: boolean
-    showY: boolean
-    showZ: boolean
-    xLength: number
-    yLength: number
-    zLenght: number
-    xColor: string
-    yColor: string
-    zColor: string
-}
-type AcoordinatesProps = { from: AnimCoordinatesProps } & Pick<
-    CoordinatesProps,
-    'scale' | 'format'
-> & {
-        pause: boolean
-        setSpringRef: React.MutableRefObject<
-            SpringStartFn<AnimCoordinatesProps>
-        >
-    }
-
-type AnimCoorProps = AnimCoordinatesProps &
-    Pick<CoordinatesProps, 'scale' | 'format'>
-
-const Animwrapper: React.FC<AnimCoorProps> = (props) => {
-    return (
-        <AnimCoor
-            scale={props.scale}
-            format={props.format}
-            tickValues={props.tickValues}
-            lengths={{
-                xAxes: props.xLength,
-                yAxes: props.yLength,
-                zAxes: props.zLenght,
-            }}
-            showAxis={{
-                xAxes: props.showX,
-                yAxes: props.showY,
-                zAxes: props.showZ,
-            }}
-            colors={{
-                xAxes: props.xColor,
-                yAxes: props.yColor,
-                zAxes: props.zColor,
-            }}
-        />
-    )
-}
-const AnimCoordinates = a(Animwrapper)
-
-export const Acoordinates: React.FC<AcoordinatesProps> = ({
-    from,
-    scale,
-    format,
-    pause,
-    setSpringRef,
-}) => {
-    const spRef = useRef<SpringHandle<AnimCoordinatesProps>>(null)
-    const [spring, setSpring] = useSpring<AnimCoordinatesProps>(() => ({
-        ref: spRef,
-        from,
-    }))
-
-    useEffect(() => {
-        if (pause && spRef.current) {
-            spRef.current.pause()
-        }
-    }, [pause])
-    useEffect(() => {
-        setSpringRef.current = setSpring
-    }, [])
-
-    return <AnimCoordinates {...spring} format={format} scale={scale} />
 }

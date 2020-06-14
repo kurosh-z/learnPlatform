@@ -49,7 +49,7 @@ export const Meshline: React.FC<MeshlineProps> = ({
     const { camera } = useThree()
 
     return (
-        <mesh raycast={MeshLineRaycast} visible={visible}>
+        <mesh raycast={MeshLineRaycast} visible={visible && opacity > 0.001}>
             <meshLine attach="geometry" vertices={vertices} />
             <meshLineMaterial
                 attach="material"

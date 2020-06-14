@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, ReactNode } from 'react'
+import React, { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 import { useThree, ReactThreeFiber } from 'react-three-fiber'
 import { SpringHandle, SpringStartFn } from '@react-spring/core'
 import { useSpring, useSprings, a } from 'react-spring'
-import { useDrag, useHover } from 'react-use-gesture'
 
 export type SinglePoint = {
     position?: [number, number, number]
@@ -48,7 +47,12 @@ export const Point: React.FC<SinglePoint> = ({
     ...events
 }) => {
     return (
-        <mesh position={position} visible={visible} {...events}>
+        <mesh
+            position={position}
+            visible={visible && opacity > 0.001} // transparent objects with zero opacity are still visible in threejs
+            // that's just a trick to make sure they are really unvisible
+            {...events}
+        >
             <sphereGeometry attach="geometry" args={[radius, 20, 20]} />
             <meshBasicMaterial
                 attach="material"
@@ -95,14 +99,14 @@ export const Points: React.FC<{
     )
 }
 
-export type PAnimatedProps = Pick<
+export type AnimatedPointsProps = Pick<
     SinglePoint,
     'opacity' | 'position' | 'radius' | 'color' | 'visible'
 >
-export type SetPoint = SpringStartFn<PAnimatedProps>
+export type SetPoint = SpringStartFn<AnimatedPointsProps>
 
 export type APointProps = {
-    from: PAnimatedProps
+    from: AnimatedPointsProps
     setSpringRef: React.MutableRefObject<SetPoint>
     pause: boolean
 }
@@ -112,8 +116,8 @@ export const APoint: React.FC<APointProps> = ({
     setSpringRef,
     pause,
 }) => {
-    const spRef = useRef<SpringHandle<PAnimatedProps>>(null)
-    const [sprops, setSprops] = useSpring<PAnimatedProps>(() => ({
+    const spRef = useRef<SpringHandle<AnimatedPointsProps>>(null)
+    const [sprops, setSprops] = useSpring<AnimatedPointsProps>(() => ({
         ref: spRef,
         from: from,
     }))
@@ -138,9 +142,11 @@ export const APoint: React.FC<APointProps> = ({
     )
 }
 
+export type SetPoints = SpringStartFn<AnimatedPointsProps>
+
 export type PointsProps = {
     points: SinglePoint[]
-    setSpringsRef: React.MutableRefObject<SpringStartFn<PAnimatedProps>>
+    setSpringsRef: React.MutableRefObject<SetPoints>
     pause: boolean
 }
 
@@ -149,27 +155,32 @@ export const APoints: React.FC<PointsProps> = ({
     setSpringsRef,
     pause,
 }) => {
+    console.log(points[0].position)
     const spRef = useRef<SpringHandle<SinglePoint>>(null)
-    const [springs, setSprings] = useSprings(points.length, (idx) => {
-        const {
-            position = [0, 0, 0],
-            color = 'blue',
-            opacity = 0,
-            radius = 0,
-            visible = true,
-        } = points[idx]
+    const [springs, setSprings] = useSprings(
+        points.length,
+        (idx) => {
+            const {
+                position = [0, 0, 0],
+                color = 'blue',
+                opacity = 0,
+                radius = 0,
+                visible = true,
+            } = points[idx]
 
-        const from: PAnimatedProps = {
-            position,
-            color,
-            opacity,
-            radius,
-            visible,
-        }
+            const from: AnimatedPointsProps = {
+                position,
+                color,
+                opacity,
+                radius,
+                visible,
+            }
 
-        if (idx === 0) return { from, ref: spRef }
-        else return { from }
-    })
+            if (idx === 0) return { from, ref: spRef }
+            else return { from }
+        },
+        [points]
+    )
 
     useEffect(() => {
         setSpringsRef.current = setSprings

@@ -26,3 +26,19 @@ export function addVectors(
 
     return res.addVectors(_vector1, _vector2)
 }
+
+type LinearCombArgs = {
+    alpha1?: number
+    alpha2?: number
+    vec1: [number, number, number]
+    vec2: [number, number, number]
+}
+export function linearComb({
+    alpha1 = 1,
+    alpha2 = 1,
+    vec1,
+    vec2,
+}: LinearCombArgs) {
+    const res = addVectors(sMultiply(alpha1, vec1), sMultiply(alpha2, vec2))
+    return res.toArray() as [number, number, number]
+}

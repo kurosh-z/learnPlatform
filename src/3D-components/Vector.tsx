@@ -152,8 +152,8 @@ type HeadProps = {
     color?: ReactThreeFiber.Color
     opacity?: number
     thicknessFactor: number
-    onPointerDown: (e) => void
-    hover: (e) => void
+    onPointerDown?: (e) => void
+    hover?: (e) => void
     visible: boolean
     transparent: boolean
 }
@@ -555,7 +555,11 @@ export const VectorComp: React.FC<VectorCompProps> = ({
                 thicknessFactor={thicknessFactor}
                 // onPointerDown={onPointerDown}
                 // hover={hover}
-                visible={visible && _mag >= thicknessFactor * HHEIGHT}
+                visible={
+                    visible &&
+                    _mag >= thicknessFactor * HHEIGHT &&
+                    opacity > 0.001
+                }
                 transparent={transparent}
             />
             <Shaft
@@ -566,7 +570,11 @@ export const VectorComp: React.FC<VectorCompProps> = ({
                 // onPointerDown={onPointerDown}
                 thicknessFactor={thicknessFactor}
                 // hover={hover}
-                visibile={visible && _mag >= thicknessFactor * HHEIGHT}
+                visibile={
+                    visible &&
+                    _mag >= thicknessFactor * HHEIGHT &&
+                    opacity > 0.001
+                }
                 transparent={transparent}
             />
             {pointForZero && (
@@ -575,7 +583,6 @@ export const VectorComp: React.FC<VectorCompProps> = ({
                     position={[ORIGIN.x, ORIGIN.y, ORIGIN.z]}
                     opacity={opacity}
                     transparent={transparent}
-                    pkey={'zero_vector'}
                     visible={visible && _mag < thicknessFactor * HHEIGHT}
                 />
             )}
@@ -592,20 +599,6 @@ export const VectorComp: React.FC<VectorCompProps> = ({
                 label_transform={label_transform}
             />
         </group>
-        // <Vector
-        //     vector={vector}
-        //     origin={origin}
-        //     color={color}
-        //     opacity={opacity}
-        //     thicknessFactor={thicknessFactor}
-        //     label={_label}
-        //     labelID={labelID}
-        //     labelStyle={labelStyle}
-        //     label2ndStyle={label2ndStyle}
-        //     latexParser
-        //     transparent={transparent}
-        //     visible={visible}
-        // />
     )
 }
 
