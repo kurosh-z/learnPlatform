@@ -20,10 +20,9 @@ import {
     SetPulsingPoint,
 } from '../../3D-components'
 
-import { Section, Subsection, Sanim, SanimSet } from './anim_section'
+import { Section, Subsection } from './anim_section'
 import { sConfigs, cubic_in_out } from './anim-utils'
-import { mplayer } from './mplayer'
-import { StreamDrawUsage, NumberKeyframeTrack } from 'three'
+import { Mplayer } from './mplayer'
 
 const { FAST, SLOW } = sConfigs
 
@@ -46,7 +45,6 @@ function calculatePoints({
     base2,
 }: CalPointsArgs): PointsProps['points'] {
     const points: PointsProps['points'] = []
-    console.log('point are being calculated')
     if (alpha1_range) {
         const a = alpha1_range[0]
         const b = alpha1_range[1]
@@ -85,17 +83,6 @@ function calculatePoints({
 
     return points
 }
-// compiler complains about empty object
-const STORAGE: {
-    anim_x1: Sanim<AnimatedVecProps>
-    anim_x2: Sanim<AnimatedVecProps>
-    anim_u: Sanim<AnimatedVecProps>
-    anim_x1b: Sanim<AnimatedVecProps>
-    anim_x2b: Sanim<AnimatedVecProps>
-    anim_line: Sanim<AnimatedMlineProps>
-    anim_points: Sanim<AnimatedPointsProps>
-    pulsing_point: Sanim<AnimatedPulsingPointProps>
-} = {}
 
 export function useMathboxAnim({
     scale,
@@ -124,6 +111,14 @@ export function useMathboxAnim({
     const x1_base: [number, number, number] = [scale(2), scale(-3), 0]
     const x2_base: [number, number, number] = [scale(3), scale(2), 0]
 
+    const progressRef = useRef({ sec: 0, sub: 0, con: 0, sobj: 0, sanim: 0 })
+
+    const mplayer = useMemo(() => {
+        return new Mplayer({
+            setProgress: setProgressbarRef,
+            progressRef: progressRef,
+        })
+    }, [])
     // after every section we set this we set this
     const started = useRef([false, false])
     // set the default span2d_data this will be set again from user input data in practice 2d
@@ -183,89 +178,6 @@ export function useMathboxAnim({
         width: 0.05,
     }
 
-    const currProgress = useRef({ sec: 0, sub: 0, con: 0, sobj: 0, sanim: 0 })
-
-    const createCoordinatesAnims = useCallback(() => {
-        const delay = 200
-        // Defining single animation objects
-        STORAGE['anim_xAxes'] = new Sanim<AnimatedVecProps>({
-            set: setxAxesRef,
-            from: { visible: false, vector: [0, 0, 0] },
-        })
-        STORAGE['anim_yAxes'] = new Sanim<AnimatedVecProps>({
-            set: setyAxesRef,
-            from: { visible: false, vector: [0, 0, 0] },
-        })
-        STORAGE['anim_xTicks'] = new Sanim<AnimatedTickProps>({
-            set: setxTicksRef,
-            from: (i: number) => ({
-                opacity: 0,
-                length: 0,
-                config: FAST,
-                delay: (delay / 4) * i,
-            }),
-        })
-        STORAGE['anim_yTicks'] = new Sanim<AnimatedTickProps>({
-            set: setyTicksRef,
-            from: (i: number) => ({
-                opacity: 0,
-                length: 0,
-                config: FAST,
-                delay: (delay / 4) * i,
-            }),
-        })
-        STORAGE['anim_grids'] = new Sanim({
-            set: gridStartRef as SanimSet<{
-                hdraw: boolean
-                vdraw: boolean
-            }>,
-            from: {
-                hdraw: false,
-                vdraw: false,
-            },
-        })
-    }, [])
-
-    const createbasisAnims = useCallback(() => {
-        // Defining single animation objects
-
-        STORAGE['anim_x1'] = new Sanim<AnimatedVecProps>({
-            set: x1_startRef,
-            from: x1_from,
-        })
-        STORAGE['anim_x1b'] = new Sanim<AnimatedVecProps>({
-            set: x1base_startRef,
-            from: x1b_from,
-        })
-        STORAGE['anim_x2b'] = new Sanim<AnimatedVecProps>({
-            set: x2base_startRef,
-            from: x2b_from,
-        })
-        STORAGE['anim_x2'] = new Sanim<AnimatedVecProps>({
-            set: x2_startRef,
-            from: x2_from,
-        })
-        STORAGE['anim_u'] = new Sanim<AnimatedVecProps>({
-            set: u_startRef,
-            from: u_from,
-        })
-        STORAGE['anim_points'] = new Sanim<AnimatedPointsProps>({
-            set: setPointsRef,
-            from: () => ({}),
-        })
-        STORAGE['anim_line'] = new Sanim<AnimatedMlineProps>({
-            set: setMlineRef,
-            from: {},
-        })
-        STORAGE['pulsing_point'] = new Sanim<AnimatedPulsingPointProps>({
-            set: setPulsingPointRef,
-            from: {
-                opacity: 0,
-                position: x1_base,
-            },
-        })
-    }, [])
-
     const create_sub_2dCoordinates = useCallback(
         (secNum: number, subNum: number) => {
             const delay = 200
@@ -278,84 +190,156 @@ export function useMathboxAnim({
             })
 
             sub.add({
-                anim: STORAGE['anim_xAxes'],
-                props: {
-                    to: { visible: true },
-                    meta: 'make xaxes visible',
-                },
+                set: setxAxesRef,
+                to: { visible: true },
+                meta: 'make xaxes visible',
             })
                 .add({
-                    anim: STORAGE['anim_yAxes'],
-                    props: {
-                        to: { visible: true },
-                        meta: 'make yaxes visible',
-                    },
+                    set: setyAxesRef,
+                    to: { visible: true },
+                    meta: 'make yaxes visible',
                 })
                 .nextCon()
                 .add({
-                    anim: STORAGE['anim_xAxes'],
-                    props: {
-                        to: { vector: [scale(10), 0, 0] },
-                        settings: { config: FAST },
-                        meta: 'starting off x axis',
-                    },
+                    set: setxAxesRef,
+                    to: { vector: [scale(10), 0, 0] },
+                    settings: { config: FAST },
+                    meta: 'starting off x axis',
                 })
                 .add({
-                    anim: STORAGE['anim_yAxes'],
-                    props: {
-                        to: { vector: [0, scale(10), 0] },
-                        settings: { config: FAST },
-                        meta: 'starting off y axis',
-                    },
+                    set: setyAxesRef,
+                    to: { vector: [0, scale(10), 0] },
+                    settings: { config: FAST },
+                    meta: 'starting off y axis',
                 })
                 .add({
-                    anim: STORAGE['anim_xTicks'],
-                    props: {
-                        to: (i: number) => ({
-                            opacity: 1,
-                            length: 0.2,
-                            config: SLOW,
-                            delay: (delay / 4) * i,
-                        }),
-                        meta: 'starting off x ticks',
-                    },
+                    set: setxTicksRef,
+                    to: (i: number) => ({
+                        opacity: 1,
+                        length: 0.2,
+                        config: SLOW,
+                        delay: (delay / 4) * i,
+                    }),
+                    meta: 'starting off x ticks',
                 })
                 .add({
-                    anim: STORAGE['anim_yTicks'],
-                    props: {
-                        to: (i: number) => ({
-                            opacity: 1,
-                            length: 0.2,
-                            config: SLOW,
-                            delay: (delay / 4) * i,
-                        }),
-                        meta: 'starting off y ticks',
-                    },
+                    set: setyTicksRef,
+                    to: (i: number) => ({
+                        opacity: 1,
+                        length: 0.2,
+                        config: SLOW,
+                        delay: (delay / 4) * i,
+                    }),
+                    meta: 'starting off y ticks',
                 })
                 .add({
-                    anim: STORAGE['anim_grids'],
-                    props: {
-                        to: { vdraw: true, hdraw: true },
-                        settings: {
-                            config: cubic_in_out(3),
-                            delay: 2 * delay,
-                        },
-                        meta: 'set horizontal grids',
+                    set: gridStartRef,
+                    to: { vdraw: true, hdraw: true },
+                    settings: {
+                        config: cubic_in_out(3),
+                        delay: 2 * delay,
                     },
+                    meta: 'set horizontal grids',
                 })
                 .add({
-                    anim: STORAGE['anim_grids'],
-                    props: {
-                        to: { hdraw: true },
-                        settings: { config: cubic_in_out(3), delay: 4 * delay },
-                        meta: 'set vertical grids',
-                    },
+                    set: gridStartRef,
+                    to: { hdraw: true },
+                    settings: { config: cubic_in_out(3), delay: 4 * delay },
+                    meta: 'set vertical grids',
                 })
 
             return sub
         },
         []
     )
+    const create_sub_prepare_2dSpan = useCallback(
+        (secNumber: number, subNumber: number) => {
+            // Defining Sub01:'starting off a 2D span'
+            const sub = new Subsection({
+                title: 'starting basis',
+                secNumber: secNumber,
+                subNumber: subNumber,
+                meta: 'starting off a 2D span',
+            })
+
+            sub.add({
+                set: x1_startRef,
+                to: { visible: true },
+                meta: 'set x1 visible',
+            })
+                .nextCon()
+                .add({
+                    set: x1_startRef,
+                    to: { opacity: 1, label_opacity: 1 },
+                    settings: { config: cubic_in_out(4) },
+                    meta: 'starting off x1',
+                })
+                .nextCon()
+                .add({
+                    set: x2_startRef,
+                    to: { visible: true },
+                    meta: 'set x2 visible',
+                })
+                .nextCon()
+                .add({
+                    set: x2_startRef,
+                    to: { opacity: 1, label_opacity: 1 },
+                    settings: { config: cubic_in_out(4) },
+                    meta: 'starting off x2',
+                })
+                .nextCon()
+                .add({
+                    set: x1base_startRef,
+                    to: { visible: true },
+                    meta: 'set x1b visible',
+                })
+                .nextCon()
+                .add({
+                    set: x1base_startRef,
+                    to: { opacity: 0.7 },
+                    settings: { config: cubic_in_out(4) },
+                    meta: 'show x1 base ',
+                })
+                .add({
+                    set: x1_startRef,
+                    to: {
+                        origin: x2_base,
+                        label_transform: 'translate(10px, -20px)',
+                    },
+                    settings: { config: cubic_in_out(4) },
+                    meta: " move x1's origin",
+                })
+                .add({
+                    set: x1base_startRef,
+                    to: { opacity: 0 },
+                    settings: { config: cubic_in_out(6) },
+                    meta: 'set opacity of x1 base to zero',
+                })
+                .nextCon()
+                .add({
+                    set: u_startRef,
+                    to: { visible: true },
+                    meta: 'set u visible',
+                })
+                .nextCon()
+                .add({
+                    set: u_startRef,
+                    to: {
+                        vector: linearComb({
+                            vec1: x1_base,
+                            vec2: x2_base,
+                        }),
+                        label_opacity: 1,
+                    },
+                    settings: { config: SLOW },
+                    meta: 'show vector u',
+                })
+
+            return sub
+        },
+        []
+    )
+
     const create_sub_linearcombination = useCallback(
         (secNum: number, subNum: number) => {
             const delay = 200
@@ -396,121 +380,104 @@ export function useMathboxAnim({
                 if (i !== 0) {
                     sub.nextCon()
                 }
-                sub.add<AnimatedVecProps>({
-                    anim: STORAGE['anim_x1'],
-                    props: {
+                sub.add({
+                    set: x1_startRef,
+                    to: {
+                        vector: v1,
+                        label_factor: alpha,
+                        label_transform: `translate${x1labeltrans[i]}`,
+                    },
+                    settings: {
+                        config: FAST,
+                        delay: 0,
+                    },
+                    meta: `set x1 to ${alpha} * x1`,
+                })
+                    .add({
+                        set: u_startRef,
                         to: {
-                            vector: v1,
-                            label_factor: alpha,
-                            label_transform: `translate${x1labeltrans[i]}`,
+                            vector: uv,
+                            label_transform: `translate${ulabeltrans[i]}`,
                         },
                         settings: {
                             config: FAST,
                             delay: 0,
                         },
-                        meta: `set x1 to ${alpha} * x1`,
-                    },
-                })
-                    .add<AnimatedVecProps>({
-                        anim: STORAGE['anim_u'],
-                        props: {
-                            to: {
-                                vector: uv,
-                                label_transform: `translate${ulabeltrans[i]}`,
-                            },
-                            settings: {
-                                config: FAST,
-                                delay: 0,
-                            },
-                            meta: `set u to ${alpha}*x1 + x2`,
-                        },
+                        meta: `set u to ${alpha}*x1 + x2`,
                     })
                     .nextCon()
-                    .add<Function>({
-                        anim: STORAGE['anim_points'],
-                        props: {
-                            to: ((idx) => (i) => {
-                                if (i === idx) {
-                                    return {
-                                        from: { radius: 0.0001 },
-                                        to: { radius: 0.09 },
-                                        config: cubic_in_out(0.4),
-                                    }
-                                } else return {}
-                            })(idx),
-                            from: ((idx) => (i) => {
-                                if (i === idx) {
-                                    return {
-                                        from: { radius: 0.09 },
-                                        to: { radius: 0.0001 },
-                                    }
-                                } else return {}
-                            })(idx),
-                            meta: `set ${i}st point on ${alpha}*x1 + x2`,
-                        },
+                    .add({
+                        set: setPointsRef,
+                        to: ((idx) => (i) => {
+                            if (i === idx) {
+                                return {
+                                    from: { radius: 0.0001 },
+                                    to: { radius: 0.09 },
+                                    config: cubic_in_out(0.4),
+                                }
+                            } else return {}
+                        })(idx),
+                        from: ((idx) => (i) => {
+                            if (i === idx) {
+                                return {
+                                    from: { radius: 0.09 },
+                                    to: { radius: 0.0001 },
+                                }
+                            } else return {}
+                        })(idx),
+                        meta: `set ${i}st point on ${alpha}*x1 + x2`,
                     })
 
                 idx--
                 i++
             }
             sub.add({
-                anim: STORAGE['anim_x2'],
-                props: {
+                set: x2_startRef,
+                to: { opacity: 0, label_opacity: 0 },
+                settings: {
+                    config: cubic_in_out(2),
+                    delay: 4 * delay,
+                },
+                meta: 'set opacity of x2 to zero',
+            })
+                .add({
+                    set: x1_startRef,
                     to: { opacity: 0, label_opacity: 0 },
                     settings: {
                         config: cubic_in_out(2),
-                        delay: 4 * delay,
+                        delay: 9 * delay,
                     },
-                    meta: 'set opacity of x2 to zero',
-                },
-            })
-                .add({
-                    anim: STORAGE['anim_x1'],
-                    props: {
-                        to: { opacity: 0, label_opacity: 0 },
-                        settings: {
-                            config: cubic_in_out(2),
-                            delay: 9 * delay,
-                        },
-                        meta: 'set opacity of x1 to zero',
-                    },
+                    meta: 'set opacity of x1 to zero',
                 })
                 .add({
-                    anim: STORAGE['anim_u'],
-                    props: {
-                        to: { opacity: 0, label_opacity: 0 },
-                        settings: {
-                            config: cubic_in_out(2),
-                            delay: 14 * delay,
-                        },
-                        meta: 'set opacity of u to zero',
+                    set: u_startRef,
+                    to: { opacity: 0, label_opacity: 0 },
+                    settings: {
+                        config: cubic_in_out(2),
+                        delay: 14 * delay,
                     },
+                    meta: 'set opacity of u to zero',
                 })
                 .nextCon()
                 .add({
-                    anim: STORAGE['anim_line'],
-                    props: {
-                        to: {
-                            visible: true,
-                        },
-
-                        meta: 'set line visible',
+                    set: setMlineRef,
+                    to: {
+                        visible: true,
                     },
+                    meta: 'set line visible',
                 })
                 .nextCon()
                 .add({
-                    anim: STORAGE['anim_line'],
-                    props: {
-                        to: {
-                            p2: linearComb({
-                                vec1: x1_base,
-                                vec2: x2_base,
-                                alpha1: -3.1,
-                            }),
-                        },
-                        settings: { config: SLOW },
-                        meta: 'drawing a mline thorought lc points',
+                    set: setMlineRef,
+                    to: {
+                        p2: linearComb({
+                            vec1: x1_base,
+                            vec2: x2_base,
+                            alpha1: -3.1,
+                        }),
                     },
+                    settings: { config: SLOW },
+                    meta: 'drawing a mline thorought lc points',
                 })
 
             return sub
@@ -518,303 +485,188 @@ export function useMathboxAnim({
 
         []
     )
-    const create_section_2dSpan = useCallback(() => {
-        const sub0 = create_sub_2dCoordinates(0, 0)
 
-        // Defining Sub01:'starting off a 2D span'
-        const sub01 = new Subsection({
-            title: 'starting basis',
-            secNumber: 0,
-            subNumber: 1,
-            meta: 'starting off a 2D span',
-        })
-
-        sub01
-            .add<AnimatedVecProps>({
-                anim: STORAGE['anim_x1'],
-                props: {
-                    to: { visible: true },
-                    meta: 'set x1 visible',
-                },
-            })
-            .nextCon()
-            .add<AnimatedVecProps>({
-                anim: STORAGE['anim_x1'],
-                props: {
-                    to: { opacity: 1, label_opacity: 1 },
-                    settings: { config: cubic_in_out(4) },
-                    meta: 'starting off x1',
-                },
-            })
-            .nextCon()
-            .add<AnimatedVecProps>({
-                anim: STORAGE['anim_x2'],
-                props: {
-                    to: { visible: true },
-                    meta: 'set x2 visible',
-                },
-            })
-            .nextCon()
-            .add<AnimatedVecProps>({
-                anim: STORAGE['anim_x2'],
-                props: {
-                    to: { opacity: 1, label_opacity: 1 },
-                    settings: { config: cubic_in_out(4) },
-                    meta: 'starting off x2',
-                },
-            })
-            .nextCon()
-            .add<AnimatedVecProps>({
-                anim: STORAGE['anim_x1b'],
-                props: {
-                    to: { visible: true },
-                    meta: 'set x1b visible',
-                },
-            })
-            .nextCon()
-            .add<AnimatedVecProps>({
-                anim: STORAGE['anim_x1b'],
-                props: {
-                    to: { opacity: 0.7 },
-                    settings: { config: cubic_in_out(4) },
-                    meta: 'show x1 base ',
-                },
-            })
-            .add<AnimatedVecProps>({
-                anim: STORAGE['anim_x1'],
-                props: {
-                    to: {
-                        origin: x2_base,
-                        label_transform: 'translate(10px, -20px)',
-                    },
-                    settings: { config: cubic_in_out(4) },
-                    meta: " move x1's origin",
-                },
-            })
-            .add<AnimatedVecProps>({
-                anim: STORAGE['anim_x1b'],
-                props: {
-                    to: { opacity: 0 },
-                    settings: { config: cubic_in_out(6) },
-                    meta: 'set opacity of x1 base to zero',
-                },
-            })
-            .nextCon()
-            .add<AnimatedVecProps>({
-                anim: STORAGE['anim_u'],
-                props: {
-                    to: { visible: true },
-                    meta: 'set u visible',
-                },
-            })
-            .nextCon()
-            .add<AnimatedVecProps>({
-                anim: STORAGE['anim_u'],
-                props: {
-                    to: {
-                        vector: linearComb({
-                            vec1: x1_base,
-                            vec2: x2_base,
-                        }),
-                        label_opacity: 1,
-                    },
-                    settings: { config: SLOW },
-                    meta: 'show vector u',
-                },
-            })
-
-        const sub02 = create_sub_linearcombination(0, 2)
-
-        const section0 = new Section({
-            title: '2D Span',
-            secNumber: 0,
-            meta: 'linear combination of basis x1 & x2',
-            subs: [sub0, sub01, sub02],
-        })
-
-        return section0
-    }, [])
-
-    const create_sub_begin_2d_practice = useCallback(() => {
-        // setting the
-        const pointDragCb = (pos: [number, number, number]) => {
-            const _vecSetRef = x1base_startRef
-            if (_vecSetRef.current) {
-                _vecSetRef.current({
-                    vector: pos,
-                    config: sConfigs['FASTER'],
-                })
+    const create_sub_begin_2d_practice = useCallback(
+        (secNumber: number, subNumber: number) => {
+            const pointDragCb = (pos: [number, number, number]) => {
+                const _vecSetRef = x1base_startRef
+                if (_vecSetRef.current) {
+                    _vecSetRef.current({
+                        vector: pos,
+                        config: sConfigs['FASTER'],
+                    })
+                }
             }
-        }
-        pulsingDragCallbackRef.current = pointDragCb
-
-        const basisConfirmed = (pos: VectorArray) => {
-            console.log('data has been set!')
-            set_span2d_data((data) => ({ ...data, base1: pos }))
-        }
-        userBasisConfirmedRef.current = basisConfirmed
-
-        // Defining Sub01:'starting off a 2D span'
-        const sub = new Subsection({
-            title: 'starting practice 2D Sapn',
-            secNumber: 1,
-            subNumber: 0,
-            meta: 'make things ready for practice 2D span',
-        })
-        sub.add({
-            anim: STORAGE['anim_line'],
-            props: {
+            pulsingDragCallbackRef.current = pointDragCb
+            const basisConfirmed = (pos: VectorArray) => {
+                console.log('data has been set!')
+                set_span2d_data((data) => ({ ...data, base1: pos }))
+            }
+            userBasisConfirmedRef.current = basisConfirmed
+            // Defining Sub01:'starting off a 2D span'
+            const sub = new Subsection({
+                title: 'starting practice 2D Sapn',
+                secNumber: secNumber,
+                subNumber: subNumber,
+                meta: 'make things ready for practice 2D span',
+            })
+            sub.add({
+                set: setMlineRef,
                 to: {
                     opacity: 0,
                 },
                 meta: 'hide line',
-            },
-        })
-            .add({
-                anim: STORAGE['anim_points'],
-                props: {
+            })
+                .add({
+                    set: setPointsRef,
                     to: () => ({ opacity: 0 }),
                     meta: 'hide all points',
-                },
-            })
-
-            .add({
-                anim: STORAGE['anim_x1b'],
-                props: {
+                })
+                .add({
+                    set: x1base_startRef,
                     to: {
                         visible: true,
                         opacity: 1,
                     },
                     meta: 'make x1b visble',
-                },
-            })
-            .add({
-                anim: STORAGE['anim_x2b'],
-                props: {
+                })
+                .add({
+                    set: x2base_startRef,
                     to: {
                         visible: true,
                         opacity: 1,
                     },
                     meta: 'make x2b visble',
-                },
-            })
-            .add({
-                anim: STORAGE['pulsing_point'],
-                props: {
+                })
+                .add({
+                    set: setPulsingPointRef,
                     to: {
                         opacity: 1,
                         color: 'blue',
                     },
                     meta: 'setting pulsing point for changing the x1b',
-                },
-            })
-            .nextCon()
+                })
 
-        return sub
+            return sub
 
-        // })
-    }, [])
-
-    const create_sub_lincomb_practice = useCallback(() => {
+            // })
+        },
+        []
+    )
+    //create_sub_lincomb_practice
+    useMemo(() => {
+        if (span2d_data.base1 === x1_base) {
+            return
+        }
         const delay = 200
 
         // Defining Sub02:' 2D span: linear combination of alpha*x1+x2'
         const sub = new Subsection({
             title: '2D span practice alpha*x1+x2',
-            secNumber: 2,
-            subNumber: 0,
+            secNumber: 1,
+            subNumber: 1,
             meta: 'pracitce linear combination: 2d span ',
         })
 
         sub.add({
-            anim: STORAGE['anim_x1'],
-            props: {
+            set: x1_startRef,
+            from: {
+                vector: span2d_data['base1'],
+                origin: [0, 0, 0],
+                opacity: 1,
+                label_factor: 1,
+            },
+            to: {
+                visible: true,
+            },
+            immediate: true,
+            meta: `set x1 to new poistion from user data`,
+        })
+            .add({
+                set: x1base_startRef,
                 to: {
                     vector: span2d_data['base1'],
                     visible: true,
                     opacity: 1,
-                    label_factor: 1,
-                    origin: [0, 0, 0],
+                },
+                immediate: true,
+                meta: `set x1base to new poistion from user data`,
+            })
+            .add({
+                set: setMlineRef,
+                from: {
+                    p1: linearComb({
+                        vec1: span2d_data['base1'],
+                        vec2: x2_base,
+                        alpha1: 4.2,
+                    }),
+                    p2: linearComb({
+                        vec1: span2d_data['base1'],
+                        vec2: x2_base,
+                        alpha1: 4.2,
+                    }),
+                },
+                to: { visible: true },
+                immediate: true,
+                meta: 'setting first point of the line to the new position',
+            })
+            .add({
+                set: setPointsRef,
+                to: () => ({
+                    from: {
+                        opacity: 0,
+                    },
+                    immediate: true,
+                }),
+            })
+            .add({
+                set: u_startRef,
+                from: {
+                    opacity: 0,
+                },
+                to: {
+                    visible: true,
+                    vector: linearComb({
+                        vec1: span2d_data['base1'],
+                        vec2: x2_base,
+                        alpha1: 1,
+                        alpha2: 1,
+                    }),
+                },
+                immediate: true,
+                meta: 'make u visble',
+            })
+            .nextCon()
+            .add({
+                set: x1_startRef,
+                to: {
+                    origin: x2_base,
                 },
                 settings: {
                     config: sConfigs['FAST'],
                 },
-                meta: `set x1 to new poistion from user data`,
-            },
-        })
+                meta: 'setting origing of the x1 to x2base',
+            })
             .add({
-                anim: STORAGE['anim_line'],
-                props: {
-                    to: {
-                        p1: linearComb({
-                            vec1: span2d_data['base1'],
-                            vec2: x2_base,
-                            alpha1: 4.2,
-                        }),
-                        visible: true,
-                        p2: linearComb({
-                            vec1: span2d_data['base1'],
-                            vec2: x2_base,
-                            alpha1: 4.2,
-                        }),
-                    },
-
-                    meta: 'setting first point of the line to the new position',
+                set: x1base_startRef,
+                to: {
+                    opacity: 0.5,
                 },
+                settings: {
+                    config: sConfigs['SLOW'],
+                },
+                meta: 'hide x1 base',
             })
             .nextCon()
             .add({
-                anim: STORAGE['anim_u'],
-                props: {
-                    to: {
-                        visible: true,
-                        opacity: 0,
-                        vector: linearComb({
-                            vec1: span2d_data['base1'],
-                            vec2: x2_base,
-                            alpha1: 1,
-                            alpha2: 1,
-                        }),
-                    },
-                    settings: { config: sConfigs['FASTs'] },
-                    meta: 'make u visble',
+                set: u_startRef,
+                to: {
+                    opacity: 1,
                 },
-            })
-            .nextCon()
-            .add({
-                anim: STORAGE['anim_x1'],
-                props: {
-                    to: {
-                        origin: x2_base,
-                    },
-                    settings: {
-                        config: sConfigs['FAST'],
-                    },
-                    meta: 'setting origing of the x1 to x2base',
+                settings: {
+                    config: sConfigs['FAST'],
                 },
-            })
-            .add({
-                anim: STORAGE['anim_x1b'],
-                props: {
-                    to: {
-                        opacity: 0,
-                    },
-                    settings: {
-                        config: sConfigs['FAST'],
-                    },
-                    meta: 'hide x1 base',
-                },
-            })
-            .nextCon()
-            .add({
-                anim: STORAGE['anim_u'],
-                props: {
-                    to: {
-                        opacity: 1,
-                    },
-                    settings: { config: sConfigs['SLOW'] },
-                    meta: 'make u visble',
-                },
+                meta: 'make u visble',
             })
             .nextCon()
 
@@ -848,175 +700,167 @@ export function useMathboxAnim({
                 sub.nextCon()
             }
             sub.add({
-                anim: STORAGE['anim_x1'],
-                props: {
+                set: x1_startRef,
+                to: {
+                    vector: v1,
+                    label_factor: alpha,
+                    label_transform: `translate${x1labeltrans[i]}`,
+                },
+                settings: {
+                    config: sConfigs['default'],
+                    delay: 0,
+                },
+                meta: `set x1 to ${alpha} * x1`,
+            })
+                .add({
+                    set: u_startRef,
                     to: {
-                        vector: v1,
-                        label_factor: alpha,
-                        label_transform: `translate${x1labeltrans[i]}`,
+                        vector: uv,
+                        label_transform: `translate${ulabeltrans[i]}`,
                     },
                     settings: {
                         config: sConfigs['default'],
                         delay: 0,
                     },
-                    meta: `set x1 to ${alpha} * x1`,
-                },
-            })
-                .add({
-                    anim: STORAGE['anim_u'],
-                    props: {
-                        to: {
-                            vector: uv,
-                            label_transform: `translate${ulabeltrans[i]}`,
-                        },
-                        settings: {
-                            config: sConfigs['default'],
-                            delay: 0,
-                        },
-                        meta: `set u to ${alpha}*x1 + x2`,
-                    },
+                    meta: `set u to ${alpha}*x1 + x2`,
                 })
                 .nextCon()
-                .add<Function>({
-                    anim: STORAGE['anim_points'],
-                    props: {
-                        to: ((idx) => (i) => {
-                            if (i === idx) {
-                                return {
-                                    from: {
-                                        radius: 0.0001,
-                                        visible: true,
-                                        opacity: 1,
-                                        position: points[i].position,
-                                    },
-                                    to: { radius: 0.09 },
-                                    config: cubic_in_out(0.4),
-                                }
-                            } else return {}
-                        })(idx),
-                        from: ((idx) => (i) => {
-                            if (i === idx) {
-                                return {
-                                    from: { radius: 0.09 },
-                                    to: { radius: 0.0001 },
-                                }
-                            } else return {}
-                        })(idx),
-                        meta: `set ${i}st point on ${alpha}*x1 + x2`,
-                    },
+                .add({
+                    set: setPointsRef,
+                    to: ((idx) => (i: number) => {
+                        if (i === idx) {
+                            return {
+                                from: {
+                                    radius: 0.0001,
+                                    visible: true,
+                                    opacity: 1,
+                                    position: points[i].position,
+                                },
+                                to: { radius: 0.09 },
+                                config: cubic_in_out(0.4),
+                            }
+                        } else return {}
+                    })(idx),
+                    from: ((idx) => (i) => {
+                        if (i === idx) {
+                            return {
+                                from: { radius: 0.09 },
+                                to: { radius: 0.0001 },
+                            }
+                        } else return {}
+                    })(idx),
+                    meta: `set ${i}st point on ${alpha}*x1 + x2`,
                 })
 
             idx--
             i++
         }
         sub.add({
-            anim: STORAGE['anim_x2'],
-            props: {
+            set: x2_startRef,
+            to: { opacity: 0, label_opacity: 0 },
+            settings: {
+                config: cubic_in_out(2),
+                delay: 4 * delay,
+            },
+            meta: 'set opacity of x2 to zero',
+        })
+            .add({
+                set: x1_startRef,
                 to: { opacity: 0, label_opacity: 0 },
                 settings: {
                     config: cubic_in_out(2),
-                    delay: 4 * delay,
+                    delay: 9 * delay,
                 },
-                meta: 'set opacity of x2 to zero',
-            },
-        })
-            .add({
-                anim: STORAGE['anim_x1'],
-                props: {
-                    to: { opacity: 0, label_opacity: 0 },
-                    settings: {
-                        config: cubic_in_out(2),
-                        delay: 9 * delay,
-                    },
-                    meta: 'set opacity of x1 to zero',
-                },
+                meta: 'set opacity of x1 to zero',
             })
-            .add({
-                anim: STORAGE['anim_u'],
-                props: {
-                    to: { opacity: 0, label_opacity: 0 },
-                    settings: {
-                        config: cubic_in_out(2),
-                        delay: 14 * delay,
-                    },
-                    meta: 'set opacity of u to zero',
-                },
-            })
+            // .add({
+            //     set: u_startRef,
+            //     to: { opacity: 0, label_opacity: 0 },
+            //     settings: {
+            //         config: cubic_in_out(2),
+            //         delay: 20 * delay,
+            //     },
+            //     meta: 'set opacity of u to zero',
+            // })
             .nextCon()
             .add({
-                anim: STORAGE['anim_line'],
-                props: {
-                    to: {
-                        opacity: 1,
-                    },
-
-                    meta: 'set line visible',
+                set: setMlineRef,
+                to: {
+                    opacity: 1,
                 },
+                meta: 'set line visible',
             })
             .add({
-                anim: STORAGE['anim_line'],
-                props: {
-                    to: {
-                        p2: linearComb({
-                            vec1: span2d_data['base1'],
-                            vec2: x2_base,
-                            alpha1: -3.1,
-                        }),
-                    },
-                    settings: { config: sConfigs['VSLOW'] },
-                    meta: 'drawing a mline thorought new lc points',
+                set: setMlineRef,
+                to: {
+                    p2: linearComb({
+                        vec1: span2d_data['base1'],
+                        vec2: x2_base,
+                        alpha1: -3.1,
+                    }),
                 },
+                settings: { config: sConfigs['VSLOW'] },
+                meta: 'drawing a mline thorought new lc points',
             })
 
-        return sub
+        mplayer.update(sub)
+
+        // update animation according to user data:
     }, [span2d_data])
+    useMemo(() => {
+        const section0 = new Section({
+            title: 'sec1',
+            secNumber: 0,
+            // subs: [
+            //     create_sub_2dCoordinates(0, 0),
+            //     create_sub_prepare_2dSpan(0, 1),
+            //     create_sub_linearcombination(0, 2),
+            // ],
+            subs: [],
+        })
+        mplayer.add_section(section0)
+    }, [])
+    useMemo(() => {
+        const section1 = new Section({
+            title: 'sec1',
+            secNumber: 1,
+            subs: [
+                create_sub_begin_2d_practice(1, 0),
+                // create_sub_lincomb_practice(1, 1),
+            ],
+        })
+        mplayer.add_section(section1)
+    }, [])
 
     const animate = useCallback(async () => {
         if (started.current[0] === false) {
-            createCoordinatesAnims()
-            createbasisAnims()
-            const section0 = create_section_2dSpan()
-            const section1 = new Section({
-                title: 'test',
-                secNumber: 1,
-                subs: [create_sub_begin_2d_practice()],
-            })
             started.current[0] = true
-            await mplayer({
-                sections: [],
-                setProgress: setProgressbarRef.current,
-                progressRef: currProgress,
-            })
-            await mplayer({
-                sections: [section1],
-                setProgress: setProgressbarRef.current,
-                progressRef: currProgress,
-            })
+            started.current[1] = true
+            mplayer.play()
         }
     }, [])
 
-    useEffect(() => {
-        let practice_2d_span_Sub: Subsection
+    // useEffect(() => {
+    //     let practice_2d_span_Sub: Subsection
 
-        if (span2d_data['base1'] !== x1_base) {
-            practice_2d_span_Sub = create_sub_lincomb_practice()
-            console.log('practic created')
-            started.current[1] = true
-        }
-        if (started.current[1]) {
-            const section2 = new Section({
-                title: 'test',
-                secNumber: 2,
-                subs: [practice_2d_span_Sub],
-            })
-            console.log('practic runs!')
-            mplayer({
-                sections: [section2],
-                setProgress: setProgressbarRef.current,
-                progressRef: currProgress,
-            })
-        }
-    }, [span2d_data])
+    //     if (span2d_data['base1'] !== x1_base) {
+    //         practice_2d_span_Sub = create_sub_lincomb_practice()
+    //         console.log('practic created')
+    //         started.current[1] = true
+    //     }
+    //     if (started.current[1]) {
+    //         const section2 = new Section({
+    //             title: 'test',
+    //             secNumber: 2,
+    //             subs: [practice_2d_span_Sub],
+    //         })
+    //         console.log('practic runs!')
+    //         const player = Mplayer.getInstance()
+    //         player.addSections([section2])
+    //         // player.enable()
+    //         player.play({ sec: [1, 2] })
+    //     }
+    // }, [span2d_data])
     // const animateSec1 = useCallback(async () => {
 
     //     const section0 = create2dSpan()

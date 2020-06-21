@@ -4,147 +4,48 @@ import {
     SpringDefaultProps,
 } from '@react-spring/core'
 
-type FnToFrom<T> = (args?: object | number | string) => T
-export type SanimSet<T> = React.MutableRefObject<
-    SpringStartFn<T | Function> | SpringStartFn<T>
->
-type SanimTF<T> = T | FnToFrom<T>
-type SanimSettings = {
+type AnimSettings = {
     config?: SpringConfig
     delay?: number
     default?: SpringDefaultProps
 }
-export type SanimAddArgs<T> = {
-    to: SanimTF<T>
-    from?: SanimTF<T>
-    settings?: SanimSettings
+
+type ToFn<T> = (
+    args: object | number | string | Array<number | object | string>
+) =>
+    | T
+    | {
+          from?: T
+          to?: T
+          config?: AnimSettings['config']
+          dely?: number
+          default?: AnimSettings['default']
+      }
+
+type AnimCustomStrFn<T> = (props: {
+    to?: T | ToFn<T>
+    from?: T | ToFn<T>
+    config?: AnimSettings['config']
+    default?: AnimSettings['default']
+    cancel?: boolean
+}) => Promise<any>
+
+export type AnimStartFn<T> = SpringStartFn<T> | AnimCustomStrFn<T>
+
+export type AnimSetFn<T> = React.MutableRefObject<AnimStartFn<T>>
+
+export type SingleAnim<T> = {
+    set: AnimSetFn<T>
+    to: T | ToFn<T>
+    from?: T | ToFn<T>
+    immediate?: boolean
+    settings?: AnimSettings
     meta: string
     payload?: object | number | string | Function
 }
 
-/* =================  SANIM ====================  */
-
-export class Sanim<T = object> {
-    set: SanimSet<T>
-    from: SanimTF<T>
-    all: {
-        [keys: string]: (SanimAddArgs<T> & { from: SanimTF<T> })[]
-    } = {}
-    currIndex: { secNum: number; subNum: number; conNum: number } = {
-        secNum: 0,
-        subNum: 0,
-        conNum: 0,
-    }
-    currIndexKey = '0-0-0'
-    constructor({ set, from }: { set: SanimSet<T>; from: SanimTF<T> }) {
-        this.set = set
-        this.from = from
-    }
-
-    add({
-        to,
-        from,
-        settings = {},
-        meta,
-        secNum,
-        subNum,
-        conNum,
-        payload,
-    }: SanimAddArgs<T> & {
-        secNum?: number
-        subNum?: number
-        conNum?: number
-    }) {
-        const currSec = this.currIndex.secNum
-        const currSub = this.currIndex.subNum
-        const currCon = this.currIndex.conNum
-        const last_index = currSec + '-' + currSub + '-' + currCon
-        const index_key = secNum + '-' + subNum + '-' + conNum
-        this.currIndex = { secNum, subNum, conNum }
-
-        if (!index_key) {
-            throw new Error(
-                `index_key is undefined! recieved args: secNum:${secNum}, subNum:${subNum}, conNum:${conNum}`
-            )
-        }
-
-        let _from: typeof from
-        // : SanimTF<T>
-
-        if (typeof this.from === 'function') {
-            if (this.isEmpty(this.all)) {
-                _from = from ? from : this.from
-            } else {
-                const last = this.all[last_index]
-                const len = last.length
-                _from = from ? from : last[len - 1].to
-            }
-        } else {
-            if (this.isEmpty(this.all)) {
-                _from = from ? from : this.from
-            } else {
-                const last = this.all[last_index]
-                const len = last.length
-                _from = {
-                    ...last[len - 1].from,
-                    ...last[len - 1].to,
-                    ...from,
-                }
-            }
-        }
-
-        // for the case that in one index_key contains more than one animation with the same set (for example same animation with
-        // different delays  after each others) we push every animations in a list so all[index] is a list of animations
-        if (!this.all[index_key]) {
-            this.all[index_key] = [{ from: _from, to, settings, meta, payload }]
-        } else {
-            this.all[index_key].push({
-                from: _from,
-                to,
-                settings,
-                meta,
-                payload,
-            })
-        }
-
-        this.currIndexKey = index_key
-
-        return this
-    }
-
-    isEmpty(arg: object) {
-        if (arg === undefined || arg === null) {
-            throw new Error(`object is undefined or null!`)
-        }
-        if (typeof arg === 'object') {
-            return Object.keys(arg).length === 0
-        }
-    }
-
-    getAnimList({
-        secNum,
-        subNum,
-        conNum,
-    }: {
-        secNum: number
-        subNum: number
-        conNum: number
-    }) {
-        const index_key = secNum + '-' + subNum + '-' + conNum
-        const res = this.all[index_key]
-        if (!res) {
-            {
-                console.log(this.all)
-                throw new Error(
-                    `no props could be found for index_key:${index_key}`
-                )
-            }
-        } else return res
-    }
-}
-
+export type ConcurrentAnims = SingleAnim<any>[]
 /* =================  SUBSECTTION ====================  */
-export type ConcurrentSanims = Sanim<any>[]
 
 type SubsectionArgs = {
     title: string
@@ -158,7 +59,7 @@ export class Subsection {
     meta?: string
     secNumber: number
     subNumber: number
-    queue: ConcurrentSanims[] = []
+    queue: ConcurrentAnims[] = []
     currCon = 0
     constructor({ title, meta, secNumber, subNumber }: SubsectionArgs) {
         this.title = title
@@ -166,20 +67,8 @@ export class Subsection {
         this.secNumber = secNumber
         this.subNumber = subNumber
     }
-    add<T extends object>({
-        anim,
-        props,
-    }: {
-        anim: Sanim<T>
-        props: SanimAddArgs<T>
-    }) {
-        anim.add({
-            secNum: this.secNumber,
-            subNum: this.subNumber,
-            conNum: this.currCon,
-            ...props,
-        })
-
+    add<T>(anim: SingleAnim<T>) {
+        // const anim = { ...rest, immediate }
         let currConList = this.queue[this.currCon]
         if (currConList) {
             currConList.push(anim)
@@ -216,28 +105,21 @@ export class Section {
         this.subs = subs
         this.num_anims = this.counter()
     }
-    counter() {
+    counter(subNum?: number) {
+        //if subNum is given it returns the number of animations for that sub otherwise for subs
         let count = 0
-        let subNum = 0
-        let conNum = 0
+        if (typeof subNum === 'number') {
+            for (const concurrent of this.subs[subNum].queue) {
+                count += concurrent.length
+            }
+            return count
+        }
         for (const sub of this.subs) {
             for (const concurrent of sub.queue) {
-                for (const sanim of concurrent) {
-                    const sanimList = sanim.getAnimList({
-                        secNum: this.secNumber,
-                        subNum,
-                        conNum,
-                    })
-                    for (const _ of sanimList) {
-                        count++
-                    }
-                }
-                conNum++
+                count += concurrent.length
             }
-            subNum++
-            conNum = 0 //reset conNum for new subSection!
         }
-
+        this.num_anims = count
         return count
     }
 }

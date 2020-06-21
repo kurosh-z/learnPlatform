@@ -137,7 +137,7 @@ export const PulsingPoint: React.FC<PulsingPointProps> = ({
     useEffect(() => {
         const setSpringFunc: SetPulsingPoint = async (props) => {
             const { config, to, from } = props
-
+            if (!to) return
             const res0 = Promise.all([
                 setCore({
                     to: {
@@ -262,6 +262,10 @@ export const PulsingPoint: React.FC<PulsingPointProps> = ({
         }
         setPopup(() => false)
     }, [])
+    const cancelCallback = useCallback(() => {
+        setPopup(() => false)
+    }, [])
+
     return (
         <>
             <Aspoint
@@ -289,6 +293,7 @@ export const PulsingPoint: React.FC<PulsingPointProps> = ({
                 <PopupMenu
                     opened={popup_opened}
                     setCallback={setConfirmationHandler}
+                    cancelCallback={cancelCallback}
                 />
             </HTML>
         </>

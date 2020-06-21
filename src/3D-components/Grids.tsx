@@ -264,6 +264,7 @@ const Grids: React.FC<GridProps> = ({
 
     useEffect(() => {
         const setGridFn: SetGridFn = async ({ to, from, config, delay }) => {
+            if (!to) return
             if (to.hdraw || to.vdraw) {
                 setGspring({
                     visible: true,

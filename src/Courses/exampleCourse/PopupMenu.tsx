@@ -75,11 +75,13 @@ const Container = a(PopupContainer)
 type PopupMenuProps = {
     opened: boolean
     setCallback: () => void
+    cancelCallback: () => void
 }
 
 export const PopupMenu: React.FC<PopupMenuProps> = ({
     opened,
     setCallback,
+    cancelCallback,
 }) => {
     const springRef = useRef(null)
     const contSpring = useSpring({
@@ -96,7 +98,7 @@ export const PopupMenu: React.FC<PopupMenuProps> = ({
     })
 
     const transRef = useRef(null)
-    const transitions = useTransition(opened ? ['set', 'change'] : [], {
+    const transitions = useTransition(opened ? ['set', 'cancel'] : [], {
         ref: transRef,
         keys: (item) => item,
         unique: true,
@@ -106,14 +108,6 @@ export const PopupMenu: React.FC<PopupMenuProps> = ({
         leave: { opacity: 0, transform: 'scale(0)' },
     })
 
-    const setItemClickHandler = useCallback(
-        (ev: React.MouseEvent<HTMLSpanElement, MouseEvent>) => {
-            ev.preventDefault()
-            ev.stopPropagation()
-            setCallback()
-        },
-        []
-    )
     const elements = transitions((styles, item) => {
         return (
             <a.span
@@ -121,7 +115,7 @@ export const PopupMenu: React.FC<PopupMenuProps> = ({
                 role="button"
                 tabIndex={item === 'set' ? 1 : 0}
                 style={styles}
-                onClick={item === 'set' ? setItemClickHandler : null}
+                onClick={item === 'set' ? setCallback : cancelCallback}
             >
                 {item}
             </a.span>

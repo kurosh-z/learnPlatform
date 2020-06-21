@@ -99,9 +99,8 @@ export const Points: React.FC<{
     )
 }
 
-export type AnimatedPointsProps = Pick<
-    SinglePoint,
-    'opacity' | 'position' | 'radius' | 'color' | 'visible'
+export type AnimatedPointsProps = Partial<
+    Pick<SinglePoint, 'opacity' | 'position' | 'radius' | 'color' | 'visible'>
 >
 export type SetPoint = SpringStartFn<AnimatedPointsProps>
 
@@ -155,7 +154,6 @@ export const APoints: React.FC<PointsProps> = ({
     setSpringsRef,
     pause,
 }) => {
-    console.log(points[0].position)
     const spRef = useRef<SpringHandle<SinglePoint>>(null)
     const [springs, setSprings] = useSprings(
         points.length,
@@ -179,7 +177,7 @@ export const APoints: React.FC<PointsProps> = ({
             if (idx === 0) return { from, ref: spRef }
             else return { from }
         },
-        [points]
+        []
     )
 
     useEffect(() => {

@@ -84,16 +84,18 @@ export const Line: React.FC<LineProps> = ({ p1, p2, ...rest }) => {
 
 export const ALine = animated(Line)
 
-export type AnimatedMlineProps = Pick<
-    LineProps,
-    | 'color'
-    | 'dashArray'
-    | 'dashRatio'
-    | 'p1'
-    | 'p2'
-    | 'opacity'
-    | 'visible'
-    | 'width'
+export type AnimatedMlineProps = Partial<
+    Pick<
+        LineProps,
+        | 'color'
+        | 'dashArray'
+        | 'dashRatio'
+        | 'p1'
+        | 'p2'
+        | 'opacity'
+        | 'visible'
+        | 'width'
+    >
 >
 export type SetMline = SpringStartFn<AnimatedMlineProps>
 type MlineProps = Omit<LineProps, keyof AnimatedMlineProps> & {
