@@ -22,7 +22,7 @@ import {
 
 import { Section, Subsection } from './anim_section'
 import { sConfigs, cubic_in_out } from './anim-utils'
-import { Mplayer } from './mplayer'
+import { useMathPlayer } from './mplayer'
 
 const { FAST, SLOW } = sConfigs
 
@@ -111,14 +111,15 @@ export function useMathboxAnim({
     const x1_base: [number, number, number] = [scale(2), scale(-3), 0]
     const x2_base: [number, number, number] = [scale(3), scale(2), 0]
 
-    const progressRef = useRef({ sec: 0, sub: 0, con: 0, sobj: 0, sanim: 0 })
+    const mplayer = useMathPlayer(setProgressbarRef)
+    // const progressRef = useRef({ sec: 0, sub: 0, con: 0, sanim: 0 })
 
-    const mplayer = useMemo(() => {
-        return new Mplayer({
-            setProgress: setProgressbarRef,
-            progressRef: progressRef,
-        })
-    }, [])
+    // const mplayer = useMemo(() => {
+    //     return new Mplayer({
+    //         setProgress: setProgressbarRef,
+    //         progressRef: progressRef,
+    //     })
+    // }, [])
     // after every section we set this we set this
     const started = useRef([false, false])
     // set the default span2d_data this will be set again from user input data in practice 2d
@@ -618,6 +619,7 @@ export function useMathboxAnim({
                     },
                     immediate: true,
                 }),
+                meta: 'set opacity of points to zero ',
             })
             .add({
                 set: u_startRef,
@@ -741,7 +743,7 @@ export function useMathboxAnim({
                             }
                         } else return {}
                     })(idx),
-                    from: ((idx) => (i) => {
+                    from: ((idx) => (i: number) => {
                         if (i === idx) {
                             return {
                                 from: { radius: 0.09 },
@@ -809,14 +811,13 @@ export function useMathboxAnim({
     }, [span2d_data])
     useMemo(() => {
         const section0 = new Section({
-            title: 'sec1',
+            title: 'sec0',
             secNumber: 0,
-            // subs: [
-            //     create_sub_2dCoordinates(0, 0),
-            //     create_sub_prepare_2dSpan(0, 1),
-            //     create_sub_linearcombination(0, 2),
-            // ],
-            subs: [],
+            subs: [
+                create_sub_2dCoordinates(0, 0),
+                create_sub_prepare_2dSpan(0, 1),
+                create_sub_linearcombination(0, 2),
+            ],
         })
         mplayer.add_section(section0)
     }, [])
@@ -824,20 +825,20 @@ export function useMathboxAnim({
         const section1 = new Section({
             title: 'sec1',
             secNumber: 1,
-            subs: [
-                create_sub_begin_2d_practice(1, 0),
-                // create_sub_lincomb_practice(1, 1),
-            ],
+            subs: [create_sub_begin_2d_practice(1, 0)],
         })
         mplayer.add_section(section1)
     }, [])
 
     const animate = useCallback(async () => {
-        if (started.current[0] === false) {
-            started.current[0] = true
-            started.current[1] = true
-            mplayer.play()
-        }
+        mplayer.play({
+            onPlayStart: () => {
+                console.log('started')
+            },
+            onPlayEnd: () => {
+                console.log('ends')
+            },
+        })
     }, [])
 
     // useEffect(() => {
@@ -879,8 +880,9 @@ export function useMathboxAnim({
     useEffect(() => {
         if (setxAxesRef.current && !pause) {
             animate()
+            // mplayer.play()
         }
-    }, [pause, span2d_data])
+    }, [pause])
 
     // overlay
     const [overlayStyle, setOverlay] = useSpring(() => ({

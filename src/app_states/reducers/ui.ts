@@ -5,6 +5,7 @@ export const NAV_ANIM_FININISHED = '[ui] nav anim finished'
 export const NAV_ANIM_PROGRESS = '[ui] nav anim progress'
 export const IS_MOBILE = '[gen] isMobile'
 export const IS_COURSE_PAGE = '[ui] in a coursepage'
+
 export type UiActions =
     | {
           type: typeof TOGGLE_NAV_PANEL

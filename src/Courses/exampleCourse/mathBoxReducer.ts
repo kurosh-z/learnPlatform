@@ -4,19 +4,14 @@ export const SET_CANV_VISIBLE = '[canv] set visible'
 export const SET_SVG_VISIBLE = '[svg] set visible'
 export const HIDE_CANV = '[canv] hide'
 export const HIDE_SVG = '[svg] hide'
-// export const PLAY = '[mathbox] play'
-// export const PAUSE = '[mathbox] pause'
 export const TOGGLE_PAUSE = '[mathbox] toggle'
 
-export type MathBoxActions = {
-    type:
-        | typeof SET_CANV_VISIBLE
-        | typeof SET_SVG_VISIBLE
-        | typeof HIDE_CANV
-        | typeof HIDE_SVG
-        | typeof TOGGLE_PAUSE
-    playload?: object
-}
+export type MathBoxActions =
+    | { type: typeof SET_CANV_VISIBLE; payload?: null }
+    | { type: typeof SET_SVG_VISIBLE; payload?: null }
+    | { type: typeof HIDE_CANV; payload?: null }
+    | { type: typeof HIDE_SVG; payload?: null }
+    | { type: typeof TOGGLE_PAUSE; paylod?: null }
 
 export type MathBoxState = Readonly<{
     canvVisibility: boolean

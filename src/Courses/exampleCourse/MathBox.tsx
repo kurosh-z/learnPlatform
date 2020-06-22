@@ -147,12 +147,12 @@ const MathBox: React.FC = () => {
                 font_size={1.3}
                 className={'mathbox__svg'}
                 math_formula={String.raw`
-                            \begin{bmatrix}
-                            e^{\lambda_1} & 0& \cdots & 0 \\
-                            0 & \anim<test>{e^{\lambda_2}} & \cdots & 0 \\
-                            \vdots & \vdots & \ddots & \vdots \\ 
-                            0 & 0 & \cdots & e^{\lambda_n}
-                            \end{bmatrix} `}
+    \begin{bmatrix}
+    e^{\lambda_1} & 0& \cdots & 0 \\
+    0 & \anim<test>{e^{\lambda_2}} & \cdots & 0 \\
+    \vdots & \vdots & \ddots & \vdots \\ 
+    0 & 0 & \cdots & e^{\lambda_n}
+    \end{bmatrix} `}
             >
                 <Latex.Anim
                     id="test"
